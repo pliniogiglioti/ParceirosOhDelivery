@@ -1,0 +1,222 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color: #1f2937;
+    background:
+      radial-gradient(circle at top left, rgba(234, 29, 44, 0.08), transparent 28%),
+      radial-gradient(circle at bottom right, rgba(49, 198, 122, 0.08), transparent 22%),
+      #f7f7f7;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply font-sans antialiased text-ink-900;
+    min-height: 100dvh;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    margin: 0;
+    -webkit-appearance: none;
+  }
+
+  #root {
+    min-height: 100dvh;
+  }
+}
+
+@layer components {
+  .panel-card {
+    @apply rounded-[28px] bg-white shadow-soft;
+    border: 1px solid rgba(35, 49, 67, 0.08);
+  }
+
+  .metric-card {
+    @apply panel-card p-5;
+  }
+
+  .sidebar-link {
+    @apply flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-ink-700 transition;
+  }
+
+  .sidebar-link:hover {
+    @apply bg-ink-50 text-ink-900;
+  }
+
+  .sidebar-link-active {
+    @apply bg-coral-50 text-coral-700;
+  }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .sidebar-shell {
+    transition:
+      width 260ms cubic-bezier(0.22, 1, 0.36, 1),
+      padding 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .sidebar-content {
+    transition:
+      padding 260ms cubic-bezier(0.22, 1, 0.36, 1),
+      gap 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .sidebar-label {
+    transition:
+      opacity 180ms ease,
+      transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+      max-width 260ms cubic-bezier(0.22, 1, 0.36, 1);
+    transform-origin: left center;
+  }
+
+  .sidebar-label-hidden {
+    opacity: 0;
+    transform: translateX(-6px);
+    max-width: 0;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .sidebar-label-visible {
+    opacity: 1;
+    transform: translateX(0);
+    max-width: 220px;
+  }
+
+  .main-shell-shift {
+    transition: padding 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .store-status-popover {
+    transform-origin: top center;
+    transition:
+      opacity 180ms ease,
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      visibility 180ms ease;
+    will-change: opacity, transform;
+  }
+
+  .store-status-popover-open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    visibility: visible;
+  }
+
+  .store-status-popover-closed {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .hours-editor-panel {
+    animation: hours-editor-enter 220ms cubic-bezier(0.22, 1, 0.36, 1);
+    transform-origin: top center;
+  }
+
+  .kanban-scrollbar {
+    position: relative;
+    height: 16px;
+    border-radius: 999px;
+    background: transparent;
+    user-select: none;
+  }
+
+  .kanban-scrollbar-thumb {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    border: 0;
+    border-radius: 999px;
+    background: #f3f7fbcc;
+    box-shadow: none;
+    cursor: grab;
+  }
+
+  .kanban-scrollbar-thumb:hover,
+  .kanban-scrollbar-thumb:active {
+    background: #f3f7fbcc;
+  }
+
+  .kanban-alert-triangle {
+    position: relative;
+    display: inline-flex;
+    height: 18px;
+    width: 20px;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    flex-shrink: 0;
+    background: center/contain no-repeat
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 21' fill='none'%3E%3Cpath d='M12.923 1.615c-.405-.738-1.441-.738-1.846 0L1.57 18.946C1.18 19.656 1.694 20.5 2.493 20.5h19.014c.799 0 1.313-.844.924-1.554L12.923 1.615Z' fill='%23EA1D2C' stroke='%23EA1D2C' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E");
+  }
+
+  .kanban-alert-triangle span {
+    position: relative;
+    transform: translateY(2px);
+  }
+
+  .order-card-expired {
+    animation: order-card-expired 1s ease-in-out infinite;
+    border-color: rgba(234, 29, 44, 0.88);
+  }
+}
+
+@keyframes hours-editor-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes order-card-expired {
+  0%,
+  100% {
+    border-color: rgba(234, 29, 44, 0.32);
+    box-shadow: 0 0 0 0 rgba(234, 29, 44, 0);
+  }
+
+  50% {
+    border-color: rgba(234, 29, 44, 0.96);
+    box-shadow: 0 0 0 2px rgba(234, 29, 44, 0.18);
+  }
+}
