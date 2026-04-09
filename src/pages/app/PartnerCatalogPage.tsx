@@ -70,6 +70,14 @@ function reorderCategoryIds(categoryIds: string[], fromCategoryId: string, toCat
 type CategoryTemplate = 'padrao' | 'pizza'
 type ProductCreationKind = 'industrializado' | 'preparado'
 type StandardItemStepTab = 'dados' | 'detalhes' | 'revisao'
+type IndustrializedCatalogItem = {
+  id: string
+  name: string
+  brand: string
+  ean: string
+  description: string
+  suggestedPrice: number
+}
 
 const categoryTemplates: Array<{
   id: CategoryTemplate
@@ -120,6 +128,41 @@ const standardItemStepTabs: Array<{ id: StandardItemStepTab; label: string }> = 
   { id: 'revisao', label: 'Revisao' },
 ]
 
+const industrializedCatalogItems: IndustrializedCatalogItem[] = [
+  {
+    id: 'ind-1',
+    name: 'Coca-Cola Lata 350ml',
+    brand: 'Coca-Cola',
+    ean: '7894900011517',
+    description: 'Refrigerante lata 350ml pronto para venda unitara.',
+    suggestedPrice: 6.5,
+  },
+  {
+    id: 'ind-2',
+    name: 'Guarana Antarctica Lata 350ml',
+    brand: 'Guarana Antarctica',
+    ean: '7891991011024',
+    description: 'Refrigerante lata 350ml com cadastro de mercado.',
+    suggestedPrice: 6,
+  },
+  {
+    id: 'ind-3',
+    name: 'Agua Mineral sem Gas 500ml',
+    brand: 'Minalba',
+    ean: '7896062800220',
+    description: 'Agua mineral sem gas para venda unitara.',
+    suggestedPrice: 4,
+  },
+  {
+    id: 'ind-4',
+    name: 'Brownie Embalado 80g',
+    brand: 'Doce Casa',
+    ean: '7898937612458',
+    description: 'Brownie individual embalado pronto para consumo.',
+    suggestedPrice: 8.9,
+  },
+]
+
 function getCategoryTemplate(category: PartnerCategory): CategoryTemplate {
   return category.template === 'pizza' ? 'pizza' : 'padrao'
 }
@@ -142,6 +185,15 @@ export function PartnerCatalogPage() {
   const [addItemCategoryId, setAddItemCategoryId] = useState<string | null>(null)
   const [selectedProductCreationKind, setSelectedProductCreationKind] = useState<ProductCreationKind | null>(null)
   const [standardItemStepTab, setStandardItemStepTab] = useState<StandardItemStepTab>('dados')
+  const [industrializedSearch, setIndustrializedSearch] = useState('')
+  const [selectedIndustrializedItemId, setSelectedIndustrializedItemId] = useState<string | null>(null)
+  const [industrializedName, setIndustrializedName] = useState('')
+  const [industrializedBrand, setIndustrializedBrand] = useState('')
+  const [industrializedEan, setIndustrializedEan] = useState('')
+  const [industrializedDescription, setIndustrializedDescription] = useState('')
+  const [industrializedPrice, setIndustrializedPrice] = useState('')
+  const [industrializedActive, setIndustrializedActive] = useState(true)
+  const [industrializedFeatured, setIndustrializedFeatured] = useState(false)
   const [expandedByCategoryId, setExpandedByCategoryId] = useState<Record<string, boolean>>({})
   const [activeByCategoryId, setActiveByCategoryId] = useState<Record<string, boolean>>({})
   const [menuOpenCategoryId, setMenuOpenCategoryId] = useState<string | null>(null)
@@ -297,6 +349,15 @@ export function PartnerCatalogPage() {
     setSelectedProductCreationKind(kind)
 
     if (kind === 'industrializado') {
+      setIndustrializedSearch('')
+      setSelectedIndustrializedItemId(null)
+      setIndustrializedName('')
+      setIndustrializedBrand('')
+      setIndustrializedEan('')
+      setIndustrializedDescription('')
+      setIndustrializedPrice('')
+      setIndustrializedActive(true)
+      setIndustrializedFeatured(false)
       setProductKindModalOpen(true)
       return
     }
@@ -325,6 +386,42 @@ export function PartnerCatalogPage() {
     selectedProductCreationKind
       ? productCreationKinds.find((kind) => kind.id === selectedProductCreationKind) ?? null
       : null
+  const filteredIndustrializedCatalogItems = useMemo(() => {
+    const normalizedIndustrializedSearch = industrializedSearch.trim().toLowerCase()
+
+    if (!normalizedIndustrializedSearch) {
+      return industrializedCatalogItems
+    }
+
+    return industrializedCatalogItems.filter((item) => {
+      const haystack = `${item.name} ${item.brand} ${item.ean}`.toLowerCase()
+      return haystack.includes(normalizedIndustrializedSearch)
+    })
+  }, [industrializedSearch])
+
+  function handleSelectIndustrializedItem(item: IndustrializedCatalogItem) {
+    setSelectedIndustrializedItemId(item.id)
+    setIndustrializedName(item.name)
+    setIndustrializedBrand(item.brand)
+    setIndustrializedEan(item.ean)
+    setIndustrializedDescription(item.description)
+    setIndustrializedPrice(String(item.suggestedPrice))
+  }
+
+  function handleSaveIndustrializedItem() {
+    if (!selectedIndustrializedItemId) {
+      toast.error('Selecione um produto da lista para continuar.')
+      return
+    }
+
+    if (!industrializedName.trim() || !industrializedEan.trim() || !industrializedPrice.trim()) {
+      toast.error('Preencha os campos principais do cadastro.')
+      return
+    }
+
+    setProductKindModalOpen(false)
+    toast.success(`Item industrializado ${industrializedName.trim()} pronto para cadastro.`)
+  }
 
   return (
     <>
@@ -964,7 +1061,7 @@ export function PartnerCatalogPage() {
           onClick={() => setProductKindModalOpen(false)}
         >
           <div
-            className="panel-card w-full max-w-2xl p-6"
+            className="panel-card w-full max-w-5xl p-6"
             role="dialog"
             aria-modal="true"
             aria-labelledby="product-kind-title"
@@ -993,22 +1090,198 @@ export function PartnerCatalogPage() {
               </button>
             </div>
 
-            <div className="mt-6 rounded-xl border border-ink-100 bg-ink-50 px-5 py-5">
-              <p className="text-sm font-semibold text-ink-800">Fluxo iniciado</p>
-              <p className="mt-2 text-sm leading-6 text-ink-500">
-                Aqui entra a proxima etapa do cadastro de item {selectedProductCreationKindMeta.label.toLowerCase()}.
-              </p>
-            </div>
+            {selectedProductCreationKind === 'industrializado' ? (
+              <>
+                <div className="mt-6 grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
+                  <div className="rounded-xl border border-ink-100 bg-white p-4">
+                    <p className="text-sm font-semibold text-ink-900">Produtos ja cadastrados no banco</p>
+                    <p className="mt-2 text-sm leading-6 text-ink-500">
+                      Busque por nome, marca ou EAN para selecionar um item industrializado de teste.
+                    </p>
 
-            <div className="mt-6 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setProductKindModalOpen(false)}
-                className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
-              >
-                Fechar
-              </button>
-            </div>
+                    <div className="mt-4 relative">
+                      <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
+                      <input
+                        type="text"
+                        value={industrializedSearch}
+                        onChange={(event) => setIndustrializedSearch(event.target.value)}
+                        placeholder="Buscar por nome ou EAN"
+                        className="h-12 w-full rounded-2xl border border-ink-100 bg-white pl-11 pr-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
+                      />
+                    </div>
+
+                    <div className="mt-4 space-y-3">
+                      {filteredIndustrializedCatalogItems.map((item) => {
+                        const isSelected = selectedIndustrializedItemId === item.id
+
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => handleSelectIndustrializedItem(item)}
+                            className={cn(
+                              'w-full rounded-xl border p-4 text-left transition',
+                              isSelected
+                                ? 'border-coral-300 bg-coral-50'
+                                : 'border-ink-100 bg-ink-50 hover:bg-white'
+                            )}
+                          >
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="text-sm font-bold text-ink-900">{item.name}</p>
+                                <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-500">
+                                  {item.brand}
+                                </p>
+                                <p className="mt-2 text-sm text-ink-500">EAN {item.ean}</p>
+                              </div>
+                              <div className="shrink-0 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-ink-700">
+                                {formatCurrency(item.suggestedPrice)}
+                              </div>
+                            </div>
+                          </button>
+                        )
+                      })}
+
+                      {filteredIndustrializedCatalogItems.length === 0 ? (
+                        <div className="rounded-xl border border-dashed border-ink-200 bg-ink-50 px-4 py-8 text-center">
+                          <p className="text-sm font-semibold text-ink-700">Nenhum produto encontrado</p>
+                          <p className="mt-2 text-sm text-ink-500">Ajuste a busca para localizar um item pelo EAN ou nome.</p>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-ink-100 bg-white p-4">
+                    <p className="text-sm font-semibold text-ink-900">Cadastro comum do item</p>
+                    <p className="mt-2 text-sm leading-6 text-ink-500">
+                      Depois de selecionar um produto do banco, voce conclui o cadastro normalmente para o cardapio.
+                    </p>
+
+                    <div className="mt-5 grid gap-4 md:grid-cols-2">
+                      <label className="block">
+                        <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Nome</span>
+                        <input
+                          type="text"
+                          value={industrializedName}
+                          onChange={(event) => setIndustrializedName(event.target.value)}
+                          placeholder="Nome do produto"
+                          className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
+                        />
+                      </label>
+
+                      <label className="block">
+                        <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Marca</span>
+                        <input
+                          type="text"
+                          value={industrializedBrand}
+                          onChange={(event) => setIndustrializedBrand(event.target.value)}
+                          placeholder="Marca"
+                          className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
+                        />
+                      </label>
+
+                      <label className="block">
+                        <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">EAN</span>
+                        <input
+                          type="text"
+                          value={industrializedEan}
+                          onChange={(event) => setIndustrializedEan(event.target.value)}
+                          placeholder="Codigo EAN"
+                          className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
+                        />
+                      </label>
+
+                      <label className="block">
+                        <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Preco de venda</span>
+                        <input
+                          type="number"
+                          inputMode="decimal"
+                          min="0"
+                          step="0.01"
+                          value={industrializedPrice}
+                          onChange={(event) => setIndustrializedPrice(event.target.value)}
+                          placeholder="0,00"
+                          className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
+                        />
+                      </label>
+                    </div>
+
+                    <label className="mt-4 block">
+                      <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Descricao</span>
+                      <textarea
+                        value={industrializedDescription}
+                        onChange={(event) => setIndustrializedDescription(event.target.value)}
+                        rows={4}
+                        placeholder="Descricao do item"
+                        className="w-full rounded-2xl border border-ink-100 bg-white px-4 py-3 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
+                      />
+                    </label>
+
+                    <div className="mt-5 grid gap-3 md:grid-cols-2">
+                      <div className="flex items-center justify-between rounded-2xl border border-ink-100 bg-ink-50 px-4 py-3">
+                        <div>
+                          <p className="text-sm font-semibold text-ink-900">Ativo</p>
+                          <p className="mt-1 text-sm text-ink-500">Disponivel para venda no cardapio.</p>
+                        </div>
+                        <ThemeSwitch
+                          checked={industrializedActive}
+                          onChange={setIndustrializedActive}
+                          ariaLabel="Alternar item industrializado ativo"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between rounded-2xl border border-ink-100 bg-ink-50 px-4 py-3">
+                        <div>
+                          <p className="text-sm font-semibold text-ink-900">Destaque</p>
+                          <p className="mt-1 text-sm text-ink-500">Marcar como item em evidencia.</p>
+                        </div>
+                        <ThemeSwitch
+                          checked={industrializedFeatured}
+                          onChange={setIndustrializedFeatured}
+                          ariaLabel="Alternar item industrializado destaque"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setProductKindModalOpen(false)}
+                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-ink-100 px-5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveIndustrializedItem}
+                    className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
+                  >
+                    Salvar cadastro
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="mt-6 rounded-xl border border-ink-100 bg-ink-50 px-5 py-5">
+                  <p className="text-sm font-semibold text-ink-800">Fluxo iniciado</p>
+                  <p className="mt-2 text-sm leading-6 text-ink-500">
+                    Aqui entra a proxima etapa do cadastro de item {selectedProductCreationKindMeta.label.toLowerCase()}.
+                  </p>
+                </div>
+
+                <div className="mt-6 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setProductKindModalOpen(false)}
+                    className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
+                  >
+                    Fechar
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       ) : null}
