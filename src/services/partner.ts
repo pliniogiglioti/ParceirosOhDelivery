@@ -196,6 +196,7 @@ export async function loadPartnerDashboard(): Promise<{
       minOrderAmount: Number(storeRow.min_order_amount ?? 0),
       etaMin: Number(storeRow.eta_min ?? 20),
       etaMax: Number(storeRow.eta_max ?? 40),
+      pickupEta: Number(storeRow.pickup_eta ?? storeRow.eta_min ?? 20),
       rating: Number(storeRow.rating ?? 4.8),
       reviewCount: Number(storeRow.review_count ?? 0),
       isOpen: Boolean(storeRow.is_open ?? true),

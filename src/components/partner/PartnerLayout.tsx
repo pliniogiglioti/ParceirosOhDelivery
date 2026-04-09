@@ -76,8 +76,6 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
     },
   }
 
-  const isOrdersRoute = location.pathname === '/app/pedidos'
-
   function handleToggleStoreStatus() {
     const nextValue = !displayData.store.isOpen
     setStoreOpen(nextValue)
@@ -106,7 +104,7 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
       <div
         className={cn(
           'main-shell-shift',
-          isOrdersRoute ? 'max-w-none' : 'mx-auto max-w-[1500px]',
+          'max-w-none',
           sidebarCollapsed ? 'lg:pl-[120px]' : 'lg:pl-[332px]'
         )}
       >

@@ -53,13 +53,13 @@ function ThemeSwitch({
       aria-label={ariaLabel}
       onClick={() => onChange(!checked)}
       className={[
-        'inline-flex h-8 w-14 items-center rounded-full px-1 transition',
+        'inline-flex h-8 w-14 items-center rounded-[16px] px-1 transition',
         checked ? 'bg-coral-500' : 'bg-ink-200',
       ].join(' ')}
     >
       <span
         className={[
-          'h-6 w-6 rounded-full bg-white shadow-sm transition-transform duration-200',
+          'h-6 w-6 rounded-[14px] bg-white shadow-sm transition-transform duration-200',
           checked ? 'translate-x-6' : 'translate-x-0',
         ].join(' ')}
       />
@@ -68,7 +68,7 @@ function ThemeSwitch({
 }
 
 function StoreEditorTab() {
-  const { data, source } = usePartnerPageData()
+  const { data } = usePartnerPageData()
   const { updateStore } = usePartnerSimulationStore()
   const coverInputRef = useRef<HTMLInputElement | null>(null)
   const logoInputRef = useRef<HTMLInputElement | null>(null)
@@ -76,7 +76,7 @@ function StoreEditorTab() {
 
   useEffect(() => {
     setDraftStore(data.store)
-  }, [data.store.id])
+  }, [data.store])
 
   function handleStorePatch(patch: Partial<PartnerStore>) {
     setDraftStore((current) => ({
@@ -207,6 +207,13 @@ function StoreEditorTab() {
                   </p>
                 </div>
                 <div className="rounded-xl border border-ink-100 bg-white px-3 py-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400">Retirada</p>
+                  <p className="mt-1 flex items-center gap-1 text-sm font-bold text-ink-900">
+                    <Clock3 className="h-3.5 w-3.5" />
+                    {draftStore.pickupEta} min
+                  </p>
+                </div>
+                <div className="rounded-xl border border-ink-100 bg-white px-3 py-2">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-400">Pedido minimo</p>
                   <p className="mt-1 text-sm font-bold text-ink-900">{formatCurrency(draftStore.minOrderAmount)}</p>
                 </div>
@@ -224,9 +231,6 @@ function StoreEditorTab() {
             <p className="text-sm font-semibold text-ink-900">Informacoes da loja</p>
             <p className="mt-1 text-sm text-ink-500">Atualize os dados principais exibidos no painel.</p>
           </div>
-          <span className="rounded-full bg-ink-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-ink-500">
-            Fonte: {source}
-          </span>
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -330,6 +334,17 @@ function StoreEditorTab() {
               value={draftStore.etaMax}
               onChange={(event) => handleStorePatch({ etaMax: parseInteger(event.target.value) })}
               placeholder="35"
+              className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm font-semibold text-ink-900 outline-none transition focus:border-coral-400"
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Tempo retirada</span>
+            <input
+              type="number"
+              value={draftStore.pickupEta}
+              onChange={(event) => handleStorePatch({ pickupEta: parseInteger(event.target.value) })}
+              placeholder="15"
               className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm font-semibold text-ink-900 outline-none transition focus:border-coral-400"
             />
           </label>

@@ -13,8 +13,11 @@
       #f7f7f7;
   }
 
-  * {
+  *,
+  *::before,
+  *::after {
     -webkit-tap-highlight-color: transparent;
+    box-shadow: none !important;
   }
 
   html {
@@ -51,7 +54,7 @@
 
 @layer components {
   .panel-card {
-    @apply rounded-xl bg-white shadow-soft;
+    @apply rounded-xl bg-white;
     border: 1px solid rgba(35, 49, 67, 0.08);
   }
 

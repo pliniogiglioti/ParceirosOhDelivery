@@ -27,6 +27,7 @@ create table if not exists public.stores (
   delivery_fee numeric(10,2) not null default 0,
   eta_min integer not null default 20,
   eta_max integer not null default 40,
+  pickup_eta integer not null default 15,
   min_order_amount numeric(10,2) not null default 0,
   rating numeric(3,2) not null default 4.5,
   review_count integer not null default 0,

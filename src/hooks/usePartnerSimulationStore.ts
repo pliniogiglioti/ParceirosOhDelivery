@@ -37,14 +37,12 @@ export const usePartnerSimulationStore = create<PartnerSimulationStoreState>()(
       hydrateStore: (store) => {
         const currentStore = get().storeByStoreId[store.id]
 
-        if (!currentStore) {
-          set((state) => ({
-            storeByStoreId: {
-              ...state.storeByStoreId,
-              [store.id]: store,
-            },
-          }))
-        }
+        set((state) => ({
+          storeByStoreId: {
+            ...state.storeByStoreId,
+            [store.id]: currentStore ? { ...store, ...currentStore } : store,
+          },
+        }))
       },
       updateStore: (storeId, patch) => {
         const currentStore = get().storeByStoreId[storeId]
@@ -109,15 +107,12 @@ export const usePartnerSimulationStore = create<PartnerSimulationStoreState>()(
       },
       hydrateOrderSettings: (storeId, settings) => {
         const currentSettings = get().orderSettingsByStoreId[storeId]
-
-        if (!currentSettings) {
-          set((state) => ({
-            orderSettingsByStoreId: {
-              ...state.orderSettingsByStoreId,
-              [storeId]: settings,
-            },
-          }))
-        }
+        set((state) => ({
+          orderSettingsByStoreId: {
+            ...state.orderSettingsByStoreId,
+            [storeId]: currentSettings ? { ...settings, ...currentSettings } : settings,
+          },
+        }))
       },
       updateOrderSettings: (storeId, patch) => {
         const currentSettings = get().orderSettingsByStoreId[storeId]

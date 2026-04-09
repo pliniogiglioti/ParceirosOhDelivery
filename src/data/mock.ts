@@ -14,6 +14,7 @@ export const mockPartnerDashboard: PartnerDashboardData = {
     minOrderAmount: 25,
     etaMin: 20,
     etaMax: 35,
+    pickupEta: 18,
     rating: 4.8,
     reviewCount: 328,
     isOpen: true,

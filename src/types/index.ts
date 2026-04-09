@@ -33,6 +33,7 @@ export interface PartnerStore {
   minOrderAmount: number
   etaMin: number
   etaMax: number
+  pickupEta: number
   rating: number
   reviewCount: number
   isOpen: boolean
@@ -84,10 +85,10 @@ export interface PartnerHour {
 
 export interface PartnerOrderSettings {
   acceptTime: number
-  deliveryForecast: number
-  pickupForecast: number
   playSound: boolean
   showNotification: boolean
+  printAutomatically: boolean
+  acceptAutomatically: boolean
 }
 
 export interface DeliveryArea {
