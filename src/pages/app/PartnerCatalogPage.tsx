@@ -3,7 +3,9 @@ import {
   ChevronDown,
   EllipsisVertical,
   GripVertical,
+  LayoutGrid,
   PencilLine,
+  Pizza,
   Plus,
   Search,
   Sparkles,
@@ -14,6 +16,7 @@ import toast from 'react-hot-toast'
 import { usePartnerPageData } from '@/hooks/usePartnerPageData'
 import { cn, formatCurrency } from '@/lib/utils'
 import { SectionFrame } from '@/components/partner/PartnerUi'
+import type { PartnerCategory } from '@/types'
 
 function ThemeSwitch({
   checked,
@@ -62,20 +65,59 @@ function reorderCategoryIds(categoryIds: string[], fromCategoryId: string, toCat
   return nextCategoryIds
 }
 
+type CategoryTemplate = 'padrao' | 'pizza'
+
+const categoryTemplates: Array<{
+  id: CategoryTemplate
+  label: string
+  description: string
+  icon: typeof LayoutGrid
+  defaultIcon: string
+}> = [
+  {
+    id: 'padrao',
+    label: 'Padrao',
+    description: 'Categoria comum para lanches, bebidas, sobremesas e combos.',
+    icon: LayoutGrid,
+    defaultIcon: 'CT',
+  },
+  {
+    id: 'pizza',
+    label: 'Pizza',
+    description: 'Modelo pensado para sabores, bordas e organizacao de pizzas.',
+    icon: Pizza,
+    defaultIcon: 'PZ',
+  },
+]
+
 export function PartnerCatalogPage() {
   const { data } = usePartnerPageData()
+  const [catalogCategories, setCatalogCategories] = useState<PartnerCategory[]>(data.categories)
   const [selectedCategoryId, setSelectedCategoryId] = useState('all')
   const [search, setSearch] = useState('')
   const [categoryOrderIds, setCategoryOrderIds] = useState<string[]>([])
   const [sortModalOpen, setSortModalOpen] = useState(false)
   const [draftCategoryOrderIds, setDraftCategoryOrderIds] = useState<string[]>([])
   const [draggingCategoryId, setDraggingCategoryId] = useState<string | null>(null)
+  const [createCategoryModalOpen, setCreateCategoryModalOpen] = useState(false)
+  const [newCategoryName, setNewCategoryName] = useState('')
+  const [newCategoryTemplate, setNewCategoryTemplate] = useState<CategoryTemplate>('padrao')
   const [expandedByCategoryId, setExpandedByCategoryId] = useState<Record<string, boolean>>({})
   const [activeByCategoryId, setActiveByCategoryId] = useState<Record<string, boolean>>({})
   const [menuOpenCategoryId, setMenuOpenCategoryId] = useState<string | null>(null)
 
   useEffect(() => {
-    const defaultOrderIds = [...data.categories]
+    setCatalogCategories((current) => {
+      if (current.length === 0) return data.categories
+
+      const incomingIds = new Set(data.categories.map((category) => category.id))
+      const preservedCustomCategories = current.filter((category) => !incomingIds.has(category.id))
+      return [...data.categories, ...preservedCustomCategories]
+    })
+  }, [data.categories])
+
+  useEffect(() => {
+    const defaultOrderIds = [...catalogCategories]
       .sort((firstCategory, secondCategory) => firstCategory.sortOrder - secondCategory.sortOrder)
       .map((category) => category.id)
 
@@ -91,26 +133,27 @@ export function PartnerCatalogPage() {
     })
 
     setExpandedByCategoryId((current) =>
-      data.categories.reduce<Record<string, boolean>>((accumulator, category) => {
+      catalogCategories.reduce<Record<string, boolean>>((accumulator, category) => {
         accumulator[category.id] = current[category.id] ?? false
         return accumulator
       }, {})
     )
 
     setActiveByCategoryId((current) =>
-      data.categories.reduce<Record<string, boolean>>((accumulator, category) => {
+      catalogCategories.reduce<Record<string, boolean>>((accumulator, category) => {
         accumulator[category.id] = current[category.id] ?? category.productCount > 0
         return accumulator
       }, {})
     )
-  }, [data.categories])
+  }, [catalogCategories])
 
   useEffect(() => {
-    if (!sortModalOpen) return
+    if (!sortModalOpen && !createCategoryModalOpen) return
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         setSortModalOpen(false)
+        setCreateCategoryModalOpen(false)
       }
     }
 
@@ -119,14 +162,14 @@ export function PartnerCatalogPage() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [sortModalOpen])
+  }, [sortModalOpen, createCategoryModalOpen])
 
   const orderedCategories = useMemo(
     () =>
       categoryOrderIds
-        .map((categoryId) => data.categories.find((category) => category.id === categoryId))
+        .map((categoryId) => catalogCategories.find((category) => category.id === categoryId))
         .filter((category): category is (typeof data.categories)[number] => Boolean(category)),
-    [categoryOrderIds, data.categories]
+    [catalogCategories, categoryOrderIds]
   )
 
   const normalizedSearch = search.trim().toLowerCase()
@@ -161,6 +204,37 @@ export function PartnerCatalogPage() {
     setMenuOpenCategoryId(null)
   }
 
+  function openCreateCategoryModal() {
+    setNewCategoryName('')
+    setNewCategoryTemplate('padrao')
+    setMenuOpenCategoryId(null)
+    setCreateCategoryModalOpen(true)
+  }
+
+  function handleCreateCategory() {
+    const trimmedName = newCategoryName.trim()
+    if (!trimmedName) {
+      toast.error('Digite o nome da categoria.')
+      return
+    }
+
+    const selectedTemplate = categoryTemplates.find((template) => template.id === newCategoryTemplate) ?? categoryTemplates[0]
+    const nextCategory: PartnerCategory = {
+      id: `category-${Date.now()}`,
+      name: trimmedName,
+      icon: selectedTemplate.defaultIcon,
+      sortOrder: categoryOrderIds.length,
+      productCount: 0,
+    }
+
+    setCatalogCategories((current) => [...current, nextCategory])
+    setCategoryOrderIds((current) => [...current, nextCategory.id])
+    setExpandedByCategoryId((current) => ({ ...current, [nextCategory.id]: false }))
+    setActiveByCategoryId((current) => ({ ...current, [nextCategory.id]: true }))
+    setCreateCategoryModalOpen(false)
+    toast.success(`Categoria ${trimmedName} criada com sucesso.`)
+  }
+
   return (
     <>
       <SectionFrame eyebrow="Cardapio" title="Gestao por categorias">
@@ -178,7 +252,7 @@ export function PartnerCatalogPage() {
 
               <button
                 type="button"
-                onClick={() => toast.success('Fluxo de criacao de categoria em preparacao.')}
+                onClick={openCreateCategoryModal}
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
               >
                 <Plus className="h-4 w-4" />
@@ -438,7 +512,7 @@ export function PartnerCatalogPage() {
 
             <div className="mt-6 space-y-3">
               {draftCategoryOrderIds.map((categoryId, index) => {
-                const category = data.categories.find((item) => item.id === categoryId)
+                const category = catalogCategories.find((item) => item.id === categoryId)
                 if (!category) return null
 
                 return (
@@ -499,6 +573,111 @@ export function PartnerCatalogPage() {
                 className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
               >
                 Salvar ordem
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {createCategoryModalOpen ? (
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-ink-900/45 p-4"
+          onClick={() => setCreateCategoryModalOpen(false)}
+        >
+          <div
+            className="panel-card w-full max-w-2xl p-6"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-category-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">Nova categoria</p>
+                <h3 id="create-category-title" className="mt-2 text-xl font-bold text-ink-900">
+                  Escolha o modelo da categoria
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-ink-500">
+                  Defina o nome e selecione o tipo para criar a nova categoria do cardapio.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setCreateCategoryModalOpen(false)}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50"
+                aria-label="Fechar criacao de categoria"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <label className="mt-6 block">
+              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Nome da categoria</span>
+              <input
+                type="text"
+                value={newCategoryName}
+                onChange={(event) => setNewCategoryName(event.target.value)}
+                placeholder="Ex.: Pizzas especiais"
+                className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
+              />
+            </label>
+
+            <div className="mt-6">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Tipo de categoria</p>
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                {categoryTemplates.map((template) => {
+                  const Icon = template.icon
+                  const isSelected = newCategoryTemplate === template.id
+
+                  return (
+                    <button
+                      key={template.id}
+                      type="button"
+                      onClick={() => setNewCategoryTemplate(template.id)}
+                      className={cn(
+                        'rounded-xl border p-5 text-left transition',
+                        isSelected
+                          ? 'border-coral-300 bg-coral-50 text-coral-700'
+                          : 'border-ink-100 bg-white text-ink-900 hover:bg-ink-50'
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className={cn(
+                            'flex h-11 w-11 items-center justify-center rounded-xl',
+                            isSelected ? 'bg-coral-100 text-coral-600' : 'bg-ink-50 text-ink-600'
+                          )}
+                        >
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="text-base font-bold">{template.label}</p>
+                          <p className={cn('mt-1 text-sm', isSelected ? 'text-coral-700/80' : 'text-ink-500')}>
+                            {template.description}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setCreateCategoryModalOpen(false)}
+                className="inline-flex h-11 items-center justify-center rounded-2xl border border-ink-100 px-5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleCreateCategory}
+                className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
+              >
+                Criar categoria
               </button>
             </div>
           </div>
