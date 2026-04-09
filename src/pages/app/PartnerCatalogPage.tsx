@@ -3,6 +3,7 @@ import {
   ChevronDown,
   ChefHat,
   Clock3,
+  Copy,
   EllipsisVertical,
   GripVertical,
   LayoutGrid,
@@ -12,9 +13,11 @@ import {
   Plus,
   Search,
   Sparkles,
+  Trash2,
   X,
 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import toast from 'react-hot-toast'
 import { usePartnerPageData } from '@/hooks/usePartnerPageData'
 import { cn, formatCurrency } from '@/lib/utils'
@@ -39,14 +42,14 @@ function ThemeSwitch({
       aria-label={ariaLabel}
       onClick={() => onChange(!checked)}
       className={[
-        'inline-flex h-8 w-14 items-center rounded-[16px] px-1 transition',
+        'inline-flex h-5 w-9 items-center rounded-full px-0.5 transition',
         checked ? 'bg-coral-500' : 'bg-ink-200',
       ].join(' ')}
     >
       <span
         className={[
-          'h-6 w-6 rounded-[14px] bg-white transition-transform duration-200',
-          checked ? 'translate-x-6' : 'translate-x-0',
+          'h-4 w-4 rounded-full bg-white transition-transform duration-200',
+          checked ? 'translate-x-4' : 'translate-x-0',
         ].join(' ')}
       />
     </button>
@@ -265,6 +268,10 @@ export function PartnerCatalogPage() {
   const [activeByProductId, setActiveByProductId] = useState<Record<string, boolean>>({})
   const [featuredByProductId, setFeaturedByProductId] = useState<Record<string, boolean>>({})
   const [menuOpenCategoryId, setMenuOpenCategoryId] = useState<string | null>(null)
+  const [menuOpenProductId, setMenuOpenProductId] = useState<string | null>(null)
+  const [productMenuPosition, setProductMenuPosition] = useState<{ top: number; right: number } | null>(null)
+  const productMenuRef = useRef<HTMLDivElement>(null)
+  const [catalogProducts, setCatalogProducts] = useState(data.products)
 
   useEffect(() => {
     setCatalogCategories((current) => {
@@ -275,6 +282,14 @@ export function PartnerCatalogPage() {
       return [...data.categories, ...preservedCustomCategories]
     })
   }, [data.categories])
+
+  useEffect(() => {
+    setCatalogProducts((current) => {
+      const incomingIds = new Set(data.products.map((product) => product.id))
+      const localOnlyProducts = current.filter((product) => !incomingIds.has(product.id))
+      return [...data.products, ...localOnlyProducts]
+    })
+  }, [data.products])
 
   useEffect(() => {
     const defaultOrderIds = [...catalogCategories]
@@ -309,24 +324,24 @@ export function PartnerCatalogPage() {
 
   useEffect(() => {
     setActiveByProductId((current) =>
-      data.products.reduce<Record<string, boolean>>((accumulator, product) => {
+      catalogProducts.reduce<Record<string, boolean>>((accumulator, product) => {
         accumulator[product.id] = current[product.id] ?? product.active
         return accumulator
       }, {})
     )
 
     setFeaturedByProductId((current) =>
-      data.products.reduce<Record<string, boolean>>((accumulator, product) => {
+      catalogProducts.reduce<Record<string, boolean>>((accumulator, product) => {
         accumulator[product.id] = current[product.id] ?? product.featured
         return accumulator
       }, {})
     )
-  }, [data.products])
+  }, [catalogProducts])
 
   useEffect(() => {
     setActiveByCategoryId((current) =>
       catalogCategories.reduce<Record<string, boolean>>((accumulator, category) => {
-        const categoryProducts = data.products.filter((product) => product.categoryId === category.id)
+        const categoryProducts = catalogProducts.filter((product) => product.categoryId === category.id)
         const hasAtLeastOneActiveProduct = categoryProducts.some(
           (product) => activeByProductId[product.id] ?? product.active
         )
@@ -337,7 +352,7 @@ export function PartnerCatalogPage() {
         return accumulator
       }, {})
     )
-  }, [activeByProductId, catalogCategories, data.products])
+  }, [activeByProductId, catalogCategories, catalogProducts])
 
   useEffect(() => {
     if (!sortModalOpen && !createCategoryModalOpen && !addItemTypeModalOpen && !standardItemStepsModalOpen && !productKindModalOpen) return
@@ -359,6 +374,23 @@ export function PartnerCatalogPage() {
     }
   }, [sortModalOpen, createCategoryModalOpen, addItemTypeModalOpen, standardItemStepsModalOpen, productKindModalOpen])
 
+  useEffect(() => {
+    if (!menuOpenProductId) return
+    function handleClickOutside(event: MouseEvent) {
+      if (productMenuRef.current && !productMenuRef.current.contains(event.target as Node)) {
+        setMenuOpenProductId(null)
+        setProductMenuPosition(null)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [menuOpenProductId])
+
+  const featuredCount = useMemo(
+    () => Object.values(featuredByProductId).filter(Boolean).length,
+    [featuredByProductId]
+  )
+
   const orderedCategories = useMemo(
     () =>
       categoryOrderIds
@@ -366,6 +398,33 @@ export function PartnerCatalogPage() {
         .filter((category): category is (typeof data.categories)[number] => Boolean(category)),
     [catalogCategories, categoryOrderIds]
   )
+
+  function handleDuplicateProduct(product: (typeof catalogProducts)[number]) {
+    const duplicated = {
+      ...product,
+      id: `${product.id}-dup-${Date.now()}`,
+      name: `${product.name} (Duplicado)`,
+      active: false,
+      featured: false,
+    }
+    setCatalogProducts((current) => [...current, duplicated])
+    setMenuOpenProductId(null)
+  }
+
+  function handleDeleteProduct(productId: string) {
+    setCatalogProducts((current) => current.filter((product) => product.id !== productId))
+    setActiveByProductId((current) => {
+      const next = { ...current }
+      delete next[productId]
+      return next
+    })
+    setFeaturedByProductId((current) => {
+      const next = { ...current }
+      delete next[productId]
+      return next
+    })
+    setMenuOpenProductId(null)
+  }
 
   const normalizedSearch = search.trim().toLowerCase()
   const visibleCategories = orderedCategories.filter((category) => {
@@ -378,7 +437,7 @@ export function PartnerCatalogPage() {
     }
 
     const categoryMatches = category.name.toLowerCase().includes(normalizedSearch)
-    const categoryProducts = data.products.filter((product) => product.categoryId === category.id)
+    const categoryProducts = catalogProducts.filter((product) => product.categoryId === category.id)
     const productMatches = categoryProducts.some((product) => {
       const haystack = `${product.name} ${product.description}`.toLowerCase()
       return haystack.includes(normalizedSearch)
@@ -660,7 +719,7 @@ export function PartnerCatalogPage() {
             <div className="rounded-xl border border-ink-100 bg-ink-50 p-3 sm:p-4">
               <div className="space-y-3">
                 {visibleCategories.map((category) => {
-                  const products = data.products.filter((product) => product.categoryId === category.id)
+                  const products = catalogProducts.filter((product) => product.categoryId === category.id)
                   const hasAtLeastOneActiveProduct = products.some(
                     (product) => activeByProductId[product.id] ?? product.active
                   )
@@ -671,10 +730,12 @@ export function PartnerCatalogPage() {
                     <article key={category.id} className="rounded-xl border border-ink-100 bg-white">
                       <div className="flex flex-col gap-4 px-4 py-4 lg:flex-row lg:items-center lg:justify-between lg:px-5">
                         <div className="min-w-0">
-                          <p className="truncate text-lg font-bold text-ink-900">{category.name}</p>
-                          <p className="mt-1 text-sm text-ink-500">
-                            {products.length} {products.length === 1 ? 'item' : 'itens'} cadastrados
-                          </p>
+                          <div className="flex min-w-0 items-center gap-2">
+                            <p className="truncate text-lg font-bold text-ink-900">{category.name}</p>
+                            <span className="shrink-0 rounded-full bg-ink-100 px-2 py-0.5 text-xs font-semibold text-ink-600">
+                              {products.length}
+                            </span>
+                          </div>
                         </div>
 
                         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
@@ -780,13 +841,14 @@ export function PartnerCatalogPage() {
                         <div className="border-t border-ink-100 px-4 py-4 lg:px-5">
                           {products.length > 0 ? (
                             <div className="overflow-hidden rounded-xl border border-ink-100 bg-white">
-                              <div className="hidden grid-cols-[88px_minmax(0,1.8fr)_140px_160px_128px_120px] items-center gap-4 border-b border-ink-100 bg-ink-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-ink-500 lg:grid">
+                              <div className="hidden grid-cols-[88px_minmax(0,1.8fr)_140px_160px_128px_120px_44px] items-center gap-4 border-b border-ink-100 bg-ink-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-ink-500 lg:grid">
                                 <span>Foto</span>
                                 <span>Nome</span>
                                 <span>Preco</span>
                                 <span>Quantidade de estoque</span>
                                 <span>Destaque</span>
                                 <span>Ativo</span>
+                                <span />
                               </div>
 
                               <div className="divide-y divide-ink-100">
@@ -797,7 +859,7 @@ export function PartnerCatalogPage() {
                                   return (
                                     <div
                                       key={product.id}
-                                      className="grid gap-4 px-4 py-4 lg:grid-cols-[88px_minmax(0,1.8fr)_140px_160px_128px_120px] lg:items-center"
+                                      className="grid gap-4 px-4 py-4 lg:grid-cols-[88px_minmax(0,1.8fr)_140px_160px_128px_120px_44px] lg:items-center"
                                     >
                                       <div className="flex items-center gap-3 lg:block">
                                         <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-400 lg:hidden">
@@ -854,12 +916,13 @@ export function PartnerCatalogPage() {
                                         </span>
                                         <ThemeSwitch
                                           checked={productIsFeatured}
-                                          onChange={(nextValue) =>
+                                          onChange={(nextValue) => {
+                                            if (nextValue && featuredCount >= 6) return
                                             setFeaturedByProductId((current) => ({
                                               ...current,
                                               [product.id]: nextValue,
                                             }))
-                                          }
+                                          }}
                                           ariaLabel={`Alternar destaque do produto ${product.name}`}
                                         />
                                       </div>
@@ -878,6 +941,29 @@ export function PartnerCatalogPage() {
                                           }
                                           ariaLabel={`Alternar status do produto ${product.name}`}
                                         />
+                                      </div>
+
+                                      <div className="flex items-center justify-end lg:justify-center">
+                                        <button
+                                          type="button"
+                                          onClick={(event) => {
+                                            if (menuOpenProductId === product.id) {
+                                              setMenuOpenProductId(null)
+                                              setProductMenuPosition(null)
+                                            } else {
+                                              const rect = event.currentTarget.getBoundingClientRect()
+                                              setProductMenuPosition({
+                                                top: rect.bottom + window.scrollY + 4,
+                                                right: window.innerWidth - rect.right,
+                                              })
+                                              setMenuOpenProductId(product.id)
+                                            }
+                                          }}
+                                          className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50"
+                                          aria-label={`Acoes do produto ${product.name}`}
+                                        >
+                                          <EllipsisVertical className="h-4 w-4" />
+                                        </button>
                                       </div>
                                     </div>
                                   )
@@ -1518,7 +1604,10 @@ export function PartnerCatalogPage() {
                         </div>
                         <ThemeSwitch
                           checked={industrializedFeatured}
-                          onChange={setIndustrializedFeatured}
+                          onChange={(nextValue) => {
+                            if (nextValue && featuredCount >= 6) return
+                            setIndustrializedFeatured(nextValue)
+                          }}
                           ariaLabel="Alternar item industrializado destaque"
                         />
                       </div>
@@ -1704,6 +1793,52 @@ export function PartnerCatalogPage() {
           </>
         ) : null}
       </AnimatedModal>
+
+      {menuOpenProductId !== null && productMenuPosition !== null &&
+        createPortal(
+          <div
+            ref={productMenuRef}
+            style={{ top: productMenuPosition.top, right: productMenuPosition.right }}
+            className="fixed z-50 w-44 rounded-xl border border-ink-100 bg-white py-1 shadow-lg"
+          >
+            {(() => {
+              const product = catalogProducts.find((p) => p.id === menuOpenProductId)
+              if (!product) return null
+              return (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      toast.success(`Edicao do produto ${product.name} em preparacao.`)
+                      setMenuOpenProductId(null)
+                    }}
+                    className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-ink-700 transition hover:bg-ink-50"
+                  >
+                    <PencilLine className="h-4 w-4 text-ink-400" />
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDuplicateProduct(product)}
+                    className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-ink-700 transition hover:bg-ink-50"
+                  >
+                    <Copy className="h-4 w-4 text-ink-400" />
+                    Duplicar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteProduct(product.id)}
+                    className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-600 transition hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Excluir
+                  </button>
+                </>
+              )
+            })()}
+          </div>,
+          document.body
+        )}
     </>
   )
 }

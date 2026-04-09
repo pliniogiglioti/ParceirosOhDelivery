@@ -27,14 +27,14 @@ function ThemeSwitch({
       aria-label={ariaLabel}
       onClick={() => onChange(!checked)}
       className={[
-        'inline-flex h-8 w-14 items-center rounded-[16px] px-1 transition',
+        'inline-flex h-5 w-9 items-center rounded-full px-0.5 transition',
         checked ? 'bg-coral-500' : 'bg-ink-200',
       ].join(' ')}
     >
       <span
         className={[
-          'h-6 w-6 rounded-[14px] bg-white shadow-sm transition-transform duration-200',
-          checked ? 'translate-x-6' : 'translate-x-0',
+          'h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200',
+          checked ? 'translate-x-4' : 'translate-x-0',
         ].join(' ')}
       />
     </button>
