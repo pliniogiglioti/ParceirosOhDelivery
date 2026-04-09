@@ -13,7 +13,6 @@ import {
   Plus,
   Search,
   Sparkles,
-  Trash2,
   X,
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
@@ -273,9 +272,7 @@ export function PartnerCatalogPage() {
   const productMenuRef = useRef<HTMLDivElement>(null)
   const [categoryMenuPosition, setCategoryMenuPosition] = useState<{ top: number; right: number } | null>(null)
   const categoryMenuRef = useRef<HTMLDivElement>(null)
-  const [productToDelete, setProductToDelete] = useState<(typeof catalogProducts)[number] | null>(null)
-  const [categoryToDelete, setCategoryToDelete] = useState<(typeof catalogCategories)[number] | null>(null)
-  const [showMaxFeaturedModal, setShowMaxFeaturedModal] = useState(false)
+const [showMaxFeaturedModal, setShowMaxFeaturedModal] = useState(false)
   const [catalogProducts, setCatalogProducts] = useState(data.products)
 
   useEffect(() => {
@@ -428,28 +425,7 @@ export function PartnerCatalogPage() {
     setMenuOpenProductId(null)
   }
 
-  function handleDeleteCategory(categoryId: string) {
-    setCatalogCategories((current) => current.filter((category) => category.id !== categoryId))
-    setCatalogProducts((current) => current.filter((product) => product.categoryId !== categoryId))
-    setCategoryToDelete(null)
-  }
-
-  function handleDeleteProduct(productId: string) {
-    setCatalogProducts((current) => current.filter((product) => product.id !== productId))
-    setActiveByProductId((current) => {
-      const next = { ...current }
-      delete next[productId]
-      return next
-    })
-    setFeaturedByProductId((current) => {
-      const next = { ...current }
-      delete next[productId]
-      return next
-    })
-    setMenuOpenProductId(null)
-  }
-
-  const normalizedSearch = search.trim().toLowerCase()
+const normalizedSearch = search.trim().toLowerCase()
   const visibleCategories = orderedCategories.filter((category) => {
     if (selectedCategoryId !== 'all' && category.id !== selectedCategoryId) {
       return false
@@ -1799,95 +1775,6 @@ export function PartnerCatalogPage() {
       </AnimatedModal>
 
       <AnimatedModal
-        open={categoryToDelete !== null}
-        onClose={() => setCategoryToDelete(null)}
-        panelClassName="panel-card w-full max-w-md p-6"
-        ariaLabelledby="delete-category-title"
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-600">
-            <Trash2 className="h-5 w-5" />
-          </div>
-          <button
-            type="button"
-            onClick={() => setCategoryToDelete(null)}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50"
-            aria-label="Fechar"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        <h3 id="delete-category-title" className="mt-4 text-lg font-bold text-ink-900">
-          Excluir categoria
-        </h3>
-        <p className="mt-2 text-sm leading-6 text-ink-500">
-          Tem certeza que deseja excluir <span className="font-semibold text-ink-800">{categoryToDelete?.name}</span>? Todos os produtos desta categoria tambem serao removidos. Essa acao nao pode ser desfeita.
-        </p>
-        <div className="mt-6 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => setCategoryToDelete(null)}
-            className="inline-flex h-11 items-center justify-center rounded-2xl border border-ink-100 px-5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={() => categoryToDelete && handleDeleteCategory(categoryToDelete.id)}
-            className="inline-flex h-11 items-center justify-center rounded-2xl bg-red-500 px-5 text-sm font-semibold text-white transition hover:bg-red-600"
-          >
-            Excluir
-          </button>
-        </div>
-      </AnimatedModal>
-
-      <AnimatedModal
-        open={productToDelete !== null}
-        onClose={() => setProductToDelete(null)}
-        panelClassName="panel-card w-full max-w-md p-6"
-        ariaLabelledby="delete-product-title"
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-600">
-            <Trash2 className="h-5 w-5" />
-          </div>
-          <button
-            type="button"
-            onClick={() => setProductToDelete(null)}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50"
-            aria-label="Fechar"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        <h3 id="delete-product-title" className="mt-4 text-lg font-bold text-ink-900">
-          Excluir produto
-        </h3>
-        <p className="mt-2 text-sm leading-6 text-ink-500">
-          Tem certeza que deseja excluir <span className="font-semibold text-ink-800">{productToDelete?.name}</span>? Essa acao nao pode ser desfeita.
-        </p>
-        <div className="mt-6 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => setProductToDelete(null)}
-            className="inline-flex h-11 items-center justify-center rounded-2xl border border-ink-100 px-5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              if (productToDelete) handleDeleteProduct(productToDelete.id)
-              setProductToDelete(null)
-            }}
-            className="inline-flex h-11 items-center justify-center rounded-2xl bg-red-500 px-5 text-sm font-semibold text-white transition hover:bg-red-600"
-          >
-            Excluir
-          </button>
-        </div>
-      </AnimatedModal>
-
-      <AnimatedModal
         open={showMaxFeaturedModal}
         onClose={() => setShowMaxFeaturedModal(false)}
         panelClassName="panel-card w-full max-w-md p-6"
@@ -1957,18 +1844,6 @@ export function PartnerCatalogPage() {
                     <Copy className="h-4 w-4 text-ink-400" />
                     Duplicar
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMenuOpenCategoryId(null)
-                      setCategoryMenuPosition(null)
-                      setCategoryToDelete(category)
-                    }}
-                    className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-600 transition hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Excluir
-                  </button>
                 </>
               )
             })()}
@@ -2006,18 +1881,6 @@ export function PartnerCatalogPage() {
                   >
                     <Copy className="h-4 w-4 text-ink-400" />
                     Duplicar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMenuOpenProductId(null)
-                      setProductMenuPosition(null)
-                      setProductToDelete(product)
-                    }}
-                    className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-600 transition hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    Excluir
                   </button>
                 </>
               )
