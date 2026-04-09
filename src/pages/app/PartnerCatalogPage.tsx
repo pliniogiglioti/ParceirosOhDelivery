@@ -271,6 +271,11 @@ export function PartnerCatalogPage() {
   const [menuOpenProductId, setMenuOpenProductId] = useState<string | null>(null)
   const [productMenuPosition, setProductMenuPosition] = useState<{ top: number; right: number } | null>(null)
   const productMenuRef = useRef<HTMLDivElement>(null)
+  const [categoryMenuPosition, setCategoryMenuPosition] = useState<{ top: number; right: number } | null>(null)
+  const categoryMenuRef = useRef<HTMLDivElement>(null)
+  const [productToDelete, setProductToDelete] = useState<(typeof catalogProducts)[number] | null>(null)
+  const [categoryToDelete, setCategoryToDelete] = useState<(typeof catalogCategories)[number] | null>(null)
+  const [showMaxFeaturedModal, setShowMaxFeaturedModal] = useState(false)
   const [catalogProducts, setCatalogProducts] = useState(data.products)
 
   useEffect(() => {
@@ -386,6 +391,18 @@ export function PartnerCatalogPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [menuOpenProductId])
 
+  useEffect(() => {
+    if (!menuOpenCategoryId) return
+    function handleClickOutside(event: MouseEvent) {
+      if (categoryMenuRef.current && !categoryMenuRef.current.contains(event.target as Node)) {
+        setMenuOpenCategoryId(null)
+        setCategoryMenuPosition(null)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [menuOpenCategoryId])
+
   const featuredCount = useMemo(
     () => Object.values(featuredByProductId).filter(Boolean).length,
     [featuredByProductId]
@@ -409,6 +426,12 @@ export function PartnerCatalogPage() {
     }
     setCatalogProducts((current) => [...current, duplicated])
     setMenuOpenProductId(null)
+  }
+
+  function handleDeleteCategory(categoryId: string) {
+    setCatalogCategories((current) => current.filter((category) => category.id !== categoryId))
+    setCatalogProducts((current) => current.filter((product) => product.categoryId !== categoryId))
+    setCategoryToDelete(null)
   }
 
   function handleDeleteProduct(productId: string) {
@@ -728,7 +751,15 @@ export function PartnerCatalogPage() {
 
                   return (
                     <article key={category.id} className="rounded-xl border border-ink-100 bg-white">
-                      <div className="flex flex-col gap-4 px-4 py-4 lg:flex-row lg:items-center lg:justify-between lg:px-5">
+                      <div
+                        className="flex cursor-pointer flex-col gap-4 px-4 py-4 lg:flex-row lg:items-center lg:justify-between lg:px-5"
+                        onClick={() =>
+                          setExpandedByCategoryId((current) => ({
+                            ...current,
+                            [category.id]: !isExpanded,
+                          }))
+                        }
+                      >
                         <div className="min-w-0">
                           <div className="flex min-w-0 items-center gap-2">
                             <p className="truncate text-lg font-bold text-ink-900">{category.name}</p>
@@ -741,23 +772,14 @@ export function PartnerCatalogPage() {
                         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
                           <button
                             type="button"
-                            onClick={() => openAddItemModal(category)}
+                            onClick={(e) => { e.stopPropagation(); openAddItemModal(category) }}
                             className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-coral-200 bg-white px-4 text-sm font-semibold text-coral-600 transition hover:bg-coral-50"
                           >
                             <Plus className="h-4 w-4" />
                             Adicionar item
                           </button>
 
-                          <button
-                            type="button"
-                            onClick={() => toast.success(`Edicao da categoria ${category.name} em preparacao.`)}
-                            className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-ink-100 bg-ink-50 px-4 text-sm font-semibold text-ink-700 transition hover:bg-ink-100"
-                          >
-                            <PencilLine className="h-4 w-4" />
-                            Editar categoria
-                          </button>
-
-                          <div className="flex items-center justify-between gap-3 rounded-2xl border border-ink-100 bg-white px-4 py-2">
+<div onClick={(e) => e.stopPropagation()} className="flex items-center justify-between gap-3 rounded-2xl border border-ink-100 bg-white px-4 py-2">
                             <span className="text-sm font-semibold text-ink-700">Ativo</span>
                             <ThemeSwitch
                               checked={isActive}
@@ -776,49 +798,27 @@ export function PartnerCatalogPage() {
                             />
                           </div>
 
-                          <div className="relative flex items-center gap-2 self-end lg:self-auto">
+                          <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-2 self-end lg:self-auto">
                             <button
                               type="button"
-                              onClick={() =>
-                                setMenuOpenCategoryId((current) => (current === category.id ? null : category.id))
-                              }
+                              onClick={(event) => {
+                                if (menuOpenCategoryId === category.id) {
+                                  setMenuOpenCategoryId(null)
+                                  setCategoryMenuPosition(null)
+                                } else {
+                                  const rect = event.currentTarget.getBoundingClientRect()
+                                  setCategoryMenuPosition({
+                                    top: rect.bottom + window.scrollY + 4,
+                                    right: window.innerWidth - rect.right,
+                                  })
+                                  setMenuOpenCategoryId(category.id)
+                                }
+                              }}
                               className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50"
                               aria-label={`Abrir menu da categoria ${category.name}`}
                             >
                               <EllipsisVertical className="h-4 w-4" />
                             </button>
-
-                            {menuOpenCategoryId === category.id ? (
-                              <div className="absolute right-14 top-0 z-10 min-w-[190px] rounded-xl border border-ink-100 bg-white p-2">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setMenuOpenCategoryId(null)
-                                    toast('Duplicacao de categoria em preparacao.')
-                                  }}
-                                  className="flex w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-ink-700 transition hover:bg-ink-50"
-                                >
-                                  Duplicar categoria
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={openSortModal}
-                                  className="flex w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-ink-700 transition hover:bg-ink-50"
-                                >
-                                  Mover categoria
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setMenuOpenCategoryId(null)
-                                    toast('Remocao de categoria em preparacao.')
-                                  }}
-                                  className="flex w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-coral-600 transition hover:bg-coral-50"
-                                >
-                                  Excluir categoria
-                                </button>
-                              </div>
-                            ) : null}
 
                             <button
                               type="button"
@@ -837,7 +837,8 @@ export function PartnerCatalogPage() {
                         </div>
                       </div>
 
-                      {isExpanded ? (
+                      <div className={cn('grid transition-all duration-300 ease-in-out', isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')}>
+                        <div className="overflow-hidden">
                         <div className="border-t border-ink-100 px-4 py-4 lg:px-5">
                           {products.length > 0 ? (
                             <div className="overflow-hidden rounded-xl border border-ink-100 bg-white">
@@ -917,7 +918,10 @@ export function PartnerCatalogPage() {
                                         <ThemeSwitch
                                           checked={productIsFeatured}
                                           onChange={(nextValue) => {
-                                            if (nextValue && featuredCount >= 6) return
+                                            if (nextValue && featuredCount >= 6) {
+                                              setShowMaxFeaturedModal(true)
+                                              return
+                                            }
                                             setFeaturedByProductId((current) => ({
                                               ...current,
                                               [product.id]: nextValue,
@@ -977,11 +981,8 @@ export function PartnerCatalogPage() {
                             </div>
                           )}
                         </div>
-                      ) : (
-                        <div className="border-t border-ink-100 px-5 py-5 text-center text-sm font-medium text-ink-400">
-                          Visualizacao recolhida
                         </div>
-                      )}
+                      </div>
                     </article>
                   )
                 })}
@@ -1605,7 +1606,10 @@ export function PartnerCatalogPage() {
                         <ThemeSwitch
                           checked={industrializedFeatured}
                           onChange={(nextValue) => {
-                            if (nextValue && featuredCount >= 6) return
+                            if (nextValue && featuredCount >= 6) {
+                              setShowMaxFeaturedModal(true)
+                              return
+                            }
                             setIndustrializedFeatured(nextValue)
                           }}
                           ariaLabel="Alternar item industrializado destaque"
@@ -1794,6 +1798,184 @@ export function PartnerCatalogPage() {
         ) : null}
       </AnimatedModal>
 
+      <AnimatedModal
+        open={categoryToDelete !== null}
+        onClose={() => setCategoryToDelete(null)}
+        panelClassName="panel-card w-full max-w-md p-6"
+        ariaLabelledby="delete-category-title"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-600">
+            <Trash2 className="h-5 w-5" />
+          </div>
+          <button
+            type="button"
+            onClick={() => setCategoryToDelete(null)}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50"
+            aria-label="Fechar"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <h3 id="delete-category-title" className="mt-4 text-lg font-bold text-ink-900">
+          Excluir categoria
+        </h3>
+        <p className="mt-2 text-sm leading-6 text-ink-500">
+          Tem certeza que deseja excluir <span className="font-semibold text-ink-800">{categoryToDelete?.name}</span>? Todos os produtos desta categoria tambem serao removidos. Essa acao nao pode ser desfeita.
+        </p>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => setCategoryToDelete(null)}
+            className="inline-flex h-11 items-center justify-center rounded-2xl border border-ink-100 px-5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={() => categoryToDelete && handleDeleteCategory(categoryToDelete.id)}
+            className="inline-flex h-11 items-center justify-center rounded-2xl bg-red-500 px-5 text-sm font-semibold text-white transition hover:bg-red-600"
+          >
+            Excluir
+          </button>
+        </div>
+      </AnimatedModal>
+
+      <AnimatedModal
+        open={productToDelete !== null}
+        onClose={() => setProductToDelete(null)}
+        panelClassName="panel-card w-full max-w-md p-6"
+        ariaLabelledby="delete-product-title"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-600">
+            <Trash2 className="h-5 w-5" />
+          </div>
+          <button
+            type="button"
+            onClick={() => setProductToDelete(null)}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50"
+            aria-label="Fechar"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <h3 id="delete-product-title" className="mt-4 text-lg font-bold text-ink-900">
+          Excluir produto
+        </h3>
+        <p className="mt-2 text-sm leading-6 text-ink-500">
+          Tem certeza que deseja excluir <span className="font-semibold text-ink-800">{productToDelete?.name}</span>? Essa acao nao pode ser desfeita.
+        </p>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => setProductToDelete(null)}
+            className="inline-flex h-11 items-center justify-center rounded-2xl border border-ink-100 px-5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (productToDelete) handleDeleteProduct(productToDelete.id)
+              setProductToDelete(null)
+            }}
+            className="inline-flex h-11 items-center justify-center rounded-2xl bg-red-500 px-5 text-sm font-semibold text-white transition hover:bg-red-600"
+          >
+            Excluir
+          </button>
+        </div>
+      </AnimatedModal>
+
+      <AnimatedModal
+        open={showMaxFeaturedModal}
+        onClose={() => setShowMaxFeaturedModal(false)}
+        panelClassName="panel-card w-full max-w-md p-6"
+        ariaLabelledby="max-featured-title"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-coral-100 text-coral-600">
+            <Sparkles className="h-5 w-5" />
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowMaxFeaturedModal(false)}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50"
+            aria-label="Fechar"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <h3 id="max-featured-title" className="mt-4 text-lg font-bold text-ink-900">
+          Limite de destaques atingido
+        </h3>
+        <p className="mt-2 text-sm leading-6 text-ink-500">
+          O cardapio permite no maximo <span className="font-semibold text-ink-800">6 produtos em destaque</span>. Remova o destaque de um produto antes de adicionar outro.
+        </p>
+        <div className="mt-6 flex justify-end">
+          <button
+            type="button"
+            onClick={() => setShowMaxFeaturedModal(false)}
+            className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
+          >
+            Entendi
+          </button>
+        </div>
+      </AnimatedModal>
+
+      {menuOpenCategoryId !== null && categoryMenuPosition !== null &&
+        createPortal(
+          <div
+            ref={categoryMenuRef}
+            style={{ top: categoryMenuPosition.top, right: categoryMenuPosition.right }}
+            className="fixed z-50 w-44 rounded-xl border border-ink-100 bg-white py-1 shadow-lg"
+          >
+            {(() => {
+              const category = catalogCategories.find((c) => c.id === menuOpenCategoryId)
+              if (!category) return null
+              return (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      toast.success(`Edicao da categoria ${category.name} em preparacao.`)
+                      setMenuOpenCategoryId(null)
+                    }}
+                    className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-ink-700 transition hover:bg-ink-50"
+                  >
+                    <PencilLine className="h-4 w-4 text-ink-400" />
+                    Editar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      toast.success(`Duplicacao da categoria ${category.name} em preparacao.`)
+                      setMenuOpenCategoryId(null)
+                    }}
+                    className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-ink-700 transition hover:bg-ink-50"
+                  >
+                    <Copy className="h-4 w-4 text-ink-400" />
+                    Duplicar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpenCategoryId(null)
+                      setCategoryMenuPosition(null)
+                      setCategoryToDelete(category)
+                    }}
+                    className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-600 transition hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Excluir
+                  </button>
+                </>
+              )
+            })()}
+          </div>,
+          document.body
+        )}
+
       {menuOpenProductId !== null && productMenuPosition !== null &&
         createPortal(
           <div
@@ -1827,7 +2009,11 @@ export function PartnerCatalogPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleDeleteProduct(product.id)}
+                    onClick={() => {
+                      setMenuOpenProductId(null)
+                      setProductMenuPosition(null)
+                      setProductToDelete(product)
+                    }}
                     className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-600 transition hover:bg-red-50"
                   >
                     <Trash2 className="h-4 w-4" />
