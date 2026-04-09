@@ -21,6 +21,7 @@ import {
 import { useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { cn } from '@/lib/utils'
+import { AnimatedModal } from '@/components/partner/AnimatedModal'
 import type { PartnerDashboardData, PartnerSection } from '@/types'
 import { SidebarLabel } from '@/components/partner/PartnerUi'
 
@@ -300,50 +301,42 @@ export function PartnerSidebar({
         </div>
       </aside>
 
-      {signOutModalOpen ? (
-        <div
-          className="fixed inset-0 z-[90] flex items-center justify-center bg-ink-900/45 p-4"
-          onClick={() => setSignOutModalOpen(false)}
+      <AnimatedModal
+        open={signOutModalOpen}
+        onClose={() => setSignOutModalOpen(false)}
+        panelClassName="panel-card w-full max-w-md p-6"
+        ariaLabelledby="signout-modal-title"
+      >
+        <p
+          id="signout-modal-title"
+          className="text-lg font-bold tracking-[-0.02em] text-ink-900"
         >
-          <div
-            className="panel-card w-full max-w-md p-6"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="signout-modal-title"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <p
-              id="signout-modal-title"
-              className="text-lg font-bold tracking-[-0.02em] text-ink-900"
-            >
-              Deseja realmente sair?
-            </p>
-            <p className="mt-2 text-sm leading-6 text-ink-500">
-              Voce precisara entrar novamente para acessar o painel da loja.
-            </p>
+          Deseja realmente sair?
+        </p>
+        <p className="mt-2 text-sm leading-6 text-ink-500">
+          Voce precisara entrar novamente para acessar o painel da loja.
+        </p>
 
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setSignOutModalOpen(false)}
-                className="inline-flex h-11 items-center justify-center rounded-2xl border border-ink-100 px-5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setSignOutModalOpen(false)
-                  onSignOut()
-                }}
-                className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
-              >
-                Sair
-              </button>
-            </div>
-          </div>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            type="button"
+            onClick={() => setSignOutModalOpen(false)}
+            className="inline-flex h-11 items-center justify-center rounded-2xl border border-ink-100 px-5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSignOutModalOpen(false)
+              onSignOut()
+            }}
+            className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
+          >
+            Sair
+          </button>
         </div>
-      ) : null}
+      </AnimatedModal>
     </>
   )
 }

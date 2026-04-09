@@ -84,6 +84,9 @@ export const mockPartnerDashboard: PartnerDashboardData = {
       description: 'Hamburguer, fritas crocantes e refrigerante.',
       categoryId: 'cat-1',
       price: 34.9,
+      imageUrl:
+        'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=500&q=80',
+      stockQuantity: 18,
       active: true,
       featured: true,
     },
@@ -93,6 +96,9 @@ export const mockPartnerDashboard: PartnerDashboardData = {
       description: 'Porcao media com molho especial.',
       categoryId: 'cat-2',
       price: 17.9,
+      imageUrl:
+        'https://images.unsplash.com/photo-1576107232684-1279f390859f?auto=format&fit=crop&w=500&q=80',
+      stockQuantity: 9,
       active: true,
       featured: false,
     },
@@ -102,6 +108,9 @@ export const mockPartnerDashboard: PartnerDashboardData = {
       description: 'Bebida autoral gelada.',
       categoryId: 'cat-3',
       price: 11.5,
+      imageUrl:
+        'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=500&q=80',
+      stockQuantity: 24,
       active: true,
       featured: false,
     },

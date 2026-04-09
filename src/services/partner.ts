@@ -156,6 +156,8 @@ export async function loadPartnerDashboard(): Promise<{
       description: String(row.description ?? ''),
       categoryId: String(row.category_id ?? ''),
       price: Number(row.price ?? 0),
+      imageUrl: row.image_url ? String(row.image_url) : undefined,
+      stockQuantity: Number(row.stock_quantity ?? 0),
       active: Boolean(row.active ?? true),
       featured: Boolean(row.featured),
     })) ?? []

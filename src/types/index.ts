@@ -72,6 +72,8 @@ export interface PartnerProduct {
   description: string
   categoryId: string
   price: number
+  imageUrl?: string
+  stockQuantity: number
   active: boolean
   featured: boolean
 }

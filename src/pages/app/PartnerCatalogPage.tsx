@@ -18,6 +18,7 @@ import { useEffect, useMemo, useState } from 'react'
 import toast from 'react-hot-toast'
 import { usePartnerPageData } from '@/hooks/usePartnerPageData'
 import { cn, formatCurrency } from '@/lib/utils'
+import { AnimatedModal } from '@/components/partner/AnimatedModal'
 import { SectionFrame } from '@/components/partner/PartnerUi'
 import type { PartnerCategory } from '@/types'
 
@@ -261,6 +262,8 @@ export function PartnerCatalogPage() {
   const [industrializedFeatured, setIndustrializedFeatured] = useState(false)
   const [expandedByCategoryId, setExpandedByCategoryId] = useState<Record<string, boolean>>({})
   const [activeByCategoryId, setActiveByCategoryId] = useState<Record<string, boolean>>({})
+  const [activeByProductId, setActiveByProductId] = useState<Record<string, boolean>>({})
+  const [featuredByProductId, setFeaturedByProductId] = useState<Record<string, boolean>>({})
   const [menuOpenCategoryId, setMenuOpenCategoryId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -303,6 +306,38 @@ export function PartnerCatalogPage() {
       }, {})
     )
   }, [catalogCategories])
+
+  useEffect(() => {
+    setActiveByProductId((current) =>
+      data.products.reduce<Record<string, boolean>>((accumulator, product) => {
+        accumulator[product.id] = current[product.id] ?? product.active
+        return accumulator
+      }, {})
+    )
+
+    setFeaturedByProductId((current) =>
+      data.products.reduce<Record<string, boolean>>((accumulator, product) => {
+        accumulator[product.id] = current[product.id] ?? product.featured
+        return accumulator
+      }, {})
+    )
+  }, [data.products])
+
+  useEffect(() => {
+    setActiveByCategoryId((current) =>
+      catalogCategories.reduce<Record<string, boolean>>((accumulator, category) => {
+        const categoryProducts = data.products.filter((product) => product.categoryId === category.id)
+        const hasAtLeastOneActiveProduct = categoryProducts.some(
+          (product) => activeByProductId[product.id] ?? product.active
+        )
+
+        accumulator[category.id] =
+          hasAtLeastOneActiveProduct ? current[category.id] ?? true : false
+
+        return accumulator
+      }, {})
+    )
+  }, [activeByProductId, catalogCategories, data.products])
 
   useEffect(() => {
     if (!sortModalOpen && !createCategoryModalOpen && !addItemTypeModalOpen && !standardItemStepsModalOpen && !productKindModalOpen) return
@@ -626,6 +661,9 @@ export function PartnerCatalogPage() {
               <div className="space-y-3">
                 {visibleCategories.map((category) => {
                   const products = data.products.filter((product) => product.categoryId === category.id)
+                  const hasAtLeastOneActiveProduct = products.some(
+                    (product) => activeByProductId[product.id] ?? product.active
+                  )
                   const isExpanded = expandedByCategoryId[category.id] ?? false
                   const isActive = activeByCategoryId[category.id] ?? true
 
@@ -662,12 +700,17 @@ export function PartnerCatalogPage() {
                             <span className="text-sm font-semibold text-ink-700">Ativo</span>
                             <ThemeSwitch
                               checked={isActive}
-                              onChange={(nextValue) =>
+                              onChange={(nextValue) => {
+                                if (nextValue && !hasAtLeastOneActiveProduct) {
+                                  toast.error('Ative ao menos 1 produto da categoria antes de ativar a categoria.')
+                                  return
+                                }
+
                                 setActiveByCategoryId((current) => ({
                                   ...current,
                                   [category.id]: nextValue,
                                 }))
-                              }
+                              }}
                               ariaLabel={`Alternar categoria ${category.name}`}
                             />
                           </div>
@@ -736,35 +779,110 @@ export function PartnerCatalogPage() {
                       {isExpanded ? (
                         <div className="border-t border-ink-100 px-4 py-4 lg:px-5">
                           {products.length > 0 ? (
-                            <div className="grid gap-3">
-                              {products.map((product) => (
-                                <div key={product.id} className="rounded-xl border border-ink-100 bg-ink-50/60 p-4">
-                                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                                    <div className="min-w-0">
-                                      <div className="flex flex-wrap items-center gap-2">
-                                        <p className="text-base font-bold text-ink-900">{product.name}</p>
-                                        {product.featured ? (
-                                          <span className="inline-flex items-center gap-1 rounded-full bg-coral-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-coral-700">
-                                            <Sparkles className="h-3 w-3" />
-                                            Destaque
-                                          </span>
-                                        ) : null}
-                                        {!product.active ? (
-                                          <span className="rounded-full bg-ink-200 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-600">
-                                            Inativo
-                                          </span>
-                                        ) : null}
-                                      </div>
-                                      <p className="mt-2 text-sm leading-6 text-ink-500">{product.description}</p>
-                                    </div>
+                            <div className="overflow-hidden rounded-xl border border-ink-100 bg-white">
+                              <div className="hidden grid-cols-[88px_minmax(0,1.8fr)_140px_160px_128px_120px] items-center gap-4 border-b border-ink-100 bg-ink-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-ink-500 lg:grid">
+                                <span>Foto</span>
+                                <span>Nome</span>
+                                <span>Preco</span>
+                                <span>Quantidade de estoque</span>
+                                <span>Destaque</span>
+                                <span>Ativo</span>
+                              </div>
 
-                                    <div className="shrink-0 rounded-2xl bg-white px-4 py-3 text-right">
-                                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-400">Preco</p>
-                                      <p className="mt-1 text-base font-bold text-ink-900">{formatCurrency(product.price)}</p>
+                              <div className="divide-y divide-ink-100">
+                                {products.map((product) => {
+                                  const productIsActive = activeByProductId[product.id] ?? product.active
+                                  const productIsFeatured = featuredByProductId[product.id] ?? product.featured
+
+                                  return (
+                                    <div
+                                      key={product.id}
+                                      className="grid gap-4 px-4 py-4 lg:grid-cols-[88px_minmax(0,1.8fr)_140px_160px_128px_120px] lg:items-center"
+                                    >
+                                      <div className="flex items-center gap-3 lg:block">
+                                        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-400 lg:hidden">
+                                          Foto
+                                        </span>
+                                        <img
+                                          src={
+                                            product.imageUrl ??
+                                            'https://images.unsplash.com/photo-1543253539-6b8d4c3b7a56?auto=format&fit=crop&w=300&q=80'
+                                          }
+                                          alt={product.name}
+                                          className="h-16 w-16 rounded-xl object-cover"
+                                        />
+                                      </div>
+
+                                      <div className="min-w-0">
+                                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-400 lg:hidden">
+                                          Nome
+                                        </p>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                          <p className="truncate text-sm font-bold text-ink-900">{product.name}</p>
+                                          {productIsFeatured ? (
+                                            <span className="inline-flex items-center gap-1 rounded-full bg-coral-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-coral-700">
+                                              <Sparkles className="h-3 w-3" />
+                                              Destaque
+                                            </span>
+                                          ) : null}
+                                          {!productIsActive ? (
+                                            <span className="rounded-full bg-ink-200 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-600">
+                                              Inativo
+                                            </span>
+                                          ) : null}
+                                        </div>
+                                        <p className="mt-1 line-clamp-2 text-sm text-ink-500">{product.description}</p>
+                                      </div>
+
+                                      <div>
+                                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-400 lg:hidden">
+                                          Preco
+                                        </p>
+                                        <p className="text-sm font-bold text-ink-900">{formatCurrency(product.price)}</p>
+                                      </div>
+
+                                      <div>
+                                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-400 lg:hidden">
+                                          Quantidade de estoque
+                                        </p>
+                                        <p className="text-sm font-semibold text-ink-900">{product.stockQuantity}</p>
+                                      </div>
+
+                                      <div className="flex items-center justify-between gap-3 lg:justify-start">
+                                        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-400 lg:hidden">
+                                          Destaque
+                                        </span>
+                                        <ThemeSwitch
+                                          checked={productIsFeatured}
+                                          onChange={(nextValue) =>
+                                            setFeaturedByProductId((current) => ({
+                                              ...current,
+                                              [product.id]: nextValue,
+                                            }))
+                                          }
+                                          ariaLabel={`Alternar destaque do produto ${product.name}`}
+                                        />
+                                      </div>
+
+                                      <div className="flex items-center justify-between gap-3 lg:justify-start">
+                                        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-400 lg:hidden">
+                                          Ativo
+                                        </span>
+                                        <ThemeSwitch
+                                          checked={productIsActive}
+                                          onChange={(nextValue) =>
+                                            setActiveByProductId((current) => ({
+                                              ...current,
+                                              [product.id]: nextValue,
+                                            }))
+                                          }
+                                          ariaLabel={`Alternar status do produto ${product.name}`}
+                                        />
+                                      </div>
                                     </div>
-                                  </div>
-                                </div>
-                              ))}
+                                  )
+                                })}
+                              </div>
                             </div>
                           ) : (
                             <div className="rounded-xl border border-dashed border-ink-200 bg-ink-50 px-5 py-8 text-center">
@@ -794,18 +912,12 @@ export function PartnerCatalogPage() {
         </div>
       </SectionFrame>
 
-      {sortModalOpen ? (
-        <div
-          className="fixed inset-0 z-[90] flex items-center justify-center bg-ink-900/45 p-4"
-          onClick={() => setSortModalOpen(false)}
-        >
-          <div
-            className="panel-card w-full max-w-2xl p-6"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="sort-categories-title"
-            onClick={(event) => event.stopPropagation()}
-          >
+      <AnimatedModal
+        open={sortModalOpen}
+        onClose={() => setSortModalOpen(false)}
+        panelClassName="panel-card w-full max-w-2xl p-6"
+        ariaLabelledby="sort-categories-title"
+      >
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">Ordenar categorias</p>
@@ -892,22 +1004,14 @@ export function PartnerCatalogPage() {
                 Salvar ordem
               </button>
             </div>
-          </div>
-        </div>
-      ) : null}
+      </AnimatedModal>
 
-      {createCategoryModalOpen ? (
-        <div
-          className="fixed inset-0 z-[90] flex items-center justify-center bg-ink-900/45 p-4"
-          onClick={() => setCreateCategoryModalOpen(false)}
-        >
-          <div
-            className="panel-card w-full max-w-2xl p-6"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="create-category-title"
-            onClick={(event) => event.stopPropagation()}
-          >
+      <AnimatedModal
+        open={createCategoryModalOpen}
+        onClose={() => setCreateCategoryModalOpen(false)}
+        panelClassName="panel-card w-full max-w-2xl p-6"
+        ariaLabelledby="create-category-title"
+      >
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">Nova categoria</p>
@@ -997,22 +1101,16 @@ export function PartnerCatalogPage() {
                 Criar categoria
               </button>
             </div>
-          </div>
-        </div>
-      ) : null}
+      </AnimatedModal>
 
-      {addItemTypeModalOpen && addItemCategory ? (
-        <div
-          className="fixed inset-0 z-[90] flex items-center justify-center bg-ink-900/45 p-4"
-          onClick={() => setAddItemTypeModalOpen(false)}
-        >
-          <div
-            className="panel-card w-full max-w-2xl p-6"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="add-item-type-title"
-            onClick={(event) => event.stopPropagation()}
-          >
+      <AnimatedModal
+        open={Boolean(addItemTypeModalOpen && addItemCategory)}
+        onClose={() => setAddItemTypeModalOpen(false)}
+        panelClassName="panel-card w-full max-w-2xl p-6"
+        ariaLabelledby="add-item-type-title"
+      >
+        {addItemCategory ? (
+          <>
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">Adicionar item</p>
@@ -1074,22 +1172,18 @@ export function PartnerCatalogPage() {
                 Fechar
               </button>
             </div>
-          </div>
-        </div>
-      ) : null}
+          </>
+        ) : null}
+      </AnimatedModal>
 
-      {standardItemStepsModalOpen && addItemCategory ? (
-        <div
-          className="fixed inset-0 z-[90] flex items-center justify-center bg-ink-900/45 p-4"
-          onClick={() => setStandardItemStepsModalOpen(false)}
-        >
-          <div
-            className="panel-card w-full max-w-3xl p-6"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="standard-item-steps-title"
-            onClick={(event) => event.stopPropagation()}
-          >
+      <AnimatedModal
+        open={Boolean(standardItemStepsModalOpen && addItemCategory)}
+        onClose={() => setStandardItemStepsModalOpen(false)}
+        panelClassName="panel-card w-full max-w-3xl p-6"
+        ariaLabelledby="standard-item-steps-title"
+      >
+        {addItemCategory ? (
+          <>
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">Adicionar item Preparado</p>
@@ -1180,22 +1274,18 @@ export function PartnerCatalogPage() {
                 {standardItemStepTab === 'revisao' ? 'Concluir' : 'Continuar'}
               </button>
             </div>
-          </div>
-        </div>
-      ) : null}
+          </>
+        ) : null}
+      </AnimatedModal>
 
-      {productKindModalOpen && addItemCategory && selectedProductCreationKindMeta ? (
-        <div
-          className="fixed inset-0 z-[90] flex items-center justify-center bg-ink-900/45 p-4"
-          onClick={() => setProductKindModalOpen(false)}
-        >
-          <div
-            className="panel-card flex h-[min(88vh,860px)] w-full max-w-5xl flex-col p-6"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="product-kind-title"
-            onClick={(event) => event.stopPropagation()}
-          >
+      <AnimatedModal
+        open={Boolean(productKindModalOpen && addItemCategory && selectedProductCreationKindMeta)}
+        onClose={() => setProductKindModalOpen(false)}
+        panelClassName="panel-card flex h-[min(88vh,860px)] w-full max-w-5xl flex-col p-6"
+        ariaLabelledby="product-kind-title"
+      >
+        {addItemCategory && selectedProductCreationKindMeta ? (
+          <>
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">
@@ -1611,9 +1701,9 @@ export function PartnerCatalogPage() {
               </>
             )}
             </div>
-          </div>
-        </div>
-      ) : null}
+          </>
+        ) : null}
+      </AnimatedModal>
     </>
   )
 }
