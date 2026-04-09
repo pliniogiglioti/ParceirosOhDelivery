@@ -12,9 +12,10 @@ import {
   LayoutGrid,
   LogOut,
   MapPinned,
+  Settings,
   Star,
   Store,
-  UserRound,
+  User,
   WalletCards,
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
@@ -35,7 +36,8 @@ const navItems: Array<{ id: PartnerSection; label: string; icon: LucideIcon; to:
   { id: 'avaliacoes', label: 'Avaliacoes', icon: Star, to: '/app/avaliacoes' },
   { id: 'suporte', label: 'Suporte', icon: Headphones, to: '/app/suporte' },
   { id: 'loja', label: 'Loja', icon: Store, to: '/app/loja' },
-  { id: 'perfil', label: 'Perfil', icon: UserRound, to: '/app/perfil' },
+  { id: 'perfil', label: 'Perfil', icon: User, to: '/app/perfil' },
+  { id: 'configuracoes', label: 'Configuracoes', icon: Settings, to: '/app/configuracoes' },
 ]
 
 function StoreStatusToggleCard({
@@ -164,122 +166,184 @@ export function PartnerSidebar({
   onNavigate?: () => void
   className?: string
 }) {
+  const [signOutModalOpen, setSignOutModalOpen] = useState(false)
+
+  useEffect(() => {
+    if (!signOutModalOpen) return
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setSignOutModalOpen(false)
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [signOutModalOpen])
+
   return (
-    <aside className={cn('panel-card sidebar-content flex h-full w-full flex-col overflow-hidden bg-white', className)}>
-      <div className={cn('sidebar-content border-b border-ink-100 pb-4 pt-5', collapsed ? 'px-3' : 'px-4')}>
-        <div className={cn('flex items-center', collapsed ? 'justify-center' : 'gap-3')}>
-          {!collapsed ? (
-            <div className="min-w-0 flex-1">
-              <p className="font-display text-lg font-bold text-coral-500 pl-3">oh! Delivery</p>
-              <p className="text-sm text-ink-500 pl-3">{data.store.name}</p>
-            </div>
-          ) : null}
-          <button
-            type="button"
-            onClick={onToggleCollapsed}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-ink-50 text-ink-900 transition hover:bg-ink-100"
-            aria-label={collapsed ? 'Expandir menu lateral' : 'Contrair menu lateral'}
-            title={collapsed ? 'Expandir menu lateral' : 'Contrair menu lateral'}
-          >
-            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </button>
-        </div>
-      </div>
-
-      <div className={cn('sidebar-content space-y-3 py-4', collapsed ? 'px-3' : 'px-4')}>
-        <StoreStatusToggleCard
-          isOpen={data.store.isOpen}
-          onConfirmToggle={onToggleStoreStatus}
-          collapsed={collapsed}
-        />
-      </div>
-
-      <nav className={cn('hide-scrollbar sidebar-content flex-1 space-y-1 overflow-y-auto pb-4', collapsed ? 'px-2' : 'px-3')}>
-        {navItems.map((item) => {
-          const Icon = item.icon
-
-          return [
-            <NavLink
-              key={item.id}
-              to={item.to}
-              end={item.to === '/app'}
-              onClick={onNavigate}
-              className={({ isActive }) =>
-                cn(
-                  'sidebar-link w-full text-left',
-                  collapsed && 'justify-center px-2',
-                  !collapsed && 'gap-3',
-                  isActive && 'sidebar-link-active'
-                )
-              }
-              aria-label={item.label}
-              title={item.label}
+    <>
+      <aside className={cn('panel-card sidebar-content flex h-full w-full flex-col overflow-hidden bg-white', className)}>
+        <div className={cn('sidebar-content border-b border-ink-100 pb-4 pt-5', collapsed ? 'px-3' : 'px-4')}>
+          <div className={cn('flex items-center', collapsed ? 'justify-center' : 'gap-3')}>
+            {!collapsed ? (
+              <div className="min-w-0 flex-1">
+                <p className="font-display text-lg font-bold text-coral-500 pl-3">oh! Delivery</p>
+                <p className="text-sm text-ink-500 pl-3">{data.store.name}</p>
+              </div>
+            ) : null}
+            <button
+              type="button"
+              onClick={onToggleCollapsed}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-ink-50 text-ink-900 transition hover:bg-ink-100"
+              aria-label={collapsed ? 'Expandir menu lateral' : 'Contrair menu lateral'}
+              title={collapsed ? 'Expandir menu lateral' : 'Contrair menu lateral'}
             >
-              {({ isActive }) => (
-                <>
-                  <span className="relative">
-                    {item.id === 'perfil' && collapsed ? (
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-ink-100 text-xs font-bold text-ink-900">
-                        {data.profile.name.charAt(0).toUpperCase()}
-                      </span>
-                    ) : (
-                      <Icon className="h-5 w-5" />
-                    )}
-                    {item.id === 'pedidos' && data.metrics.pendingOrders > 0 ? (
-                      <span
-                        className={cn(
-                          'absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white',
-                          isActive ? 'bg-coral-600' : 'bg-coral-500'
-                        )}
-                      >
-                        {data.metrics.pendingOrders}
-                      </span>
-                    ) : null}
-                  </span>
-                  <SidebarLabel collapsed={collapsed} className="whitespace-nowrap">
-                    {item.label}
-                  </SidebarLabel>
-                </>
-              )}
-            </NavLink>,
-            item.id === 'perfil' ? (
-              <button
-                key={`${item.id}-signout`}
-                type="button"
-                onClick={onSignOut}
-                className={cn(
-                  'sidebar-link w-full text-left text-ink-700 transition hover:bg-ink-50',
-                  collapsed && 'justify-center px-2'
-                )}
-                aria-label="Sair"
-                title="Sair"
-              >
-                <LogOut className="h-5 w-5" />
-                <SidebarLabel collapsed={collapsed} className="whitespace-nowrap">
-                  Sair
-                </SidebarLabel>
-              </button>
-            ) : null,
-          ]
-        })}
-      </nav>
-
-      <div className={cn('sidebar-content border-t border-ink-100 py-4', collapsed ? 'px-3' : 'px-4')}>
-        <div className={cn('flex items-center gap-3', collapsed && 'justify-center')}>
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-ink-100 bg-ink-50 text-sm font-bold text-ink-700">
-            {data.profile.name.slice(0, 1)}
-          </div>
-          <div
-            className={cn(
-              'sidebar-label min-w-0',
-              collapsed ? 'sidebar-label-hidden' : 'sidebar-label-visible'
-            )}
-          >
-            <p className="truncate text-sm font-semibold text-ink-900">{data.profile.name}</p>
-            <p className="truncate text-xs text-ink-500">{data.profile.email}</p>
+              {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            </button>
           </div>
         </div>
-      </div>
-    </aside>
+
+        <div className={cn('sidebar-content space-y-3 py-4', collapsed ? 'px-3' : 'px-4')}>
+          <StoreStatusToggleCard
+            isOpen={data.store.isOpen}
+            onConfirmToggle={onToggleStoreStatus}
+            collapsed={collapsed}
+          />
+        </div>
+
+        <nav className={cn('hide-scrollbar sidebar-content flex-1 space-y-1 overflow-y-auto pb-4', collapsed ? 'px-2' : 'px-3')}>
+          {navItems.map((item) => {
+            const Icon = item.icon
+
+            return [
+              <NavLink
+                key={item.id}
+                to={item.to}
+                end={item.to === '/app'}
+                onClick={onNavigate}
+                className={({ isActive }) =>
+                  cn(
+                    'sidebar-link w-full text-left',
+                    collapsed && 'justify-center px-2',
+                    !collapsed && 'gap-3',
+                    isActive && 'sidebar-link-active'
+                  )
+                }
+                aria-label={item.label}
+                title={item.label}
+              >
+                {({ isActive }) => (
+                  <>
+                    <span className="relative">
+                      <Icon className="h-5 w-5" />
+                      {item.id === 'pedidos' && data.metrics.pendingOrders > 0 ? (
+                        <span
+                          className={cn(
+                            'absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white',
+                            isActive ? 'bg-coral-600' : 'bg-coral-500'
+                          )}
+                        >
+                          {data.metrics.pendingOrders}
+                        </span>
+                      ) : null}
+                    </span>
+                    <SidebarLabel collapsed={collapsed} className="whitespace-nowrap">
+                      {item.label}
+                    </SidebarLabel>
+                  </>
+                )}
+              </NavLink>,
+              item.id === 'configuracoes' ? (
+                <div key={`${item.id}-signout-group`} className="pt-1">
+                  <div className={cn('mb-1 border-t border-ink-100', collapsed ? 'mx-1' : 'mx-1')} />
+                  <button
+                    type="button"
+                    onClick={() => setSignOutModalOpen(true)}
+                    className={cn(
+                      'sidebar-link w-full text-left text-ink-700 transition hover:bg-ink-50',
+                      collapsed && 'justify-center px-2',
+                      !collapsed && 'gap-3'
+                    )}
+                    aria-label="Sair"
+                    title="Sair"
+                  >
+                    <LogOut className="h-5 w-5" />
+                    <SidebarLabel collapsed={collapsed} className="whitespace-nowrap">
+                      Sair
+                    </SidebarLabel>
+                  </button>
+                </div>
+              ) : null,
+            ]
+          })}
+        </nav>
+
+        <div className={cn('sidebar-content border-t border-ink-100 py-4', collapsed ? 'px-3' : 'px-4')}>
+          <div className={cn('flex items-center gap-3', collapsed && 'justify-center')}>
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-ink-100 bg-ink-50 text-sm font-bold text-ink-700">
+              {data.profile.name.slice(0, 1)}
+            </div>
+            <div
+              className={cn(
+                'sidebar-label min-w-0',
+                collapsed ? 'sidebar-label-hidden' : 'sidebar-label-visible'
+              )}
+            >
+              <p className="truncate text-sm font-semibold text-ink-900">{data.profile.name}</p>
+              <p className="truncate text-xs text-ink-500">{data.profile.email}</p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {signOutModalOpen ? (
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-ink-900/45 p-4"
+          onClick={() => setSignOutModalOpen(false)}
+        >
+          <div
+            className="panel-card w-full max-w-md p-6"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="signout-modal-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <p
+              id="signout-modal-title"
+              className="text-lg font-bold tracking-[-0.02em] text-ink-900"
+            >
+              Deseja realmente sair?
+            </p>
+            <p className="mt-2 text-sm leading-6 text-ink-500">
+              Voce precisara entrar novamente para acessar o painel da loja.
+            </p>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setSignOutModalOpen(false)}
+                className="inline-flex h-11 items-center justify-center rounded-2xl border border-ink-100 px-5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSignOutModalOpen(false)
+                  onSignOut()
+                }}
+                className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
+              >
+                Sair
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </>
   )
 }

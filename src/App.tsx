@@ -10,6 +10,7 @@ import { PartnerLogisticsPage } from '@/pages/app/PartnerLogisticsPage'
 import { PartnerOrdersPage } from '@/pages/app/PartnerOrdersPage'
 import { PartnerOverviewPage } from '@/pages/app/PartnerOverviewPage'
 import { PartnerPaymentsPage } from '@/pages/app/PartnerPaymentsPage'
+import { PartnerConfiguracoesPage } from '@/pages/app/PartnerConfiguracoesPage'
 import { PartnerProfilePage } from '@/pages/app/PartnerProfilePage'
 import { PartnerReviewsPage } from '@/pages/app/PartnerReviewsPage'
 import { PartnerStorePage } from '@/pages/app/PartnerStorePage'
@@ -72,6 +73,7 @@ export function App() {
           <Route path="suporte" element={<PartnerSupportPage />} />
           <Route path="loja" element={<PartnerStorePage />} />
           <Route path="perfil" element={<PartnerProfilePage />} />
+          <Route path="configuracoes" element={<PartnerConfiguracoesPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

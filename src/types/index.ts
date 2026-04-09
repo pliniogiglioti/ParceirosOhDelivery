@@ -19,6 +19,7 @@ export type PartnerSection =
   | 'suporte'
   | 'loja'
   | 'perfil'
+  | 'configuracoes'
 
 export interface PartnerStore {
   id: string
