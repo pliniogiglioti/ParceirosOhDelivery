@@ -73,9 +73,9 @@ export const mockPartnerDashboard: PartnerDashboardData = {
     },
   ],
   categories: [
-    { id: 'cat-1', name: 'Combos', icon: 'CB', sortOrder: 0, productCount: 4 },
-    { id: 'cat-2', name: 'Entradas', icon: 'ET', sortOrder: 1, productCount: 3 },
-    { id: 'cat-3', name: 'Bebidas', icon: 'BB', sortOrder: 2, productCount: 6 },
+    { id: 'cat-1', name: 'Combos', icon: 'CB', template: 'padrao', sortOrder: 0, productCount: 4 },
+    { id: 'cat-2', name: 'Entradas', icon: 'ET', template: 'padrao', sortOrder: 1, productCount: 3 },
+    { id: 'cat-3', name: 'Bebidas', icon: 'BB', template: 'padrao', sortOrder: 2, productCount: 6 },
   ],
   products: [
     {

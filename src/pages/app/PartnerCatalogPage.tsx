@@ -1,9 +1,11 @@
 import {
   ArrowUpDown,
   ChevronDown,
+  ChefHat,
   EllipsisVertical,
   GripVertical,
   LayoutGrid,
+  Package,
   PencilLine,
   Pizza,
   Plus,
@@ -66,6 +68,7 @@ function reorderCategoryIds(categoryIds: string[], fromCategoryId: string, toCat
 }
 
 type CategoryTemplate = 'padrao' | 'pizza'
+type ProductCreationKind = 'industrializado' | 'preparado'
 
 const categoryTemplates: Array<{
   id: CategoryTemplate
@@ -90,6 +93,30 @@ const categoryTemplates: Array<{
   },
 ]
 
+const productCreationKinds: Array<{
+  id: ProductCreationKind
+  label: string
+  description: string
+  icon: typeof Package
+}> = [
+  {
+    id: 'industrializado',
+    label: 'Industrializado',
+    description: 'Para produtos prontos, embalados ou vendidos sem preparo da cozinha.',
+    icon: Package,
+  },
+  {
+    id: 'preparado',
+    label: 'Preparado',
+    description: 'Para itens montados ou feitos pela operacao, como lanches, pratos e porcoes.',
+    icon: ChefHat,
+  },
+]
+
+function getCategoryTemplate(category: PartnerCategory): CategoryTemplate {
+  return category.template === 'pizza' ? 'pizza' : 'padrao'
+}
+
 export function PartnerCatalogPage() {
   const { data } = usePartnerPageData()
   const [catalogCategories, setCatalogCategories] = useState<PartnerCategory[]>(data.categories)
@@ -102,6 +129,9 @@ export function PartnerCatalogPage() {
   const [createCategoryModalOpen, setCreateCategoryModalOpen] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
   const [newCategoryTemplate, setNewCategoryTemplate] = useState<CategoryTemplate>('padrao')
+  const [addItemModalOpen, setAddItemModalOpen] = useState(false)
+  const [addItemCategoryId, setAddItemCategoryId] = useState<string | null>(null)
+  const [selectedProductCreationKind, setSelectedProductCreationKind] = useState<ProductCreationKind | null>(null)
   const [expandedByCategoryId, setExpandedByCategoryId] = useState<Record<string, boolean>>({})
   const [activeByCategoryId, setActiveByCategoryId] = useState<Record<string, boolean>>({})
   const [menuOpenCategoryId, setMenuOpenCategoryId] = useState<string | null>(null)
@@ -148,12 +178,13 @@ export function PartnerCatalogPage() {
   }, [catalogCategories])
 
   useEffect(() => {
-    if (!sortModalOpen && !createCategoryModalOpen) return
+    if (!sortModalOpen && !createCategoryModalOpen && !addItemModalOpen) return
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         setSortModalOpen(false)
         setCreateCategoryModalOpen(false)
+        setAddItemModalOpen(false)
       }
     }
 
@@ -162,7 +193,7 @@ export function PartnerCatalogPage() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [sortModalOpen, createCategoryModalOpen])
+  }, [sortModalOpen, createCategoryModalOpen, addItemModalOpen])
 
   const orderedCategories = useMemo(
     () =>
@@ -223,6 +254,7 @@ export function PartnerCatalogPage() {
       id: `category-${Date.now()}`,
       name: trimmedName,
       icon: selectedTemplate.defaultIcon,
+      template: selectedTemplate.id,
       sortOrder: categoryOrderIds.length,
       productCount: 0,
     }
@@ -234,6 +266,32 @@ export function PartnerCatalogPage() {
     setCreateCategoryModalOpen(false)
     toast.success(`Categoria ${trimmedName} criada com sucesso.`)
   }
+
+  function openAddItemModal(category: PartnerCategory) {
+    if (getCategoryTemplate(category) === 'pizza') {
+      toast('O fluxo de item para categoria Pizza entra na proxima etapa.')
+      return
+    }
+
+    setAddItemCategoryId(category.id)
+    setSelectedProductCreationKind(null)
+    setAddItemModalOpen(true)
+    setMenuOpenCategoryId(null)
+  }
+
+  function handleContinueAddItem() {
+    if (!selectedProductCreationKind) {
+      toast.error('Escolha se o item e industrializado ou preparado.')
+      return
+    }
+
+    const category = catalogCategories.find((item) => item.id === addItemCategoryId)
+    setAddItemModalOpen(false)
+    toast.success(`Etapa 1 salva para ${category?.name ?? 'a categoria'}.`)
+  }
+
+  const addItemCategory =
+    addItemCategoryId ? catalogCategories.find((category) => category.id === addItemCategoryId) ?? null : null
 
   return (
     <>
@@ -325,7 +383,7 @@ export function PartnerCatalogPage() {
                         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
                           <button
                             type="button"
-                            onClick={() => toast.success(`Novo item em ${category.name} em preparacao.`)}
+                            onClick={() => openAddItemModal(category)}
                             className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-coral-200 bg-white px-4 text-sm font-semibold text-coral-600 transition hover:bg-coral-50"
                           >
                             <Plus className="h-4 w-4" />
@@ -678,6 +736,115 @@ export function PartnerCatalogPage() {
                 className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
               >
                 Criar categoria
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {addItemModalOpen && addItemCategory ? (
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-ink-900/45 p-4"
+          onClick={() => setAddItemModalOpen(false)}
+        >
+          <div
+            className="panel-card w-full max-w-3xl p-6"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="add-item-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">Adicionar item</p>
+                <h3 id="add-item-title" className="mt-2 text-xl font-bold text-ink-900">
+                  Etapa 1: tipo do produto
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-ink-500">
+                  Categoria {addItemCategory.name}. Escolha primeiro se o produto e industrializado ou preparado.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setAddItemModalOpen(false)}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50"
+                aria-label="Fechar criacao de item"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mt-6 grid gap-3 md:grid-cols-3">
+              <div className="rounded-xl border border-coral-200 bg-coral-50 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-coral-600">Step 1</p>
+                <p className="mt-1 text-sm font-bold text-coral-700">Tipo do item</p>
+              </div>
+              <div className="rounded-xl border border-ink-100 bg-white px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-400">Step 2</p>
+                <p className="mt-1 text-sm font-bold text-ink-600">Dados do produto</p>
+              </div>
+              <div className="rounded-xl border border-ink-100 bg-white px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-400">Step 3</p>
+                <p className="mt-1 text-sm font-bold text-ink-600">Revisao</p>
+              </div>
+            </div>
+
+            <div className="mt-6">
+              <p className="text-sm font-semibold text-ink-800">Esse item e industrializado ou preparado?</p>
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                {productCreationKinds.map((kind) => {
+                  const Icon = kind.icon
+                  const isSelected = selectedProductCreationKind === kind.id
+
+                  return (
+                    <button
+                      key={kind.id}
+                      type="button"
+                      onClick={() => setSelectedProductCreationKind(kind.id)}
+                      className={cn(
+                        'rounded-xl border p-5 text-left transition',
+                        isSelected
+                          ? 'border-coral-300 bg-coral-50 text-coral-700'
+                          : 'border-ink-100 bg-white text-ink-900 hover:bg-ink-50'
+                      )}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={cn(
+                            'mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl',
+                            isSelected ? 'bg-coral-100 text-coral-600' : 'bg-ink-50 text-ink-600'
+                          )}
+                        >
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="text-base font-bold">{kind.label}</p>
+                          <p className={cn('mt-1 text-sm leading-6', isSelected ? 'text-coral-700/80' : 'text-ink-500')}>
+                            {kind.description}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setAddItemModalOpen(false)}
+                className="inline-flex h-11 items-center justify-center rounded-2xl border border-ink-100 px-5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleContinueAddItem}
+                className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
+              >
+                Continuar
               </button>
             </div>
           </div>

@@ -144,6 +144,7 @@ export async function loadPartnerDashboard(): Promise<{
       id: String(row.id),
       name: String(row.name),
       icon: String(row.icon ?? 'MENU'),
+      template: row.template === 'pizza' ? 'pizza' : 'padrao',
       sortOrder: Number(row.sort_order ?? 0),
       productCount: (productRows ?? []).filter((product) => String(product.category_id) === String(row.id)).length,
     })) ?? []

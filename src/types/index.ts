@@ -61,6 +61,7 @@ export interface PartnerCategory {
   id: string
   name: string
   icon: string
+  template?: 'padrao' | 'pizza'
   sortOrder: number
   productCount: number
 }
