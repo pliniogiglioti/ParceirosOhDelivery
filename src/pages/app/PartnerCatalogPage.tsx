@@ -69,7 +69,7 @@ function reorderCategoryIds(categoryIds: string[], fromCategoryId: string, toCat
 
 type CategoryTemplate = 'padrao' | 'pizza'
 type ProductCreationKind = 'industrializado' | 'preparado'
-type StandardItemStepTab = 'tipo' | 'dados' | 'revisao'
+type StandardItemStepTab = 'dados' | 'detalhes' | 'revisao'
 
 const categoryTemplates: Array<{
   id: CategoryTemplate
@@ -115,8 +115,8 @@ const productCreationKinds: Array<{
 ]
 
 const standardItemStepTabs: Array<{ id: StandardItemStepTab; label: string }> = [
-  { id: 'tipo', label: 'Tipo do item' },
   { id: 'dados', label: 'Dados do produto' },
+  { id: 'detalhes', label: 'Detalhes' },
   { id: 'revisao', label: 'Revisao' },
 ]
 
@@ -141,7 +141,7 @@ export function PartnerCatalogPage() {
   const [productKindModalOpen, setProductKindModalOpen] = useState(false)
   const [addItemCategoryId, setAddItemCategoryId] = useState<string | null>(null)
   const [selectedProductCreationKind, setSelectedProductCreationKind] = useState<ProductCreationKind | null>(null)
-  const [standardItemStepTab, setStandardItemStepTab] = useState<StandardItemStepTab>('tipo')
+  const [standardItemStepTab, setStandardItemStepTab] = useState<StandardItemStepTab>('dados')
   const [expandedByCategoryId, setExpandedByCategoryId] = useState<Record<string, boolean>>({})
   const [activeByCategoryId, setActiveByCategoryId] = useState<Record<string, boolean>>({})
   const [menuOpenCategoryId, setMenuOpenCategoryId] = useState<string | null>(null)
@@ -280,26 +280,24 @@ export function PartnerCatalogPage() {
   }
 
   function openAddItemModal(category: PartnerCategory) {
+    if (getCategoryTemplate(category) === 'pizza') {
+      toast('O fluxo de item para categoria Pizza entra na proxima etapa.')
+      return
+    }
+
     setAddItemCategoryId(category.id)
     setSelectedProductCreationKind(null)
-    setStandardItemStepTab('tipo')
+    setStandardItemStepTab('dados')
     setAddItemTypeModalOpen(true)
     setMenuOpenCategoryId(null)
   }
 
-  function handleOpenCategoryItemFlow(template: CategoryTemplate) {
-    const category = catalogCategories.find((item) => item.id === addItemCategoryId)
-    const categoryTemplate = category ? getCategoryTemplate(category) : 'padrao'
-
-    if (template !== categoryTemplate) {
-      toast.error(`Essa categoria usa o modelo ${categoryTemplate === 'padrao' ? 'Padrao' : 'Pizza'}.`)
-      return
-    }
-
+  function handleOpenCategoryItemFlow(kind: ProductCreationKind) {
     setAddItemTypeModalOpen(false)
+    setSelectedProductCreationKind(kind)
 
-    if (template === 'pizza') {
-      toast('O fluxo de item para categoria Pizza entra na proxima etapa.')
+    if (kind === 'industrializado') {
+      setProductKindModalOpen(true)
       return
     }
 
@@ -307,18 +305,22 @@ export function PartnerCatalogPage() {
   }
 
   function handleContinueStandardItemFlow() {
-    if (!selectedProductCreationKind) {
-      toast.error('Escolha se o item e industrializado ou preparado.')
+    if (standardItemStepTab === 'dados') {
+      setStandardItemStepTab('detalhes')
+      return
+    }
+
+    if (standardItemStepTab === 'detalhes') {
+      setStandardItemStepTab('revisao')
       return
     }
 
     setStandardItemStepsModalOpen(false)
-    setProductKindModalOpen(true)
+    toast.success(`Fluxo de item preparado iniciado para ${addItemCategory?.name ?? 'a categoria'}.`)
   }
 
   const addItemCategory =
     addItemCategoryId ? catalogCategories.find((category) => category.id === addItemCategoryId) ?? null : null
-  const addItemCategoryTemplate = addItemCategory ? getCategoryTemplate(addItemCategory) : null
   const selectedProductCreationKindMeta =
     selectedProductCreationKind
       ? productCreationKinds.find((kind) => kind.id === selectedProductCreationKind) ?? null
@@ -792,7 +794,7 @@ export function PartnerCatalogPage() {
                   Escolha o modelo do cadastro
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-ink-500">
-                  Categoria {addItemCategory.name}. Primeiro definimos se o item segue o modelo Padrao ou Pizza.
+                  Categoria {addItemCategory.name}. Primeiro definimos se o item sera Preparado ou Industrializado.
                 </p>
               </div>
 
@@ -808,38 +810,27 @@ export function PartnerCatalogPage() {
 
             <div className="mt-6">
               <div className="mt-3 grid gap-3 md:grid-cols-2">
-                {categoryTemplates.map((template) => {
-                  const Icon = template.icon
-                  const isActive = addItemCategoryTemplate === template.id
+                {productCreationKinds.map((kind) => {
+                  const Icon = kind.icon
 
                   return (
                     <button
-                      key={template.id}
+                      key={kind.id}
                       type="button"
-                      onClick={() => handleOpenCategoryItemFlow(template.id)}
+                      onClick={() => handleOpenCategoryItemFlow(kind.id)}
                       className={cn(
-                        'rounded-xl border p-5 text-left transition',
-                        isActive
-                          ? 'border-coral-300 bg-coral-50 text-coral-700'
-                          : 'border-ink-100 bg-ink-50 text-ink-400'
+                        'rounded-xl border border-ink-100 bg-white p-5 text-left text-ink-900 transition hover:bg-ink-50'
                       )}
                     >
                       <div className="flex items-start gap-3">
                         <div
-                          className={cn(
-                            'mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl',
-                            isActive ? 'bg-coral-100 text-coral-600' : 'bg-white text-ink-400'
-                          )}
+                          className="mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-ink-50 text-ink-600"
                         >
                           <Icon className="h-5 w-5" />
                         </div>
                         <div>
-                          <p className="text-base font-bold">{template.label}</p>
-                          <p className={cn('mt-1 text-sm leading-6', isActive ? 'text-coral-700/80' : 'text-ink-500')}>
-                            {isActive
-                              ? template.description
-                              : `Disponivel apenas para categoria ${addItemCategoryTemplate === 'padrao' ? 'Padrao' : 'Pizza'}.`}
-                          </p>
+                          <p className="text-base font-bold">{kind.label}</p>
+                          <p className="mt-1 text-sm leading-6 text-ink-500">{kind.description}</p>
                         </div>
                       </div>
                     </button>
@@ -875,12 +866,12 @@ export function PartnerCatalogPage() {
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">Adicionar item Padrao</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">Adicionar item Preparado</p>
                 <h3 id="standard-item-steps-title" className="mt-2 text-xl font-bold text-ink-900">
                   Cadastro em etapas
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-ink-500">
-                  Categoria {addItemCategory.name}. O fluxo segue o modelo Padrao com abas por etapa.
+                  Categoria {addItemCategory.name}. O fluxo segue o modelo Preparado com abas por etapa.
                 </p>
               </div>
 
@@ -900,13 +891,7 @@ export function PartnerCatalogPage() {
                   <button
                     key={tab.id}
                     type="button"
-                    onClick={() => {
-                      if (tab.id !== 'tipo') {
-                        toast('As proximas abas entram na sequencia do cadastro.')
-                        return
-                      }
-                      setStandardItemStepTab(tab.id)
-                    }}
+                    onClick={() => setStandardItemStepTab(tab.id)}
                     className={cn(
                       'inline-flex shrink-0 items-center rounded-2xl border px-4 py-3 text-sm font-semibold transition',
                       standardItemStepTab === tab.id
@@ -920,45 +905,35 @@ export function PartnerCatalogPage() {
               </div>
             </div>
 
-            {standardItemStepTab === 'tipo' ? (
+            {standardItemStepTab === 'dados' ? (
               <div className="mt-6">
-                <p className="text-sm font-semibold text-ink-800">Esse item e industrializado ou preparado?</p>
-                <div className="mt-3 grid gap-3 md:grid-cols-2">
-                  {productCreationKinds.map((kind) => {
-                    const Icon = kind.icon
-                    const isSelected = selectedProductCreationKind === kind.id
+                <div className="rounded-xl border border-ink-100 bg-ink-50 px-5 py-5">
+                  <p className="text-sm font-semibold text-ink-800">Dados do produto preparado</p>
+                  <p className="mt-2 text-sm leading-6 text-ink-500">
+                    Aqui entram os campos principais do item, como nome, descricao e foto, dentro do fluxo em abas.
+                  </p>
+                </div>
+              </div>
+            ) : null}
 
-                    return (
-                      <button
-                        key={kind.id}
-                        type="button"
-                        onClick={() => setSelectedProductCreationKind(kind.id)}
-                        className={cn(
-                          'rounded-xl border p-5 text-left transition',
-                          isSelected
-                            ? 'border-coral-300 bg-coral-50 text-coral-700'
-                            : 'border-ink-100 bg-white text-ink-900 hover:bg-ink-50'
-                        )}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div
-                            className={cn(
-                              'mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl',
-                              isSelected ? 'bg-coral-100 text-coral-600' : 'bg-ink-50 text-ink-600'
-                            )}
-                          >
-                            <Icon className="h-5 w-5" />
-                          </div>
-                          <div>
-                            <p className="text-base font-bold">{kind.label}</p>
-                            <p className={cn('mt-1 text-sm leading-6', isSelected ? 'text-coral-700/80' : 'text-ink-500')}>
-                              {kind.description}
-                            </p>
-                          </div>
-                        </div>
-                      </button>
-                    )
-                  })}
+            {standardItemStepTab === 'detalhes' ? (
+              <div className="mt-6">
+                <div className="rounded-xl border border-ink-100 bg-ink-50 px-5 py-5">
+                  <p className="text-sm font-semibold text-ink-800">Detalhes do item</p>
+                  <p className="mt-2 text-sm leading-6 text-ink-500">
+                    Nesta etapa entram preco, disponibilidade, destaque e demais configuracoes do produto preparado.
+                  </p>
+                </div>
+              </div>
+            ) : null}
+
+            {standardItemStepTab === 'revisao' ? (
+              <div className="mt-6">
+                <div className="rounded-xl border border-ink-100 bg-ink-50 px-5 py-5">
+                  <p className="text-sm font-semibold text-ink-800">Revisao final</p>
+                  <p className="mt-2 text-sm leading-6 text-ink-500">
+                    Aqui fica a conferencia final antes de salvar o item preparado no cardapio.
+                  </p>
                 </div>
               </div>
             ) : null}
@@ -976,7 +951,7 @@ export function PartnerCatalogPage() {
                 onClick={handleContinueStandardItemFlow}
                 className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
               >
-                Continuar
+                {standardItemStepTab === 'revisao' ? 'Concluir' : 'Continuar'}
               </button>
             </div>
           </div>
