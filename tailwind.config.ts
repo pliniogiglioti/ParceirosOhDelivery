@@ -65,6 +65,17 @@ export default {
       animation: {
         rise: 'rise 0.32s ease-out',
       },
+      borderRadius: {
+        none: '0px',
+        sm: '12px',
+        DEFAULT: '12px',
+        md: '12px',
+        lg: '12px',
+        xl: '12px',
+        '2xl': '12px',
+        '3xl': '12px',
+        full: '12px',
+      },
     },
   },
   plugins: [],

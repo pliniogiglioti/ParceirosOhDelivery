@@ -51,7 +51,7 @@
 
 @layer components {
   .panel-card {
-    @apply rounded-[28px] bg-white shadow-soft;
+    @apply rounded-xl bg-white shadow-soft;
     border: 1px solid rgba(35, 49, 67, 0.08);
   }
 
@@ -60,7 +60,7 @@
   }
 
   .sidebar-link {
-    @apply flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium text-ink-700 transition;
+    @apply flex items-center rounded-2xl px-4 py-3 text-sm font-medium text-ink-700 transition;
   }
 
   .sidebar-link:hover {
@@ -148,7 +148,7 @@
   .kanban-scrollbar {
     position: relative;
     height: 16px;
-    border-radius: 999px;
+    border-radius: 12px;
     background: transparent;
     user-select: none;
   }
@@ -158,7 +158,7 @@
     top: 0;
     bottom: 0;
     border: 0;
-    border-radius: 999px;
+    border-radius: 12px;
     background: #f3f7fbcc;
     box-shadow: none;
     cursor: grab;

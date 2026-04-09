@@ -24,8 +24,8 @@ function EmailField({
   return (
     <label className="mt-6 block">
       <span className="mb-2 block text-[13px] font-semibold text-[#4f4f4f]">Email</span>
-      <div className="group flex h-[56px] items-center gap-3 rounded-[16px] border border-[#d9d9d9] bg-[#fbfbfb] px-4 transition focus-within:border-[#ea1d2c] focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(234,29,44,0.09)]">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[12px] bg-[#fff1f2] text-[#ea1d2c]">
+      <div className="group flex h-[56px] items-center gap-3 rounded-xl border border-[#d9d9d9] bg-[#fbfbfb] px-4 transition focus-within:border-[#ea1d2c] focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(234,29,44,0.09)]">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#fff1f2] text-[#ea1d2c]">
           <Mail className="h-4 w-4" />
         </div>
         <input
@@ -73,7 +73,7 @@ function VerificationCodeField({
               <span
                 key={index}
                 className={[
-                  'flex h-[58px] items-center justify-center rounded-[16px] border text-[22px] font-bold tracking-[0.02em] transition',
+                  'flex h-[58px] items-center justify-center rounded-xl border text-[22px] font-bold tracking-[0.02em] transition',
                   isFilled
                     ? 'border-[#ea1d2c] bg-[#fff5f5] text-[#1d1d1d]'
                     : 'border-[#d9d9d9] bg-[#fbfbfb] text-[#b3b3b3]',
@@ -124,7 +124,7 @@ function AuthCard({
   onResend: () => Promise<void>
 }) {
   return (
-    <div className="overflow-hidden rounded-[24px] bg-white shadow-[0_18px_50px_rgba(0,0,0,0.32)]">
+    <div className="overflow-hidden rounded-xl bg-white shadow-[0_18px_50px_rgba(0,0,0,0.32)]">
       {!codeSent ? (
         <form onSubmit={onSend}>
           <div className="px-8 pb-7 pt-8">
@@ -145,7 +145,7 @@ function AuthCard({
             <button
               type="submit"
               disabled={sending}
-              className="mt-6 h-[50px] w-full rounded-[14px] bg-[#ea1d2c] text-[15px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
+              className="mt-6 h-[50px] w-full rounded-xl bg-[#ea1d2c] text-[15px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {sending ? 'Enviando...' : 'Receber codigo'}
             </button>
@@ -179,7 +179,7 @@ function AuthCard({
               <button
                 type="submit"
                 disabled={verifying}
-                className="h-[50px] flex-1 rounded-[14px] bg-[#ea1d2c] text-[15px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
+                className="h-[50px] flex-1 rounded-xl bg-[#ea1d2c] text-[15px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {verifying ? 'Validando...' : 'Entrar'}
               </button>
@@ -190,7 +190,7 @@ function AuthCard({
                   void onResend()
                 }}
                 disabled={sending}
-                className="h-[50px] flex-1 rounded-[14px] border border-[#dddddd] text-[14px] font-semibold text-[#303030] transition hover:bg-[#f7f7f7] disabled:cursor-not-allowed disabled:opacity-70"
+                className="h-[50px] flex-1 rounded-xl border border-[#dddddd] text-[14px] font-semibold text-[#303030] transition hover:bg-[#f7f7f7] disabled:cursor-not-allowed disabled:opacity-70"
               >
                 Reenviar
               </button>
@@ -298,7 +298,7 @@ export function HomePage({
         </div>
 
         <div className="pointer-events-none absolute bottom-8 left-6 sm:left-10 lg:left-14">
-          <div className="flex overflow-hidden rounded-[12px] shadow-[0_12px_30px_rgba(0,0,0,0.28)]">
+          <div className="flex overflow-hidden rounded-xl shadow-[0_12px_30px_rgba(0,0,0,0.28)]">
             <div className="flex h-[72px] w-[88px] items-center justify-center bg-white">
               <span className="text-[1.9rem] font-black italic tracking-[-0.08em] text-[#ea1d2c]">ifood</span>
             </div>

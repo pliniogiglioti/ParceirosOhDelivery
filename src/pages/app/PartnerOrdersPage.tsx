@@ -392,13 +392,13 @@ export function PartnerOrdersPage() {
                   }}
                   onDrop={() => handleDropOrder(column.id)}
                   className={cn(
-                    'flex h-full min-h-0 w-[310px] shrink-0 self-stretch flex-col rounded-[28px] border p-3 transition',
+                    'flex h-full min-h-0 w-[310px] shrink-0 self-stretch flex-col rounded-xl border p-3 transition',
                     hoveredColumn === column.id
                       ? 'border-coral-300 bg-coral-50/50'
                       : 'border-ink-100 bg-ink-50/80'
                   )}
                 >
-                  <div className="rounded-[18px] border border-ink-100 bg-white px-3 py-2 shadow-soft">
+                  <div className="rounded-xl border border-ink-100 bg-white px-3 py-2 shadow-soft">
                     <div className="flex items-center justify-between gap-3">
                       <p className="text-[15px] font-bold leading-5 text-ink-900">{column.label}</p>
 
@@ -445,7 +445,7 @@ export function PartnerOrdersPage() {
                               setHoveredColumn(null)
                             }}
                             className={cn(
-                              'cursor-grab rounded-[24px] border border-ink-100 bg-white p-3 shadow-soft transition active:cursor-grabbing',
+                              'cursor-grab rounded-xl border border-ink-100 bg-white p-3 shadow-soft transition active:cursor-grabbing',
                               expired && 'order-card-expired',
                               draggingOrderId === order.id &&
                                 'scale-[0.98] border-coral-200 bg-white/40 opacity-35 shadow-none'
@@ -504,7 +504,7 @@ export function PartnerOrdersPage() {
                         )
                       })
                     ) : normalizedSearch ? (
-                      <div className="flex flex-1 items-center justify-center rounded-[24px] border border-dashed border-ink-200 bg-white/70 p-6 text-center">
+                      <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-ink-200 bg-white/70 p-6 text-center">
                         <div>
                           <p className="text-sm font-semibold text-ink-700">Nenhum pedido encontrado</p>
                           <p className="mt-1 text-sm text-ink-500">A busca atual nao retornou pedidos nesta etapa.</p>
@@ -513,7 +513,7 @@ export function PartnerOrdersPage() {
                     ) : (
                       <div
                         className={cn(
-                          'flex flex-1 items-center justify-center rounded-[24px] border border-dashed p-6 text-center transition',
+                          'flex flex-1 items-center justify-center rounded-xl border border-dashed p-6 text-center transition',
                           hoveredColumn === column.id
                             ? 'border-coral-300 bg-white'
                             : 'border-ink-200 bg-white/80'
@@ -553,11 +553,11 @@ export function PartnerOrdersPage() {
 
         {selectedOrder ? (
           <div
-            className="absolute inset-0 z-40 flex items-center justify-center rounded-[28px] bg-ink-950/30 p-4 backdrop-blur-[2px]"
+            className="absolute inset-0 z-40 flex items-center justify-center rounded-xl bg-ink-950/30 p-4 backdrop-blur-[2px]"
             onClick={() => setSelectedOrder(null)}
           >
             <div
-              className="w-full max-w-[520px] rounded-[28px] border border-ink-100 bg-white p-5 shadow-soft sm:p-6"
+              className="w-full max-w-[520px] rounded-xl border border-ink-100 bg-white p-5 shadow-soft sm:p-6"
               onClick={(event) => event.stopPropagation()}
             >
               <div className="flex items-start justify-between gap-4">
@@ -606,7 +606,7 @@ export function PartnerOrdersPage() {
                 </div>
               </div>
 
-              <div className="mt-4 rounded-[24px] border border-ink-100 bg-white p-4">
+              <div className="mt-4 rounded-xl border border-ink-100 bg-white p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div>
                     <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">

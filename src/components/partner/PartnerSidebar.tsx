@@ -78,15 +78,15 @@ function StoreStatusToggleCard({
         type="button"
         onClick={() => setConfirmOpen((current) => !current)}
         className={cn(
-          'w-full rounded-[20px] px-2.5 py-3 text-left shadow-soft transition hover:brightness-[0.98]',
-          collapsed && 'flex justify-center px-2',
+          'w-full rounded-xl text-left shadow-soft transition hover:brightness-[0.98]',
+          collapsed && 'flex justify-center',
           toneClass
         )}
         aria-label={isOpen ? 'Loja aberta' : 'Loja fechada'}
         title={isOpen ? 'Loja aberta' : 'Loja fechada'}
       >
         <div className={cn('flex items-center gap-3', collapsed && 'justify-center')}>
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[14px] bg-white/18">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/18">
             <div className="flex h-6 w-6 items-center justify-center rounded-full border border-white/40 bg-white/12">
               <Store className="h-3.5 w-3.5" />
             </div>
@@ -101,7 +101,7 @@ function StoreStatusToggleCard({
 
           {!collapsed ? (
             <ChevronDown
-              className={cn('h-4 w-4 shrink-0 text-white/85 transition-transform', confirmOpen && 'rotate-180')}
+              className={cn('ml-auto mr-2 h-4 w-4 shrink-0 text-white/85 transition-transform', confirmOpen && 'rotate-180')}
             />
           ) : null}
         </div>
@@ -109,7 +109,7 @@ function StoreStatusToggleCard({
 
       <div
         className={cn(
-          'store-status-popover absolute left-0 right-0 top-[calc(100%+10px)] z-30 rounded-[18px] border border-ink-100 bg-white p-3 text-ink-900 shadow-float',
+          'store-status-popover absolute left-0 right-0 top-[calc(100%+10px)] z-30 rounded-xl border border-ink-100 bg-white p-3 text-ink-900 shadow-float',
           confirmOpen ? 'store-status-popover-open' : 'store-status-popover-closed'
         )}
         aria-hidden={!confirmOpen}
@@ -167,11 +167,11 @@ export function PartnerSidebar({
   return (
     <aside className={cn('panel-card sidebar-content flex h-full w-full flex-col overflow-hidden bg-white', className)}>
       <div className={cn('sidebar-content border-b border-ink-100 pb-4 pt-5', collapsed ? 'px-3' : 'px-4')}>
-        <div className={cn('flex items-center gap-3', collapsed && 'justify-center')}>
+        <div className={cn('flex items-center', collapsed ? 'justify-center' : 'gap-3')}>
           {!collapsed ? (
             <div className="min-w-0 flex-1">
-              <p className="font-display text-lg font-bold text-ink-900">Menu lateral</p>
-              <p className="mt-1 text-sm text-ink-500">{data.store.name}</p>
+              <p className="font-display text-lg font-bold text-coral-500 pl-3">oh! Delivery</p>
+              <p className="text-sm text-ink-500 pl-3">{data.store.name}</p>
             </div>
           ) : null}
           <button
@@ -208,6 +208,7 @@ export function PartnerSidebar({
                 cn(
                   'sidebar-link w-full text-left',
                   collapsed && 'justify-center px-2',
+                  !collapsed && 'gap-3',
                   isActive && 'sidebar-link-active'
                 )
               }
@@ -217,7 +218,13 @@ export function PartnerSidebar({
               {({ isActive }) => (
                 <>
                   <span className="relative">
-                    <Icon className="h-5 w-5" />
+                    {item.id === 'perfil' && collapsed ? (
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-ink-100 text-xs font-bold text-ink-900">
+                        {data.profile.name.charAt(0).toUpperCase()}
+                      </span>
+                    ) : (
+                      <Icon className="h-5 w-5" />
+                    )}
                     {item.id === 'pedidos' && data.metrics.pendingOrders > 0 ? (
                       <span
                         className={cn(
@@ -258,27 +265,18 @@ export function PartnerSidebar({
       </nav>
 
       <div className={cn('sidebar-content border-t border-ink-100 py-4', collapsed ? 'px-3' : 'px-4')}>
-        <div className={cn('flex flex-col', collapsed && 'items-center')}>
+        <div className={cn('flex items-center gap-3', collapsed && 'justify-center')}>
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-ink-100 bg-ink-50 text-sm font-bold text-ink-700">
+            {data.profile.name.slice(0, 1)}
+          </div>
           <div
             className={cn(
-              'rounded-3xl border border-ink-100 bg-ink-50',
-              collapsed ? 'flex h-14 w-14 items-center justify-center rounded-full' : 'px-4 py-4'
+              'sidebar-label min-w-0',
+              collapsed ? 'sidebar-label-hidden' : 'sidebar-label-visible'
             )}
           >
-            <div className={cn('flex items-center gap-3', collapsed && 'justify-center')}>
-              <div className="flex h-11 w-11 items-center justify-center rounded-full border border-ink-100 bg-white text-sm font-bold text-ink-700">
-                {data.profile.name.slice(0, 1)}
-              </div>
-              <div
-                className={cn(
-                  'sidebar-label min-w-0',
-                  collapsed ? 'sidebar-label-hidden' : 'sidebar-label-visible'
-                )}
-              >
-                <p className="truncate text-sm font-semibold text-ink-900">{data.profile.name}</p>
-                <p className="truncate text-xs text-ink-500">{data.profile.email}</p>
-              </div>
-            </div>
+            <p className="truncate text-sm font-semibold text-ink-900">{data.profile.name}</p>
+            <p className="truncate text-xs text-ink-500">{data.profile.email}</p>
           </div>
         </div>
       </div>

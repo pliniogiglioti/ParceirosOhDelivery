@@ -181,7 +181,7 @@ function StoreEditorTab() {
           </div>
 
           <div className="px-6">
-            <div className="w-full rounded-[24px] border border-ink-100 bg-ink-50 p-4">
+            <div className="w-full rounded-xl border border-ink-100 bg-ink-50 p-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-semibold text-coral-600">Detalhes da loja</span>
               </div>
@@ -566,7 +566,7 @@ function StoreOrdersTab() {
           </div>
         </div>
 
-        <div className="mt-6 rounded-[28px] border border-ink-100 bg-white p-4 sm:p-5">
+        <div className="mt-6 rounded-xl border border-ink-100 bg-white p-4 sm:p-5">
           <p className="text-sm font-semibold text-ink-900">Alertas da operacao</p>
           <div className="mt-5 space-y-4">
             <label className="flex items-center justify-between gap-4 rounded-2xl border border-ink-100 bg-ink-50 px-4 py-4">
