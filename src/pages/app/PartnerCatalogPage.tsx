@@ -69,6 +69,7 @@ function reorderCategoryIds(categoryIds: string[], fromCategoryId: string, toCat
 
 type CategoryTemplate = 'padrao' | 'pizza'
 type ProductCreationKind = 'industrializado' | 'preparado'
+type StandardItemStepTab = 'tipo' | 'dados' | 'revisao'
 
 const categoryTemplates: Array<{
   id: CategoryTemplate
@@ -113,6 +114,12 @@ const productCreationKinds: Array<{
   },
 ]
 
+const standardItemStepTabs: Array<{ id: StandardItemStepTab; label: string }> = [
+  { id: 'tipo', label: 'Tipo do item' },
+  { id: 'dados', label: 'Dados do produto' },
+  { id: 'revisao', label: 'Revisao' },
+]
+
 function getCategoryTemplate(category: PartnerCategory): CategoryTemplate {
   return category.template === 'pizza' ? 'pizza' : 'padrao'
 }
@@ -129,9 +136,12 @@ export function PartnerCatalogPage() {
   const [createCategoryModalOpen, setCreateCategoryModalOpen] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
   const [newCategoryTemplate, setNewCategoryTemplate] = useState<CategoryTemplate>('padrao')
-  const [addItemModalOpen, setAddItemModalOpen] = useState(false)
+  const [addItemTypeModalOpen, setAddItemTypeModalOpen] = useState(false)
+  const [standardItemStepsModalOpen, setStandardItemStepsModalOpen] = useState(false)
+  const [productKindModalOpen, setProductKindModalOpen] = useState(false)
   const [addItemCategoryId, setAddItemCategoryId] = useState<string | null>(null)
   const [selectedProductCreationKind, setSelectedProductCreationKind] = useState<ProductCreationKind | null>(null)
+  const [standardItemStepTab, setStandardItemStepTab] = useState<StandardItemStepTab>('tipo')
   const [expandedByCategoryId, setExpandedByCategoryId] = useState<Record<string, boolean>>({})
   const [activeByCategoryId, setActiveByCategoryId] = useState<Record<string, boolean>>({})
   const [menuOpenCategoryId, setMenuOpenCategoryId] = useState<string | null>(null)
@@ -178,13 +188,15 @@ export function PartnerCatalogPage() {
   }, [catalogCategories])
 
   useEffect(() => {
-    if (!sortModalOpen && !createCategoryModalOpen && !addItemModalOpen) return
+    if (!sortModalOpen && !createCategoryModalOpen && !addItemTypeModalOpen && !standardItemStepsModalOpen && !productKindModalOpen) return
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         setSortModalOpen(false)
         setCreateCategoryModalOpen(false)
-        setAddItemModalOpen(false)
+        setAddItemTypeModalOpen(false)
+        setStandardItemStepsModalOpen(false)
+        setProductKindModalOpen(false)
       }
     }
 
@@ -193,7 +205,7 @@ export function PartnerCatalogPage() {
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [sortModalOpen, createCategoryModalOpen, addItemModalOpen])
+  }, [sortModalOpen, createCategoryModalOpen, addItemTypeModalOpen, standardItemStepsModalOpen, productKindModalOpen])
 
   const orderedCategories = useMemo(
     () =>
@@ -268,30 +280,49 @@ export function PartnerCatalogPage() {
   }
 
   function openAddItemModal(category: PartnerCategory) {
-    if (getCategoryTemplate(category) === 'pizza') {
+    setAddItemCategoryId(category.id)
+    setSelectedProductCreationKind(null)
+    setStandardItemStepTab('tipo')
+    setAddItemTypeModalOpen(true)
+    setMenuOpenCategoryId(null)
+  }
+
+  function handleOpenCategoryItemFlow(template: CategoryTemplate) {
+    const category = catalogCategories.find((item) => item.id === addItemCategoryId)
+    const categoryTemplate = category ? getCategoryTemplate(category) : 'padrao'
+
+    if (template !== categoryTemplate) {
+      toast.error(`Essa categoria usa o modelo ${categoryTemplate === 'padrao' ? 'Padrao' : 'Pizza'}.`)
+      return
+    }
+
+    setAddItemTypeModalOpen(false)
+
+    if (template === 'pizza') {
       toast('O fluxo de item para categoria Pizza entra na proxima etapa.')
       return
     }
 
-    setAddItemCategoryId(category.id)
-    setSelectedProductCreationKind(null)
-    setAddItemModalOpen(true)
-    setMenuOpenCategoryId(null)
+    setStandardItemStepsModalOpen(true)
   }
 
-  function handleContinueAddItem() {
+  function handleContinueStandardItemFlow() {
     if (!selectedProductCreationKind) {
       toast.error('Escolha se o item e industrializado ou preparado.')
       return
     }
 
-    const category = catalogCategories.find((item) => item.id === addItemCategoryId)
-    setAddItemModalOpen(false)
-    toast.success(`Etapa 1 salva para ${category?.name ?? 'a categoria'}.`)
+    setStandardItemStepsModalOpen(false)
+    setProductKindModalOpen(true)
   }
 
   const addItemCategory =
     addItemCategoryId ? catalogCategories.find((category) => category.id === addItemCategoryId) ?? null : null
+  const addItemCategoryTemplate = addItemCategory ? getCategoryTemplate(addItemCategory) : null
+  const selectedProductCreationKindMeta =
+    selectedProductCreationKind
+      ? productCreationKinds.find((kind) => kind.id === selectedProductCreationKind) ?? null
+      : null
 
   return (
     <>
@@ -742,86 +773,72 @@ export function PartnerCatalogPage() {
         </div>
       ) : null}
 
-      {addItemModalOpen && addItemCategory ? (
+      {addItemTypeModalOpen && addItemCategory ? (
         <div
           className="fixed inset-0 z-[90] flex items-center justify-center bg-ink-900/45 p-4"
-          onClick={() => setAddItemModalOpen(false)}
+          onClick={() => setAddItemTypeModalOpen(false)}
         >
           <div
-            className="panel-card w-full max-w-3xl p-6"
+            className="panel-card w-full max-w-2xl p-6"
             role="dialog"
             aria-modal="true"
-            aria-labelledby="add-item-title"
+            aria-labelledby="add-item-type-title"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">Adicionar item</p>
-                <h3 id="add-item-title" className="mt-2 text-xl font-bold text-ink-900">
-                  Etapa 1: tipo do produto
+                <h3 id="add-item-type-title" className="mt-2 text-xl font-bold text-ink-900">
+                  Escolha o modelo do cadastro
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-ink-500">
-                  Categoria {addItemCategory.name}. Escolha primeiro se o produto e industrializado ou preparado.
+                  Categoria {addItemCategory.name}. Primeiro definimos se o item segue o modelo Padrao ou Pizza.
                 </p>
               </div>
 
               <button
                 type="button"
-                onClick={() => setAddItemModalOpen(false)}
+                onClick={() => setAddItemTypeModalOpen(false)}
                 className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50"
-                aria-label="Fechar criacao de item"
+                aria-label="Fechar escolha de modelo"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="mt-6 grid gap-3 md:grid-cols-3">
-              <div className="rounded-xl border border-coral-200 bg-coral-50 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-coral-600">Step 1</p>
-                <p className="mt-1 text-sm font-bold text-coral-700">Tipo do item</p>
-              </div>
-              <div className="rounded-xl border border-ink-100 bg-white px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-400">Step 2</p>
-                <p className="mt-1 text-sm font-bold text-ink-600">Dados do produto</p>
-              </div>
-              <div className="rounded-xl border border-ink-100 bg-white px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-400">Step 3</p>
-                <p className="mt-1 text-sm font-bold text-ink-600">Revisao</p>
-              </div>
-            </div>
-
             <div className="mt-6">
-              <p className="text-sm font-semibold text-ink-800">Esse item e industrializado ou preparado?</p>
               <div className="mt-3 grid gap-3 md:grid-cols-2">
-                {productCreationKinds.map((kind) => {
-                  const Icon = kind.icon
-                  const isSelected = selectedProductCreationKind === kind.id
+                {categoryTemplates.map((template) => {
+                  const Icon = template.icon
+                  const isActive = addItemCategoryTemplate === template.id
 
                   return (
                     <button
-                      key={kind.id}
+                      key={template.id}
                       type="button"
-                      onClick={() => setSelectedProductCreationKind(kind.id)}
+                      onClick={() => handleOpenCategoryItemFlow(template.id)}
                       className={cn(
                         'rounded-xl border p-5 text-left transition',
-                        isSelected
+                        isActive
                           ? 'border-coral-300 bg-coral-50 text-coral-700'
-                          : 'border-ink-100 bg-white text-ink-900 hover:bg-ink-50'
+                          : 'border-ink-100 bg-ink-50 text-ink-400'
                       )}
                     >
                       <div className="flex items-start gap-3">
                         <div
                           className={cn(
                             'mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl',
-                            isSelected ? 'bg-coral-100 text-coral-600' : 'bg-ink-50 text-ink-600'
+                            isActive ? 'bg-coral-100 text-coral-600' : 'bg-white text-ink-400'
                           )}
                         >
                           <Icon className="h-5 w-5" />
                         </div>
                         <div>
-                          <p className="text-base font-bold">{kind.label}</p>
-                          <p className={cn('mt-1 text-sm leading-6', isSelected ? 'text-coral-700/80' : 'text-ink-500')}>
-                            {kind.description}
+                          <p className="text-base font-bold">{template.label}</p>
+                          <p className={cn('mt-1 text-sm leading-6', isActive ? 'text-coral-700/80' : 'text-ink-500')}>
+                            {isActive
+                              ? template.description
+                              : `Disponivel apenas para categoria ${addItemCategoryTemplate === 'padrao' ? 'Padrao' : 'Pizza'}.`}
                           </p>
                         </div>
                       </div>
@@ -834,17 +851,187 @@ export function PartnerCatalogPage() {
             <div className="mt-6 flex justify-end gap-3">
               <button
                 type="button"
-                onClick={() => setAddItemModalOpen(false)}
+                onClick={() => setAddItemTypeModalOpen(false)}
+                className="inline-flex h-11 items-center justify-center rounded-2xl border border-ink-100 px-5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {standardItemStepsModalOpen && addItemCategory ? (
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-ink-900/45 p-4"
+          onClick={() => setStandardItemStepsModalOpen(false)}
+        >
+          <div
+            className="panel-card w-full max-w-3xl p-6"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="standard-item-steps-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">Adicionar item Padrao</p>
+                <h3 id="standard-item-steps-title" className="mt-2 text-xl font-bold text-ink-900">
+                  Cadastro em etapas
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-ink-500">
+                  Categoria {addItemCategory.name}. O fluxo segue o modelo Padrao com abas por etapa.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setStandardItemStepsModalOpen(false)}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50"
+                aria-label="Fechar etapas do item"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mt-6 rounded-2xl border border-ink-100 bg-white px-4 py-3 sm:px-5">
+              <div className="hide-scrollbar flex gap-2 overflow-x-auto">
+                {standardItemStepTabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => {
+                      if (tab.id !== 'tipo') {
+                        toast('As proximas abas entram na sequencia do cadastro.')
+                        return
+                      }
+                      setStandardItemStepTab(tab.id)
+                    }}
+                    className={cn(
+                      'inline-flex shrink-0 items-center rounded-2xl border px-4 py-3 text-sm font-semibold transition',
+                      standardItemStepTab === tab.id
+                        ? 'border-coral-200 bg-coral-50 text-coral-700'
+                        : 'border-transparent bg-transparent text-ink-500 hover:border-ink-100 hover:bg-ink-50 hover:text-ink-900'
+                    )}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {standardItemStepTab === 'tipo' ? (
+              <div className="mt-6">
+                <p className="text-sm font-semibold text-ink-800">Esse item e industrializado ou preparado?</p>
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                  {productCreationKinds.map((kind) => {
+                    const Icon = kind.icon
+                    const isSelected = selectedProductCreationKind === kind.id
+
+                    return (
+                      <button
+                        key={kind.id}
+                        type="button"
+                        onClick={() => setSelectedProductCreationKind(kind.id)}
+                        className={cn(
+                          'rounded-xl border p-5 text-left transition',
+                          isSelected
+                            ? 'border-coral-300 bg-coral-50 text-coral-700'
+                            : 'border-ink-100 bg-white text-ink-900 hover:bg-ink-50'
+                        )}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div
+                            className={cn(
+                              'mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl',
+                              isSelected ? 'bg-coral-100 text-coral-600' : 'bg-ink-50 text-ink-600'
+                            )}
+                          >
+                            <Icon className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <p className="text-base font-bold">{kind.label}</p>
+                            <p className={cn('mt-1 text-sm leading-6', isSelected ? 'text-coral-700/80' : 'text-ink-500')}>
+                              {kind.description}
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : null}
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setStandardItemStepsModalOpen(false)}
                 className="inline-flex h-11 items-center justify-center rounded-2xl border border-ink-100 px-5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
               >
                 Cancelar
               </button>
               <button
                 type="button"
-                onClick={handleContinueAddItem}
+                onClick={handleContinueStandardItemFlow}
                 className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
               >
                 Continuar
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {productKindModalOpen && addItemCategory && selectedProductCreationKindMeta ? (
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-ink-900/45 p-4"
+          onClick={() => setProductKindModalOpen(false)}
+        >
+          <div
+            className="panel-card w-full max-w-2xl p-6"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="product-kind-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">
+                  {selectedProductCreationKindMeta.label}
+                </p>
+                <h3 id="product-kind-title" className="mt-2 text-xl font-bold text-ink-900">
+                  Modal de {selectedProductCreationKindMeta.label.toLowerCase()}
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-ink-500">
+                  Categoria {addItemCategory.name}. Esse e o proximo modal do fluxo {selectedProductCreationKindMeta.label.toLowerCase()}.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setProductKindModalOpen(false)}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50"
+                aria-label="Fechar modal do tipo de produto"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mt-6 rounded-xl border border-ink-100 bg-ink-50 px-5 py-5">
+              <p className="text-sm font-semibold text-ink-800">Fluxo iniciado</p>
+              <p className="mt-2 text-sm leading-6 text-ink-500">
+                Aqui entra a proxima etapa do cadastro de item {selectedProductCreationKindMeta.label.toLowerCase()}.
+              </p>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setProductKindModalOpen(false)}
+                className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
+              >
+                Fechar
               </button>
             </div>
           </div>
