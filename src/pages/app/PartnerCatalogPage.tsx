@@ -2,6 +2,7 @@ import {
   ArrowUpDown,
   ChevronDown,
   ChefHat,
+  Clock3,
   EllipsisVertical,
   GripVertical,
   LayoutGrid,
@@ -70,12 +71,14 @@ function reorderCategoryIds(categoryIds: string[], fromCategoryId: string, toCat
 type CategoryTemplate = 'padrao' | 'pizza'
 type ProductCreationKind = 'industrializado' | 'preparado'
 type StandardItemStepTab = 'dados' | 'detalhes' | 'revisao'
+type IndustrializedStepTab = 'banco' | 'cadastro' | 'revisao'
 type IndustrializedCatalogItem = {
   id: string
   name: string
   brand: string
   ean: string
   description: string
+  image: string
   suggestedPrice: number
 }
 
@@ -128,6 +131,12 @@ const standardItemStepTabs: Array<{ id: StandardItemStepTab; label: string }> = 
   { id: 'revisao', label: 'Revisao' },
 ]
 
+const industrializedStepTabs: Array<{ id: IndustrializedStepTab; label: string }> = [
+  { id: 'banco', label: 'Banco de produtos' },
+  { id: 'cadastro', label: 'Cadastro comum' },
+  { id: 'revisao', label: 'Revisao' },
+]
+
 const industrializedCatalogItems: IndustrializedCatalogItem[] = [
   {
     id: 'ind-1',
@@ -135,6 +144,7 @@ const industrializedCatalogItems: IndustrializedCatalogItem[] = [
     brand: 'Coca-Cola',
     ean: '7894900011517',
     description: 'Refrigerante lata 350ml pronto para venda unitara.',
+    image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=900&q=80',
     suggestedPrice: 6.5,
   },
   {
@@ -143,6 +153,7 @@ const industrializedCatalogItems: IndustrializedCatalogItem[] = [
     brand: 'Guarana Antarctica',
     ean: '7891991011024',
     description: 'Refrigerante lata 350ml com cadastro de mercado.',
+    image: 'https://images.unsplash.com/photo-1605548230624-8d2d0419c517?auto=format&fit=crop&w=900&q=80',
     suggestedPrice: 6,
   },
   {
@@ -151,6 +162,7 @@ const industrializedCatalogItems: IndustrializedCatalogItem[] = [
     brand: 'Minalba',
     ean: '7896062800220',
     description: 'Agua mineral sem gas para venda unitara.',
+    image: 'https://images.unsplash.com/photo-1564419320461-6870880221ad?auto=format&fit=crop&w=900&q=80',
     suggestedPrice: 4,
   },
   {
@@ -159,6 +171,7 @@ const industrializedCatalogItems: IndustrializedCatalogItem[] = [
     brand: 'Doce Casa',
     ean: '7898937612458',
     description: 'Brownie individual embalado pronto para consumo.',
+    image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=900&q=80',
     suggestedPrice: 8.9,
   },
 ]
@@ -185,12 +198,14 @@ export function PartnerCatalogPage() {
   const [addItemCategoryId, setAddItemCategoryId] = useState<string | null>(null)
   const [selectedProductCreationKind, setSelectedProductCreationKind] = useState<ProductCreationKind | null>(null)
   const [standardItemStepTab, setStandardItemStepTab] = useState<StandardItemStepTab>('dados')
+  const [industrializedStepTab, setIndustrializedStepTab] = useState<IndustrializedStepTab>('banco')
   const [industrializedSearch, setIndustrializedSearch] = useState('')
   const [selectedIndustrializedItemId, setSelectedIndustrializedItemId] = useState<string | null>(null)
   const [industrializedName, setIndustrializedName] = useState('')
   const [industrializedBrand, setIndustrializedBrand] = useState('')
   const [industrializedEan, setIndustrializedEan] = useState('')
   const [industrializedDescription, setIndustrializedDescription] = useState('')
+  const [industrializedImage, setIndustrializedImage] = useState('')
   const [industrializedPrice, setIndustrializedPrice] = useState('')
   const [industrializedActive, setIndustrializedActive] = useState(true)
   const [industrializedFeatured, setIndustrializedFeatured] = useState(false)
@@ -349,12 +364,14 @@ export function PartnerCatalogPage() {
     setSelectedProductCreationKind(kind)
 
     if (kind === 'industrializado') {
+      setIndustrializedStepTab('banco')
       setIndustrializedSearch('')
       setSelectedIndustrializedItemId(null)
       setIndustrializedName('')
       setIndustrializedBrand('')
       setIndustrializedEan('')
       setIndustrializedDescription('')
+      setIndustrializedImage('')
       setIndustrializedPrice('')
       setIndustrializedActive(true)
       setIndustrializedFeatured(false)
@@ -405,6 +422,7 @@ export function PartnerCatalogPage() {
     setIndustrializedBrand(item.brand)
     setIndustrializedEan(item.ean)
     setIndustrializedDescription(item.description)
+    setIndustrializedImage(item.image)
     setIndustrializedPrice(String(item.suggestedPrice))
   }
 
@@ -421,6 +439,30 @@ export function PartnerCatalogPage() {
 
     setProductKindModalOpen(false)
     toast.success(`Item industrializado ${industrializedName.trim()} pronto para cadastro.`)
+  }
+
+  function handleContinueIndustrializedFlow() {
+    if (industrializedStepTab === 'banco') {
+      if (!selectedIndustrializedItemId) {
+        toast.error('Selecione um produto do banco para continuar.')
+        return
+      }
+
+      setIndustrializedStepTab('cadastro')
+      return
+    }
+
+    if (industrializedStepTab === 'cadastro') {
+      if (!industrializedName.trim() || !industrializedEan.trim() || !industrializedPrice.trim()) {
+        toast.error('Preencha os campos principais do cadastro.')
+        return
+      }
+
+      setIndustrializedStepTab('revisao')
+      return
+    }
+
+    handleSaveIndustrializedItem()
   }
 
   return (
@@ -1092,8 +1134,28 @@ export function PartnerCatalogPage() {
 
             {selectedProductCreationKind === 'industrializado' ? (
               <>
-                <div className="mt-6 grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-                  <div className="rounded-xl border border-ink-100 bg-white p-4">
+                <div className="mt-6 rounded-2xl border border-ink-100 bg-white px-4 py-3 sm:px-5">
+                  <div className="hide-scrollbar flex gap-2 overflow-x-auto">
+                    {industrializedStepTabs.map((tab) => (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => setIndustrializedStepTab(tab.id)}
+                        className={cn(
+                          'inline-flex shrink-0 items-center rounded-2xl border px-4 py-3 text-sm font-semibold transition',
+                          industrializedStepTab === tab.id
+                            ? 'border-coral-200 bg-coral-50 text-coral-700'
+                            : 'border-transparent bg-transparent text-ink-500 hover:border-ink-100 hover:bg-ink-50 hover:text-ink-900'
+                        )}
+                      >
+                        {tab.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {industrializedStepTab === 'banco' ? (
+                  <div className="mt-6 rounded-xl border border-ink-100 bg-white p-4">
                     <p className="text-sm font-semibold text-ink-900">Produtos ja cadastrados no banco</p>
                     <p className="mt-2 text-sm leading-6 text-ink-500">
                       Busque por nome, marca ou EAN para selecionar um item industrializado de teste.
@@ -1127,12 +1189,19 @@ export function PartnerCatalogPage() {
                             )}
                           >
                             <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <p className="text-sm font-bold text-ink-900">{item.name}</p>
-                                <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-500">
-                                  {item.brand}
-                                </p>
-                                <p className="mt-2 text-sm text-ink-500">EAN {item.ean}</p>
+                              <div className="flex min-w-0 items-start gap-3">
+                                <img
+                                  src={item.image}
+                                  alt={item.name}
+                                  className="h-16 w-16 shrink-0 rounded-2xl object-cover"
+                                />
+                                <div className="min-w-0">
+                                  <p className="text-sm font-bold text-ink-900">{item.name}</p>
+                                  <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-500">
+                                    {item.brand}
+                                  </p>
+                                  <p className="mt-2 text-sm text-ink-500">EAN {item.ean}</p>
+                                </div>
                               </div>
                               <div className="shrink-0 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-ink-700">
                                 {formatCurrency(item.suggestedPrice)}
@@ -1150,14 +1219,27 @@ export function PartnerCatalogPage() {
                       ) : null}
                     </div>
                   </div>
+                ) : null}
 
-                  <div className="rounded-xl border border-ink-100 bg-white p-4">
+                {industrializedStepTab === 'cadastro' ? (
+                  <div className="mt-6 rounded-xl border border-ink-100 bg-white p-4">
                     <p className="text-sm font-semibold text-ink-900">Cadastro comum do item</p>
                     <p className="mt-2 text-sm leading-6 text-ink-500">
                       Depois de selecionar um produto do banco, voce conclui o cadastro normalmente para o cardapio.
                     </p>
 
                     <div className="mt-5 grid gap-4 md:grid-cols-2">
+                      <label className="block md:col-span-2">
+                        <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Imagem do produto</span>
+                        <input
+                          type="text"
+                          value={industrializedImage}
+                          onChange={(event) => setIndustrializedImage(event.target.value)}
+                          placeholder="https://..."
+                          className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
+                        />
+                      </label>
+
                       <label className="block">
                         <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Nome</span>
                         <input
@@ -1243,7 +1325,118 @@ export function PartnerCatalogPage() {
                       </div>
                     </div>
                   </div>
-                </div>
+                ) : null}
+
+                {industrializedStepTab === 'revisao' ? (
+                  <div className="mt-6 grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
+                    <div className="rounded-xl border border-ink-100 bg-white p-5">
+                      <p className="text-sm font-semibold text-ink-900">Revisao final do cadastro</p>
+                      <div className="mt-4 grid gap-3">
+                        <div className="rounded-xl border border-ink-100 bg-ink-50 px-4 py-3">
+                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Produto</p>
+                          <p className="mt-2 text-sm font-bold text-ink-900">{industrializedName || 'Nao informado'}</p>
+                        </div>
+                        <div className="rounded-xl border border-ink-100 bg-ink-50 px-4 py-3">
+                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Marca</p>
+                          <p className="mt-2 text-sm font-bold text-ink-900">{industrializedBrand || 'Nao informada'}</p>
+                        </div>
+                        <div className="rounded-xl border border-ink-100 bg-ink-50 px-4 py-3">
+                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">EAN</p>
+                          <p className="mt-2 text-sm font-bold text-ink-900">{industrializedEan || 'Nao informado'}</p>
+                        </div>
+                        <div className="rounded-xl border border-ink-100 bg-ink-50 px-4 py-3">
+                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Preco</p>
+                          <p className="mt-2 text-sm font-bold text-ink-900">
+                            {industrializedPrice ? formatCurrency(Number(industrializedPrice)) : 'Nao informado'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-3 rounded-xl border border-ink-100 bg-ink-50 px-4 py-3">
+                        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Descricao</p>
+                        <p className="mt-2 text-sm leading-6 text-ink-700">{industrializedDescription || 'Sem descricao.'}</p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-[28px] border border-ink-100 bg-[#f6f7fb] p-4">
+                      <p className="text-sm font-semibold text-ink-900">Previa no front-end</p>
+                      <p className="mt-2 text-sm leading-6 text-ink-500">
+                        Simulacao baseada na pagina de produto do repositorio `OhDelivery`.
+                      </p>
+
+                      <div className="mt-4 overflow-hidden rounded-[26px] border border-[#ececec] bg-white">
+                        <div className="relative bg-white">
+                          <img
+                            src={
+                              industrializedImage ||
+                              'https://images.unsplash.com/photo-1543253539-6b8d4c3b7a56?auto=format&fit=crop&w=900&q=80'
+                            }
+                            alt={industrializedName || 'Produto'}
+                            className="h-[260px] w-full object-cover"
+                          />
+
+                          <div className="absolute inset-x-0 top-0 flex items-start justify-between p-4">
+                            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#202020]">
+                              <ChevronDown className="h-4 w-4 rotate-90" />
+                            </span>
+                            {industrializedFeatured ? (
+                              <span className="rounded-full bg-white px-2 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-coral-700">
+                                Destaque
+                              </span>
+                            ) : null}
+                          </div>
+
+                          <div className="absolute inset-x-0 bottom-0 flex justify-end p-4">
+                            <div className="inline-flex max-w-[190px] items-center gap-2 rounded-[16px] bg-white px-2 py-1.5">
+                              <img
+                                src={
+                                  data.store.logoImageUrl ??
+                                  data.store.coverImageUrl ??
+                                  (industrializedImage ||
+                                    'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=300&q=80')
+                                }
+                                alt={data.store.name}
+                                className="h-9 w-9 rounded-[12px] object-cover"
+                              />
+                              <div className="min-w-0 text-left">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-coral-600">
+                                  Loja
+                                </p>
+                                <p className="line-clamp-1 text-sm font-bold text-[#202020]">{data.store.name}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3 p-5">
+                          <p className="text-xs font-bold uppercase tracking-[0.18em] text-coral-600">{data.store.name}</p>
+                          <div>
+                            <h3 className="text-[28px] font-bold tracking-[-0.04em] text-[#202020]">
+                              {industrializedName || 'Nome do produto'}
+                            </h3>
+                            <p className="mt-2 text-sm leading-6 text-[#666]">
+                              {industrializedDescription || 'Descricao do produto para mostrar como ele apareceria na tela do app.'}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-[#666]">
+                            <div className="flex items-baseline gap-2">
+                              <span className="font-bold text-[#202020]">
+                                {industrializedPrice ? formatCurrency(Number(industrializedPrice)) : 'R$ 0,00'}
+                              </span>
+                            </div>
+                            <span className="flex items-center gap-1">
+                              <Clock3 size={15} className="text-coral-500" />
+                              15-20 min
+                            </span>
+                          </div>
+                          <div className="rounded-2xl border border-[#ececec] bg-[#fafafa] px-4 py-3">
+                            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8a8a8a]">EAN</p>
+                            <p className="mt-2 text-sm font-bold text-[#202020]">{industrializedEan || 'Nao informado'}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
 
                 <div className="mt-6 flex justify-end gap-3">
                   <button
@@ -1255,10 +1448,10 @@ export function PartnerCatalogPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={handleSaveIndustrializedItem}
+                    onClick={handleContinueIndustrializedFlow}
                     className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
                   >
-                    Salvar cadastro
+                    {industrializedStepTab === 'revisao' ? 'Salvar cadastro' : 'Continuar'}
                   </button>
                 </div>
               </>
