@@ -68,10 +68,34 @@ function reorderCategoryIds(categoryIds: string[], fromCategoryId: string, toCat
   return nextCategoryIds
 }
 
+function formatCurrencyInput(value: string) {
+  const digitsOnly = value.replace(/\D/g, '')
+
+  if (!digitsOnly) {
+    return ''
+  }
+
+  return (Number(digitsOnly) / 100).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+}
+
+function parseCurrencyInput(value: string) {
+  const normalizedValue = value.replace(/\./g, '').replace(',', '.').trim()
+
+  if (!normalizedValue) {
+    return 0
+  }
+
+  const parsedValue = Number(normalizedValue)
+  return Number.isFinite(parsedValue) ? parsedValue : 0
+}
+
 type CategoryTemplate = 'padrao' | 'pizza'
 type ProductCreationKind = 'industrializado' | 'preparado'
 type StandardItemStepTab = 'dados' | 'detalhes' | 'revisao'
-type IndustrializedStepTab = 'banco' | 'preco' | 'revisao'
+type IndustrializedStepTab = 'banco' | 'imagens' | 'preco' | 'revisao'
 type IndustrializedCatalogItem = {
   id: string
   name: string
@@ -79,7 +103,6 @@ type IndustrializedCatalogItem = {
   ean: string
   description: string
   image: string
-  suggestedPrice: number
 }
 type ImageBankItem = {
   id: string
@@ -138,6 +161,7 @@ const standardItemStepTabs: Array<{ id: StandardItemStepTab; label: string }> = 
 
 const industrializedStepTabs: Array<{ id: IndustrializedStepTab; label: string }> = [
   { id: 'banco', label: 'Banco de produtos' },
+  { id: 'imagens', label: 'Suas imagens' },
   { id: 'preco', label: 'Preco' },
   { id: 'revisao', label: 'Revisao' },
 ]
@@ -150,7 +174,6 @@ const industrializedCatalogItems: IndustrializedCatalogItem[] = [
     ean: '7894900011517',
     description: 'Refrigerante lata 350ml pronto para venda unitara.',
     image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=900&q=80',
-    suggestedPrice: 6.5,
   },
   {
     id: 'ind-2',
@@ -159,7 +182,6 @@ const industrializedCatalogItems: IndustrializedCatalogItem[] = [
     ean: '7891991011024',
     description: 'Refrigerante lata 350ml com cadastro de mercado.',
     image: 'https://images.unsplash.com/photo-1605548230624-8d2d0419c517?auto=format&fit=crop&w=900&q=80',
-    suggestedPrice: 6,
   },
   {
     id: 'ind-3',
@@ -168,7 +190,6 @@ const industrializedCatalogItems: IndustrializedCatalogItem[] = [
     ean: '7896062800220',
     description: 'Agua mineral sem gas para venda unitara.',
     image: 'https://images.unsplash.com/photo-1564419320461-6870880221ad?auto=format&fit=crop&w=900&q=80',
-    suggestedPrice: 4,
   },
   {
     id: 'ind-4',
@@ -177,7 +198,6 @@ const industrializedCatalogItems: IndustrializedCatalogItem[] = [
     ean: '7898937612458',
     description: 'Brownie individual embalado pronto para consumo.',
     image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=900&q=80',
-    suggestedPrice: 8.9,
   },
 ]
 
@@ -228,6 +248,7 @@ export function PartnerCatalogPage() {
   const [standardItemStepTab, setStandardItemStepTab] = useState<StandardItemStepTab>('dados')
   const [industrializedStepTab, setIndustrializedStepTab] = useState<IndustrializedStepTab>('banco')
   const [industrializedSearch, setIndustrializedSearch] = useState('')
+  const [imageBankSearch, setImageBankSearch] = useState('')
   const [selectedIndustrializedItemId, setSelectedIndustrializedItemId] = useState<string | null>(null)
   const [selectedImageBankItemId, setSelectedImageBankItemId] = useState<string | null>(null)
   const [industrializedName, setIndustrializedName] = useState('')
@@ -395,6 +416,7 @@ export function PartnerCatalogPage() {
     if (kind === 'industrializado') {
       setIndustrializedStepTab('banco')
       setIndustrializedSearch('')
+      setImageBankSearch('')
       setSelectedIndustrializedItemId(null)
       setSelectedImageBankItemId(null)
       setIndustrializedName('')
@@ -446,6 +468,16 @@ export function PartnerCatalogPage() {
     })
   }, [industrializedSearch])
 
+  const filteredImageBankItems = useMemo(() => {
+    const normalizedImageBankSearch = imageBankSearch.trim().toLowerCase()
+
+    if (!normalizedImageBankSearch) {
+      return imageBankItems
+    }
+
+    return imageBankItems.filter((item) => item.label.toLowerCase().includes(normalizedImageBankSearch))
+  }, [imageBankSearch])
+
   function handleSelectIndustrializedItem(item: IndustrializedCatalogItem) {
     setSelectedIndustrializedItemId(item.id)
     setIndustrializedName(item.name)
@@ -453,7 +485,7 @@ export function PartnerCatalogPage() {
     setIndustrializedDescription(item.description)
     setIndustrializedImage(item.image)
     setSelectedImageBankItemId(null)
-    setIndustrializedPrice(String(item.suggestedPrice))
+    setIndustrializedPrice('')
     setIndustrializedPromotionPrice('')
   }
 
@@ -472,6 +504,9 @@ export function PartnerCatalogPage() {
     toast.success(`Item industrializado ${industrializedName.trim()} pronto para cadastro.`)
   }
 
+  const industrializedPriceValue = parseCurrencyInput(industrializedPrice)
+  const industrializedPromotionPriceValue = parseCurrencyInput(industrializedPromotionPrice)
+
   function handleContinueIndustrializedFlow() {
     if (industrializedStepTab === 'banco') {
       if (!selectedIndustrializedItemId) {
@@ -479,6 +514,11 @@ export function PartnerCatalogPage() {
         return
       }
 
+      setIndustrializedStepTab('imagens')
+      return
+    }
+
+    if (industrializedStepTab === 'imagens') {
       setIndustrializedStepTab('preco')
       return
     }
@@ -489,10 +529,7 @@ export function PartnerCatalogPage() {
         return
       }
 
-      if (
-        industrializedPromotionPrice.trim() &&
-        Number(industrializedPromotionPrice) >= Number(industrializedPrice)
-      ) {
+      if (industrializedPromotionPrice.trim() && industrializedPromotionPriceValue >= industrializedPriceValue) {
         toast.error('O preco promocional deve ser menor que o preco normal.')
         return
       }
@@ -503,6 +540,17 @@ export function PartnerCatalogPage() {
 
     handleSaveIndustrializedItem()
   }
+
+  const canContinueIndustrializedFlow =
+    industrializedStepTab === 'banco'
+      ? Boolean(selectedIndustrializedItemId)
+      : industrializedStepTab === 'imagens'
+        ? Boolean(selectedImageBankItemId)
+        : industrializedStepTab === 'preco'
+          ? Boolean(industrializedPrice.trim()) &&
+            (!industrializedPromotionPrice.trim() || industrializedPromotionPriceValue < industrializedPriceValue)
+          : true
+  const industrializedCurrentStepIndex = industrializedStepTabs.findIndex((tab) => tab.id === industrializedStepTab)
 
   return (
     <>
@@ -1142,7 +1190,7 @@ export function PartnerCatalogPage() {
           onClick={() => setProductKindModalOpen(false)}
         >
           <div
-            className="panel-card w-full max-w-5xl p-6"
+            className="panel-card flex h-[min(88vh,860px)] w-full max-w-5xl flex-col p-6"
             role="dialog"
             aria-modal="true"
             aria-labelledby="product-kind-title"
@@ -1152,12 +1200,6 @@ export function PartnerCatalogPage() {
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">
                   {selectedProductCreationKindMeta.label}
-                </p>
-                <h3 id="product-kind-title" className="mt-2 text-xl font-bold text-ink-900">
-                  Modal de {selectedProductCreationKindMeta.label.toLowerCase()}
-                </h3>
-                <p className="mt-2 text-sm leading-6 text-ink-500">
-                  Categoria {addItemCategory.name}. Esse e o proximo modal do fluxo {selectedProductCreationKindMeta.label.toLowerCase()}.
                 </p>
               </div>
 
@@ -1171,20 +1213,29 @@ export function PartnerCatalogPage() {
               </button>
             </div>
 
+            <div className="mt-6 flex min-h-0 flex-1 flex-col">
             {selectedProductCreationKind === 'industrializado' ? (
               <>
-                <div className="mt-6 rounded-2xl border border-ink-100 bg-white px-4 py-3 sm:px-5">
+                <div className="rounded-2xl border border-ink-100 bg-white px-4 py-3 sm:px-5">
                   <div className="hide-scrollbar flex gap-2 overflow-x-auto">
                     {industrializedStepTabs.map((tab) => (
                       <button
                         key={tab.id}
                         type="button"
-                        onClick={() => setIndustrializedStepTab(tab.id)}
+                        onClick={() => {
+                          const tabIndex = industrializedStepTabs.findIndex((item) => item.id === tab.id)
+                          if (tabIndex <= industrializedCurrentStepIndex) {
+                            setIndustrializedStepTab(tab.id)
+                          }
+                        }}
+                        disabled={industrializedStepTabs.findIndex((item) => item.id === tab.id) > industrializedCurrentStepIndex}
                         className={cn(
                           'inline-flex shrink-0 items-center rounded-2xl border px-4 py-3 text-sm font-semibold transition',
                           industrializedStepTab === tab.id
                             ? 'border-coral-200 bg-coral-50 text-coral-700'
-                            : 'border-transparent bg-transparent text-ink-500 hover:border-ink-100 hover:bg-ink-50 hover:text-ink-900'
+                            : industrializedStepTabs.findIndex((item) => item.id === tab.id) < industrializedCurrentStepIndex
+                              ? 'border-transparent bg-transparent text-ink-500 hover:border-ink-100 hover:bg-ink-50 hover:text-ink-900'
+                              : 'border-transparent bg-transparent text-ink-400 opacity-60'
                         )}
                       >
                         {tab.label}
@@ -1193,156 +1244,127 @@ export function PartnerCatalogPage() {
                   </div>
                 </div>
 
+                <div
+                  className={cn(
+                    'mt-6 flex-1 pr-1',
+                    industrializedStepTab === 'banco' ? 'min-h-0 overflow-hidden' : 'overflow-y-auto'
+                  )}
+                >
                 {industrializedStepTab === 'banco' ? (
-                  <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
-                    <div className="rounded-xl border border-ink-100 bg-white p-4">
-                      <p className="text-sm font-semibold text-ink-900">Produtos ja cadastrados no banco</p>
-                      <p className="mt-2 text-sm leading-6 text-ink-500">
-                        Selecione um produto industrializado ja existente para puxar os dados base do cadastro.
-                      </p>
+                  <div className="flex h-full min-h-0 flex-col rounded-xl border border-ink-100 bg-white p-4">
+                    <p className="text-sm font-semibold text-ink-900">Produtos ja cadastrados no banco</p>
+                    <p className="mt-2 text-sm leading-6 text-ink-500">
+                      Selecione um produto industrializado ja existente para puxar os dados base do cadastro.
+                    </p>
 
-                      <div className="mt-4 relative">
-                        <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
-                        <input
-                          type="text"
-                          value={industrializedSearch}
-                          onChange={(event) => setIndustrializedSearch(event.target.value)}
-                          placeholder="Buscar produto do banco"
-                          className="h-12 w-full rounded-2xl border border-ink-100 bg-white pl-11 pr-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
-                        />
-                      </div>
+                    <div className="mt-4 relative">
+                      <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
+                      <input
+                        type="text"
+                        value={industrializedSearch}
+                        onChange={(event) => setIndustrializedSearch(event.target.value)}
+                        placeholder="Buscar produto do banco"
+                        className="h-12 w-full rounded-2xl border border-ink-100 bg-white pl-11 pr-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
+                      />
+                    </div>
 
-                      <div className="mt-4 space-y-3">
-                        {filteredIndustrializedCatalogItems.map((item) => {
-                          const isSelected = selectedIndustrializedItemId === item.id
+                    <div className="mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+                      {filteredIndustrializedCatalogItems.map((item) => {
+                        const isSelected = selectedIndustrializedItemId === item.id
 
-                          return (
-                            <button
-                              key={item.id}
-                              type="button"
-                              onClick={() => handleSelectIndustrializedItem(item)}
-                              className={cn(
-                                'w-full rounded-xl border p-4 text-left transition',
-                                isSelected
-                                  ? 'border-coral-300 bg-coral-50'
-                                  : 'border-ink-100 bg-ink-50 hover:bg-white'
-                              )}
-                            >
-                              <div className="flex items-start justify-between gap-3">
-                                <div className="flex min-w-0 items-start gap-3">
-                                  <img
-                                    src={item.image}
-                                    alt={item.name}
-                                    className="h-16 w-16 shrink-0 rounded-2xl object-cover"
-                                  />
-                                  <div className="min-w-0">
-                                    <p className="text-sm font-bold text-ink-900">{item.name}</p>
-                                    <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-500">
-                                      {item.brand}
-                                    </p>
-                                    <p className="mt-2 text-sm text-ink-500 line-clamp-2">{item.description}</p>
-                                  </div>
-                                </div>
-                                <div className="shrink-0 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-ink-700">
-                                  {formatCurrency(item.suggestedPrice)}
-                                </div>
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => handleSelectIndustrializedItem(item)}
+                            className={cn(
+                              'w-full rounded-xl border p-4 text-left transition',
+                              isSelected
+                                ? 'border-coral-300 bg-coral-50'
+                                : 'border-ink-100 bg-ink-50 hover:bg-white'
+                            )}
+                          >
+                            <div className="flex min-w-0 items-start gap-3">
+                              <img
+                                src={item.image}
+                                alt={item.name}
+                                className="h-16 w-16 shrink-0 rounded-2xl object-cover"
+                              />
+                              <div className="min-w-0">
+                                <p className="text-sm font-bold text-ink-900">{item.name}</p>
+                                <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink-500">
+                                  {item.brand}
+                                </p>
+                                <p className="mt-2 text-sm text-ink-500 line-clamp-2">{item.description}</p>
                               </div>
+                            </div>
+                          </button>
+                        )
+                      })}
+
+                      {filteredIndustrializedCatalogItems.length === 0 ? (
+                        <div className="rounded-xl border border-dashed border-ink-200 bg-ink-50 px-4 py-8 text-center">
+                          <p className="text-sm font-semibold text-ink-700">Nenhum produto encontrado</p>
+                          <p className="mt-2 text-sm text-ink-500">Ajuste a busca para localizar um item pelo nome.</p>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : null}
+
+                {industrializedStepTab === 'imagens' ? (
+                  <div className="rounded-xl border border-ink-100 bg-white p-4">
+                    <div className="mt-4 relative">
+                      <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
+                      <input
+                        type="text"
+                        value={imageBankSearch}
+                        onChange={(event) => setImageBankSearch(event.target.value)}
+                        placeholder="Buscar em suas imagens"
+                        className="h-12 w-full rounded-2xl border border-ink-100 bg-white pl-11 pr-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
+                      />
+                    </div>
+
+                    <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-6">
+                      {filteredImageBankItems.map((imageItem) => {
+                        const isSelected = selectedImageBankItemId === imageItem.id
+
+                        return (
+                          <button
+                            key={imageItem.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedImageBankItemId(imageItem.id)
+                              setIndustrializedImage(imageItem.image)
+                            }}
+                            className={cn(
+                              'overflow-hidden rounded-xl border text-left transition',
+                              isSelected
+                                ? 'border-coral-300 bg-coral-50'
+                                : 'border-ink-100 bg-white hover:bg-ink-50'
+                            )}
+                          >
+                              <img
+                                src={imageItem.image}
+                                alt={imageItem.label}
+                                className="h-28 w-full object-cover"
+                              />
                             </button>
                           )
                         })}
 
-                        {filteredIndustrializedCatalogItems.length === 0 ? (
-                          <div className="rounded-xl border border-dashed border-ink-200 bg-ink-50 px-4 py-8 text-center">
-                            <p className="text-sm font-semibold text-ink-700">Nenhum produto encontrado</p>
-                            <p className="mt-2 text-sm text-ink-500">Ajuste a busca para localizar um item pelo nome.</p>
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
-
-                    <div className="space-y-6">
-                      <div className="rounded-xl border border-ink-100 bg-white p-4">
-                        <p className="text-sm font-semibold text-ink-900">Dados base do produto</p>
-                        <div className="mt-4 grid gap-4">
-                          <label className="block">
-                            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Nome</span>
-                            <input
-                              type="text"
-                              value={industrializedName}
-                              onChange={(event) => setIndustrializedName(event.target.value)}
-                              placeholder="Nome do produto"
-                              className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
-                            />
-                          </label>
-
-                          <label className="block">
-                            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Marca</span>
-                            <input
-                              type="text"
-                              value={industrializedBrand}
-                              onChange={(event) => setIndustrializedBrand(event.target.value)}
-                              placeholder="Marca"
-                              className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
-                            />
-                          </label>
-
-                          <label className="block">
-                            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Descricao</span>
-                            <textarea
-                              value={industrializedDescription}
-                              onChange={(event) => setIndustrializedDescription(event.target.value)}
-                              rows={4}
-                              placeholder="Descricao do item"
-                              className="w-full rounded-2xl border border-ink-100 bg-white px-4 py-3 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
-                            />
-                          </label>
+                      {filteredImageBankItems.length === 0 ? (
+                        <div className="col-span-2 rounded-xl border border-dashed border-ink-200 bg-ink-50 px-4 py-8 text-center">
+                          <p className="text-sm font-semibold text-ink-700">Nenhuma imagem encontrada</p>
+                          <p className="mt-2 text-sm text-ink-500">Ajuste a busca para localizar uma imagem do seu banco.</p>
                         </div>
-                      </div>
-
-                      <div className="rounded-xl border border-ink-100 bg-white p-4">
-                        <p className="text-sm font-semibold text-ink-900">Banco de imagens do usuario</p>
-                        <p className="mt-2 text-sm leading-6 text-ink-500">
-                          Escolha uma imagem do seu banco para usar nesse produto.
-                        </p>
-
-                        <div className="mt-4 grid grid-cols-2 gap-3">
-                          {imageBankItems.map((imageItem) => {
-                            const isSelected = selectedImageBankItemId === imageItem.id
-
-                            return (
-                              <button
-                                key={imageItem.id}
-                                type="button"
-                                onClick={() => {
-                                  setSelectedImageBankItemId(imageItem.id)
-                                  setIndustrializedImage(imageItem.image)
-                                }}
-                                className={cn(
-                                  'overflow-hidden rounded-xl border text-left transition',
-                                  isSelected
-                                    ? 'border-coral-300 bg-coral-50'
-                                    : 'border-ink-100 bg-white hover:bg-ink-50'
-                                )}
-                              >
-                                <img
-                                  src={imageItem.image}
-                                  alt={imageItem.label}
-                                  className="h-28 w-full object-cover"
-                                />
-                                <div className="px-3 py-3">
-                                  <p className="text-sm font-semibold text-ink-900">{imageItem.label}</p>
-                                </div>
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </div>
+                      ) : null}
                     </div>
                   </div>
                 ) : null}
 
                 {industrializedStepTab === 'preco' ? (
-                  <div className="mt-6 rounded-xl border border-ink-100 bg-white p-4">
+                  <div className="rounded-xl border border-ink-100 bg-white p-4">
                     <p className="text-sm font-semibold text-ink-900">Preco do item</p>
                     <p className="mt-2 text-sm leading-6 text-ink-500">
                       Defina o valor normal e, se quiser, um preco promocional para aparecer riscado no produto.
@@ -1351,30 +1373,38 @@ export function PartnerCatalogPage() {
                     <div className="mt-5 grid gap-4 md:grid-cols-2">
                       <label className="block">
                         <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Preco de venda</span>
-                        <input
-                          type="number"
-                          inputMode="decimal"
-                          min="0"
-                          step="0.01"
-                          value={industrializedPrice}
-                          onChange={(event) => setIndustrializedPrice(event.target.value)}
-                          placeholder="0,00"
-                          className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
-                        />
+                        <div className="relative">
+                          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-ink-500">
+                            R$
+                          </span>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={industrializedPrice}
+                            onChange={(event) => setIndustrializedPrice(formatCurrencyInput(event.target.value))}
+                            placeholder="0,00"
+                            className="h-12 w-full rounded-2xl border border-ink-100 bg-white pl-11 pr-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
+                          />
+                        </div>
                       </label>
 
                       <label className="block">
                         <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Preco promocional</span>
-                        <input
-                          type="number"
-                          inputMode="decimal"
-                          min="0"
-                          step="0.01"
-                          value={industrializedPromotionPrice}
-                          onChange={(event) => setIndustrializedPromotionPrice(event.target.value)}
-                          placeholder="Opcional"
-                          className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
-                        />
+                        <div className="relative">
+                          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-ink-500">
+                            R$
+                          </span>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            value={industrializedPromotionPrice}
+                            onChange={(event) =>
+                              setIndustrializedPromotionPrice(formatCurrencyInput(event.target.value))
+                            }
+                            placeholder="0,00"
+                            className="h-12 w-full rounded-2xl border border-ink-100 bg-white pl-11 pr-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
+                          />
+                        </div>
                       </label>
                     </div>
 
@@ -1404,28 +1434,11 @@ export function PartnerCatalogPage() {
                       </div>
                     </div>
 
-                    <div className="mt-5 rounded-xl border border-ink-100 bg-ink-50 px-4 py-4">
-                      <p className="text-sm font-semibold text-ink-900">Como vai aparecer</p>
-                      <div className="mt-3 flex items-baseline gap-2">
-                        <span className="text-lg font-bold text-ink-900">
-                          {industrializedPromotionPrice
-                            ? formatCurrency(Number(industrializedPromotionPrice))
-                            : industrializedPrice
-                              ? formatCurrency(Number(industrializedPrice))
-                              : 'R$ 0,00'}
-                        </span>
-                        {industrializedPromotionPrice && industrializedPrice ? (
-                          <span className="text-sm font-semibold text-ink-400 line-through">
-                            {formatCurrency(Number(industrializedPrice))}
-                          </span>
-                        ) : null}
-                      </div>
-                    </div>
                   </div>
                 ) : null}
 
                 {industrializedStepTab === 'revisao' ? (
-                  <div className="mt-6 grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
+                  <div className="grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
                     <div className="rounded-xl border border-ink-100 bg-white p-5">
                       <p className="text-sm font-semibold text-ink-900">Revisao final do cadastro</p>
                       <div className="mt-4 grid gap-3">
@@ -1444,13 +1457,15 @@ export function PartnerCatalogPage() {
                         <div className="rounded-xl border border-ink-100 bg-ink-50 px-4 py-3">
                           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Preco</p>
                           <p className="mt-2 text-sm font-bold text-ink-900">
-                            {industrializedPrice ? formatCurrency(Number(industrializedPrice)) : 'Nao informado'}
+                            {industrializedPrice ? formatCurrency(industrializedPriceValue) : 'Nao informado'}
                           </p>
                         </div>
                         <div className="rounded-xl border border-ink-100 bg-ink-50 px-4 py-3">
                           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Preco promocional</p>
                           <p className="mt-2 text-sm font-bold text-ink-900">
-                            {industrializedPromotionPrice ? formatCurrency(Number(industrializedPromotionPrice)) : 'Sem promocao'}
+                            {industrializedPromotionPrice
+                              ? formatCurrency(industrializedPromotionPriceValue)
+                              : 'Sem promocao'}
                           </p>
                         </div>
                       </div>
@@ -1524,14 +1539,14 @@ export function PartnerCatalogPage() {
                             <div className="flex items-baseline gap-2">
                               <span className="font-bold text-[#202020]">
                                 {industrializedPromotionPrice
-                                  ? formatCurrency(Number(industrializedPromotionPrice))
+                                  ? formatCurrency(industrializedPromotionPriceValue)
                                   : industrializedPrice
-                                    ? formatCurrency(Number(industrializedPrice))
+                                    ? formatCurrency(industrializedPriceValue)
                                     : 'R$ 0,00'}
                               </span>
                               {industrializedPromotionPrice && industrializedPrice ? (
                                 <span className="font-bold text-[#9a9a9a] line-through">
-                                  {formatCurrency(Number(industrializedPrice))}
+                                  {formatCurrency(industrializedPriceValue)}
                                 </span>
                               ) : null}
                             </div>
@@ -1549,8 +1564,9 @@ export function PartnerCatalogPage() {
                     </div>
                   </div>
                 ) : null}
+                </div>
 
-                <div className="mt-6 flex justify-end gap-3">
+                <div className="sticky bottom-0 mt-6 flex justify-end gap-3 border-t border-ink-100 bg-white pt-4">
                   <button
                     type="button"
                     onClick={() => setProductKindModalOpen(false)}
@@ -1561,7 +1577,14 @@ export function PartnerCatalogPage() {
                   <button
                     type="button"
                     onClick={handleContinueIndustrializedFlow}
-                    className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
+                    disabled={!canContinueIndustrializedFlow}
+                    aria-disabled={!canContinueIndustrializedFlow}
+                    className={cn(
+                      'inline-flex h-11 items-center justify-center rounded-2xl px-5 text-sm font-semibold text-white transition',
+                      canContinueIndustrializedFlow
+                        ? 'bg-coral-500 hover:bg-coral-600'
+                        : 'bg-ink-300 text-white/80'
+                    )}
                   >
                     {industrializedStepTab === 'revisao' ? 'Salvar cadastro' : 'Continuar'}
                   </button>
@@ -1587,6 +1610,7 @@ export function PartnerCatalogPage() {
                 </div>
               </>
             )}
+            </div>
           </div>
         </div>
       ) : null}
