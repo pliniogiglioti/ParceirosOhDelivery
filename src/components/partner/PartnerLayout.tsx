@@ -4,6 +4,7 @@ import { Outlet, useLocation } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { LoadingScreen } from '@/components/partner/LoadingScreen'
 import { PartnerSidebar } from '@/components/partner/PartnerSidebar'
+import { PartnerTopbar } from '@/components/partner/PartnerTopbar'
 import { usePartnerDashboard } from '@/hooks/usePartnerDashboard'
 import { usePartnerSimulationStore } from '@/hooks/usePartnerSimulationStore'
 import { usePartnerUiStore } from '@/hooks/usePartnerUiStore'
@@ -109,6 +110,8 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
         )}
       >
         <div className="space-y-4">
+          <PartnerTopbar data={displayData} />
+
           <div className="panel-card flex items-center justify-between px-4 py-3 lg:hidden">
             <span className="text-sm font-bold text-ink-900">{displayData.store.name}</span>
             <button

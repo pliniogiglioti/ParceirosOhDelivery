@@ -16,10 +16,13 @@ export type PartnerSection =
   | 'horarios'
   | 'pagamentos'
   | 'avaliacoes'
+  | 'marketing'
   | 'suporte'
   | 'loja'
   | 'perfil'
   | 'configuracoes'
+  | 'mensagens'
+  | 'notificacoes'
 
 export interface PartnerStore {
   id: string

@@ -12,6 +12,7 @@ import {
   LayoutGrid,
   LogOut,
   MapPinned,
+  Megaphone,
   Settings,
   Star,
   Store,
@@ -35,10 +36,11 @@ const navItems: Array<{ id: PartnerSection; label: string; icon: LucideIcon; to:
   { id: 'horarios', label: 'Horarios', icon: Clock3, to: '/app/horarios' },
   { id: 'pagamentos', label: 'Formas de pagamento', icon: WalletCards, to: '/app/pagamentos' },
   { id: 'avaliacoes', label: 'Avaliacoes', icon: Star, to: '/app/avaliacoes' },
-  { id: 'suporte', label: 'Suporte', icon: Headphones, to: '/app/suporte' },
+  { id: 'marketing', label: 'Marketing', icon: Megaphone, to: '/app/marketing' },
   { id: 'loja', label: 'Loja', icon: Store, to: '/app/loja' },
   { id: 'perfil', label: 'Perfil', icon: User, to: '/app/perfil' },
   { id: 'configuracoes', label: 'Configuracoes', icon: Settings, to: '/app/configuracoes' },
+  { id: 'suporte', label: 'Suporte', icon: Headphones, to: '/app/suporte' },
 ]
 
 function StoreStatusToggleCard({
@@ -258,8 +260,8 @@ export function PartnerSidebar({
                   </>
                 )}
               </NavLink>,
-              item.id === 'configuracoes' ? (
-                <div key={`${item.id}-signout-group`} className="pt-1">
+              item.id === 'suporte' ? (
+                <div key={`suporte-signout-group`} className="pt-1">
                   <div className={cn('mb-1 border-t border-ink-100', collapsed ? 'mx-1' : 'mx-1')} />
                   <button
                     type="button"

@@ -69,7 +69,7 @@ export function SectionFrame({
 }) {
   return (
     <section className="animate-rise space-y-5">
-      <div>
+      <div className="pl-2">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-coral-500">{eyebrow}</p>
         <h2 className="mt-2 font-display text-2xl font-bold tracking-[-0.03em] text-ink-900">{title}</h2>
       </div>

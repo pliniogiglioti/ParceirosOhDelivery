@@ -13,6 +13,9 @@ import { PartnerPaymentsPage } from '@/pages/app/PartnerPaymentsPage'
 import { PartnerConfiguracoesPage } from '@/pages/app/PartnerConfiguracoesPage'
 import { PartnerProfilePage } from '@/pages/app/PartnerProfilePage'
 import { PartnerReviewsPage } from '@/pages/app/PartnerReviewsPage'
+import { PartnerMarketingPage } from '@/pages/app/PartnerMarketingPage'
+import { PartnerMessagesPage } from '@/pages/app/PartnerMessagesPage'
+import { PartnerNotificationsPage } from '@/pages/app/PartnerNotificationsPage'
 import { PartnerStorePage } from '@/pages/app/PartnerStorePage'
 import { PartnerSupportPage } from '@/pages/app/PartnerSupportPage'
 import { HomePage } from '@/pages/HomePage'
@@ -70,6 +73,9 @@ export function App() {
           <Route path="horarios" element={<PartnerHoursPage />} />
           <Route path="pagamentos" element={<PartnerPaymentsPage />} />
           <Route path="avaliacoes" element={<PartnerReviewsPage />} />
+          <Route path="marketing" element={<PartnerMarketingPage />} />
+          <Route path="mensagens" element={<PartnerMessagesPage />} />
+          <Route path="notificacoes" element={<PartnerNotificationsPage />} />
           <Route path="suporte" element={<PartnerSupportPage />} />
           <Route path="loja" element={<PartnerStorePage />} />
           <Route path="perfil" element={<PartnerProfilePage />} />

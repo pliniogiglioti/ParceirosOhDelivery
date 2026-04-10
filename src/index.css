@@ -121,6 +121,28 @@
     transition: padding 260ms cubic-bezier(0.22, 1, 0.36, 1);
   }
 
+  .store-selector-dropdown {
+    transform-origin: top left;
+    transition:
+      opacity 180ms ease,
+      transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+      visibility 180ms ease;
+    will-change: opacity, transform;
+  }
+
+  .store-selector-dropdown-open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    visibility: visible;
+  }
+
+  .store-selector-dropdown-closed {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+    visibility: hidden;
+    pointer-events: none;
+  }
+
   .store-status-popover {
     transform-origin: top center;
     transition:
