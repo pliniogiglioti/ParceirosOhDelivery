@@ -531,7 +531,7 @@ export function StoreRegisterPage() {
             <div className="mt-5 flex gap-3">
               <button
                 type="button"
-                onClick={() => step === 0 ? navigate('/lojas') : setStep((s) => s - 1)}
+                onClick={() => step === 0 ? navigate('/') : setStep((s) => s - 1)}
                 className="h-[52px] flex-1 rounded-2xl border border-[#d9d9d9] text-[14px] font-semibold text-[#303030] transition hover:bg-[#f5f5f5]"
               >
                 {step === 0 ? 'Voltar ao site' : 'Voltar'}
