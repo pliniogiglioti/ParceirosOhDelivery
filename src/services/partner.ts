@@ -120,10 +120,12 @@ export async function getStoresByEmail(email: string): Promise<PartnerStoreCard[
     return []
   }
 
+  const normalizedEmail = email.trim()
+
   const { data, error } = await supabase
     .from('stores')
     .select('id, first_access, name, category_name, logo_image_url, is_open, active, registration_status, rejection_reason')
-    .eq('partner_email', email)
+    .ilike('partner_email', normalizedEmail)
     .order('created_at', { ascending: false })
 
   if (error) throw error

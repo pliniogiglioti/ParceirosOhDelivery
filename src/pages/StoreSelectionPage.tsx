@@ -33,13 +33,23 @@ export function StoreSelectionPage() {
   useEffect(() => {
     if (!user?.email) return
 
-    void getStoresByEmail(user.email).then((result) => {
-      setStores(result)
-      if (result.length === 0) {
-        navigate('/cadastro', { replace: true })
-      }
-    }).finally(() => setLoading(false))
-  }, [user?.email, navigate])
+    void getStoresByEmail(user.email)
+      .then((result) => {
+        setStores(result)
+
+        if (result.length === 0) {
+          navigate('/cadastro', { replace: true })
+          return
+        }
+
+        if (result.length === 1 && result[0]?.registrationStatus === 'aprovado') {
+          const singleStore = result[0]
+          selectStore(singleStore.id)
+          navigate(singleStore.firstAccess ? '/app' : '/primeiro-acesso', { replace: true })
+        }
+      })
+      .finally(() => setLoading(false))
+  }, [user?.email, navigate, selectStore])
 
   const hasNoApprovedStore = !loading && stores.length > 0 && stores.every((s) => s.registrationStatus !== 'aprovado')
   const onlyOnePending = stores.length === 1 && stores[0]?.registrationStatus === 'pendente'
