@@ -47,10 +47,14 @@ export interface PartnerStore {
   coverImageUrl?: string
   logoImageUrl?: string
   addressStreet: string
+  addressNumber: string
+  addressComplement: string
   addressNeighborhood: string
   addressCity: string
   addressState: string
   addressZip: string
+  lat: number | null
+  lng: number | null
 }
 
 export interface PartnerOrder {

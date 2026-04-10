@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
 import { usePartnerPageData } from '@/hooks/usePartnerPageData'
 import { getStoreCategories } from '@/services/profile'
+import { MapPicker } from '@/components/MapPicker'
 import type { PartnerStore, StoreCategory } from '@/types'
 import { formatCurrency, formatTime } from '@/lib/utils'
 import { MiniInfoCard, SectionFrame } from '@/components/partner/PartnerUi'
@@ -423,45 +424,132 @@ function StoreEditorTab() {
   )
 }
 
+const inputAddressClass =
+  'h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm font-semibold text-ink-900 outline-none transition focus:border-coral-400'
+
 function StoreAddressTab() {
   const { data } = usePartnerPageData()
+  const { updateStore } = usePartnerDraftStore()
+  const [draft, setDraft] = useState<PartnerStore>(data.store)
+
+  useEffect(() => { setDraft(data.store) }, [data.store])
+
+  function patch(p: Partial<PartnerStore>) {
+    setDraft((cur) => ({ ...cur, ...p }))
+  }
+
+  function handleSave() {
+    updateStore(data.store.id, draft)
+    toast.success('Endereco salvo com sucesso.')
+  }
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
+    <div className="grid gap-4 xl:grid-cols-[1fr_1fr]">
       <article className="panel-card p-6">
         <p className="text-sm font-semibold text-ink-900">Endereco operacional</p>
-        <p className="mt-2 text-sm leading-7 text-ink-600">
-          Simulacao visual da configuracao de atendimento da loja com base nas areas de entrega ativas do painel.
-        </p>
+        <p className="mt-1 text-sm text-ink-500">Endereco fisico da loja exibido para os clientes.</p>
 
-        <div className="mt-6 space-y-3">
-          <MiniInfoCard label="Base" value="Centro" />
-          <MiniInfoCard label="Categoria" value={data.store.categoryName || 'Loja'} />
-          <MiniInfoCard label="Pedido minimo" value={formatCurrency(data.store.minOrderAmount)} />
-          <MiniInfoCard label="Taxa padrao" value={formatCurrency(data.store.deliveryFee)} />
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <label className="block sm:col-span-2">
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Rua</span>
+            <input
+              type="text"
+              value={draft.addressStreet}
+              onChange={(e) => patch({ addressStreet: e.target.value })}
+              placeholder="Nome da rua ou avenida"
+              className={inputAddressClass}
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Numero</span>
+            <input
+              type="text"
+              value={draft.addressNumber}
+              onChange={(e) => patch({ addressNumber: e.target.value })}
+              placeholder="123"
+              className={inputAddressClass}
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Complemento</span>
+            <input
+              type="text"
+              value={draft.addressComplement}
+              onChange={(e) => patch({ addressComplement: e.target.value })}
+              placeholder="Sala, andar, bloco..."
+              className={inputAddressClass}
+            />
+          </label>
+
+          <label className="block sm:col-span-2">
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Bairro</span>
+            <input
+              type="text"
+              value={draft.addressNeighborhood}
+              onChange={(e) => patch({ addressNeighborhood: e.target.value })}
+              placeholder="Bairro"
+              className={inputAddressClass}
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Cidade</span>
+            <input
+              type="text"
+              value={draft.addressCity}
+              onChange={(e) => patch({ addressCity: e.target.value })}
+              placeholder="Cidade"
+              className={inputAddressClass}
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Estado</span>
+            <input
+              type="text"
+              value={draft.addressState}
+              onChange={(e) => patch({ addressState: e.target.value })}
+              placeholder="SP"
+              maxLength={2}
+              className={inputAddressClass}
+            />
+          </label>
+
+          <label className="block sm:col-span-2">
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">CEP</span>
+            <input
+              type="text"
+              value={draft.addressZip}
+              onChange={(e) => patch({ addressZip: e.target.value })}
+              placeholder="00000-000"
+              className={inputAddressClass}
+            />
+          </label>
+        </div>
+
+        <div className="mt-6 flex justify-end">
+          <button
+            type="button"
+            onClick={handleSave}
+            className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-8 text-sm font-semibold text-white transition hover:bg-coral-600"
+          >
+            Salvar
+          </button>
         </div>
       </article>
 
       <article className="panel-card p-6">
-        <p className="text-sm font-semibold text-ink-900">Areas cobertas</p>
-        <div className="mt-5 grid gap-3 md:grid-cols-2">
-          {data.deliveryAreas.map((area) => (
-            <div key={area.id} className="rounded-3xl border border-ink-100 bg-white p-4">
-              <div className="flex items-center justify-between gap-3">
-                <p className="font-semibold text-ink-900">{area.name}</p>
-                <span
-                  className={[
-                    'rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em]',
-                    area.active ? 'bg-mint-100 text-mint-700' : 'bg-ink-100 text-ink-500',
-                  ].join(' ')}
-                >
-                  {area.active ? 'Ativa' : 'Pausada'}
-                </span>
-              </div>
-              <p className="mt-3 text-sm text-ink-500">Prazo estimado: {area.etaLabel}</p>
-              <p className="mt-1 text-sm font-semibold text-ink-800">Taxa: {formatCurrency(area.fee)}</p>
-            </div>
-          ))}
+        <p className="text-sm font-semibold text-ink-900">Ponto no mapa</p>
+        <p className="mt-1 text-sm text-ink-500">Mova o mapa para ajustar a posicao exata da loja.</p>
+        <div className="mt-4">
+          <MapPicker
+            lat={draft.lat}
+            lng={draft.lng}
+            onChange={(lat, lng) => patch({ lat, lng })}
+            height={440}
+          />
         </div>
       </article>
     </div>

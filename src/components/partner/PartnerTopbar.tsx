@@ -1,56 +1,21 @@
-import { Bell, ChevronDown, MessageCircle } from 'lucide-react'
+import { Bell, ChevronDown, MessageCircle, Store } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import type { PartnerDashboardData } from '@/types'
-
-const SIMULATED_STORES = [
-  { id: '1', name: 'Oh! Burger Centro',  initial: 'B', color: '#EA1D2C' },
-  { id: '2', name: 'Oh! Pizza Paulista', initial: 'P', color: '#f97316' },
-  { id: '3', name: 'Oh! Sushi Jardins',  initial: 'S', color: '#14c8bb' },
-]
-
-const ALL_ID = 'all'
-
-function SingleAvatar({ initial, color }: { initial: string; color: string }) {
-  return (
-    <span
-      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-      style={{ backgroundColor: color }}
-    >
-      {initial}
-    </span>
-  )
-}
-
-function StackedAvatars() {
-  return (
-    <span className="flex items-center">
-      {SIMULATED_STORES.map((s, i) => (
-        <span
-          key={s.id}
-          className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 border-white text-[9px] font-bold text-white"
-          style={{
-            backgroundColor: s.color,
-            marginLeft: i === 0 ? 0 : -8,
-            zIndex: SIMULATED_STORES.length - i,
-          }}
-        >
-          {s.initial}
-        </span>
-      ))}
-    </span>
-  )
-}
+import { usePartnerAuth } from '@/hooks/usePartnerAuth'
+import { getStoresByEmail } from '@/services/partner'
+import type { PartnerDashboardData, PartnerStoreCard } from '@/types'
 
 export function PartnerTopbar({ data }: { data: PartnerDashboardData }) {
   const [open, setOpen] = useState(false)
-  const [selectedId, setSelectedId] = useState<string>(ALL_ID)
+  const [stores, setStores] = useState<PartnerStoreCard[]>([])
   const ref = useRef<HTMLDivElement>(null)
-
   const navigate = useNavigate()
-  const isAll = selectedId === ALL_ID
-  const selected = SIMULATED_STORES.find((s) => s.id === selectedId)
-  const label = isAll ? 'Todas as lojas' : (selected?.name ?? 'Todas as lojas')
+  const { user, selectStore } = usePartnerAuth()
+
+  useEffect(() => {
+    if (!user?.email) return
+    void getStoresByEmail(user.email).then(setStores)
+  }, [user?.email])
 
   useEffect(() => {
     function handleOutside(e: MouseEvent) {
@@ -59,6 +24,14 @@ export function PartnerTopbar({ data }: { data: PartnerDashboardData }) {
     if (open) document.addEventListener('mousedown', handleOutside)
     return () => document.removeEventListener('mousedown', handleOutside)
   }, [open])
+
+  function handleSelectStore(store: PartnerStoreCard) {
+    if (store.registrationStatus !== 'aprovado') return
+    selectStore(store.id)
+    setOpen(false)
+  }
+
+  const currentStoreName = data.store.name
 
   return (
     <div className="panel-card sticky top-4 z-30 mb-6 flex items-center justify-between gap-4 px-4 py-2.5">
@@ -69,12 +42,13 @@ export function PartnerTopbar({ data }: { data: PartnerDashboardData }) {
           onClick={() => setOpen((v) => !v)}
           className="flex items-center gap-2.5 rounded-2xl border border-ink-100 bg-ink-50 px-3 py-2 text-sm font-semibold text-ink-900 transition hover:bg-ink-100"
         >
-          {isAll ? (
-            <StackedAvatars />
-          ) : (
-            <SingleAvatar initial={selected!.initial} color={selected!.color} />
-          )}
-          <span className="max-w-[180px] truncate">{label}</span>
+          <span
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+            style={{ backgroundColor: data.store.accentColor || '#ea1d2c' }}
+          >
+            {currentStoreName.charAt(0).toUpperCase()}
+          </span>
+          <span className="max-w-[180px] truncate">{currentStoreName}</span>
           <ChevronDown
             className="h-3.5 w-3.5 shrink-0 text-ink-400 transition-transform"
             style={{ transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
@@ -85,36 +59,40 @@ export function PartnerTopbar({ data }: { data: PartnerDashboardData }) {
           className={`store-selector-dropdown panel-card absolute left-0 top-[calc(100%+8px)] z-40 w-64 overflow-hidden py-1 ${open ? 'store-selector-dropdown-open' : 'store-selector-dropdown-closed'}`}
           aria-hidden={!open}
         >
-          {/* Todas */}
-          <button
-            type="button"
-            onClick={() => { setSelectedId(ALL_ID); setOpen(false) }}
-            className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition hover:bg-ink-50"
-          >
-            <StackedAvatars />
-            <span className="flex-1 truncate font-medium text-ink-900">Todas as lojas</span>
-            {isAll && <span className="h-2 w-2 rounded-full bg-coral-500" />}
-          </button>
-
-          <div className="mx-3 my-1 border-t border-ink-100" />
-
-          {SIMULATED_STORES.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => { setSelectedId(s.id); setOpen(false) }}
-              className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition hover:bg-ink-50"
-            >
-              <span
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
-                style={{ backgroundColor: s.color }}
+          {stores.map((store) => {
+            const isCurrent = store.id === data.store.id
+            const isApproved = store.registrationStatus === 'aprovado'
+            return (
+              <button
+                key={store.id}
+                type="button"
+                disabled={!isApproved}
+                onClick={() => handleSelectStore(store)}
+                className={[
+                  'flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition',
+                  isApproved ? 'hover:bg-ink-50 cursor-pointer' : 'cursor-default opacity-50',
+                ].join(' ')}
               >
-                {s.initial}
-              </span>
-              <span className="flex-1 truncate font-medium text-ink-900">{s.name}</span>
-              {s.id === selectedId && <span className="h-2 w-2 rounded-full bg-coral-500" />}
-            </button>
-          ))}
+                <span
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
+                  style={{ backgroundColor: '#ea1d2c' }}
+                >
+                  {store.logoImageUrl ? (
+                    <img src={store.logoImageUrl} alt={store.name} className="h-full w-full rounded-full object-cover" />
+                  ) : (
+                    <Store className="h-4 w-4" />
+                  )}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium text-ink-900">{store.name}</p>
+                  {!isApproved && (
+                    <p className="text-[10px] text-amber-600 capitalize">{store.registrationStatus}</p>
+                  )}
+                </div>
+                {isCurrent && <span className="h-2 w-2 rounded-full bg-coral-500" />}
+              </button>
+            )
+          })}
         </div>
       </div>
 
