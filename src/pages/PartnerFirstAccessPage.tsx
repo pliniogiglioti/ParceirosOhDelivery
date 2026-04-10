@@ -3,9 +3,11 @@ import { ArrowRight, ChevronDown, Loader2, LogOut } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { LoadingScreen } from '@/components/partner/LoadingScreen'
+import { weekDays } from '@/components/partner/PartnerUi'
 import { usePartnerAuth } from '@/hooks/usePartnerAuth'
 import { usePartnerDashboard } from '@/hooks/usePartnerDashboard'
 import { getStoreCategories } from '@/services/profile'
+import { formatTime } from '@/lib/utils'
 import {
   createProduct,
   createProductCategory,
@@ -454,64 +456,93 @@ export function PartnerFirstAccessPage() {
 
     if (currentStepId === 'horarios') {
       return (
-        <div className="rounded-2xl bg-white p-8 shadow-sm space-y-5">
-          <div>
-            <h2 className="text-[18px] font-bold text-[#1d1d1d]">Horarios de funcionamento</h2>
-            <p className="text-[13px] text-[#8b8b8b] mt-1">Defina quando sua loja atende durante a semana.</p>
+        <div className="panel-card space-y-6 p-6 rounded-2xl bg-white shadow-sm">
+          <div className="flex flex-col gap-3 rounded-3xl bg-ink-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-ink-900">Horarios de funcionamento</p>
+              <p className="mt-1 text-sm text-ink-500">
+                Defina quando sua loja atende durante a semana.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void handleSaveHoursStep()}
+              disabled={savingStep === 'horarios'}
+              className={[
+                'inline-flex h-11 items-center justify-center rounded-2xl px-5 text-sm font-semibold transition',
+                savingStep !== 'horarios'
+                  ? 'bg-coral-500 text-white hover:bg-coral-600'
+                  : 'cursor-not-allowed bg-ink-200 text-ink-500',
+              ].join(' ')}
+            >
+              {savingStep === 'horarios' ? 'Salvando...' : 'Salvar etapa'}
+            </button>
           </div>
 
-          <div className="grid gap-4">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-7">
             {hoursDraft.map((hour) => (
-              <div key={hour.id} className="rounded-xl border border-[#ececec] bg-[#fafafa] p-4">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                  <div className="min-w-[130px]">
-                    <p className="text-[13px] font-semibold text-[#1d1d1d]">
-                      {['Domingo', 'Segunda', 'Terca', 'Quarta', 'Quinta', 'Sexta', 'Sabado'][hour.weekDay] ?? `Dia ${hour.weekDay}`}
+              <article
+                key={hour.id}
+                className={[
+                  'flex h-full flex-col rounded-3xl border p-4',
+                  hour.isClosed ? 'border-coral-200 bg-coral-50/35' : 'border-mint-300 bg-mint-100/35',
+                ].join(' ')}
+              >
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold text-ink-900">{weekDays[hour.weekDay] ?? `Dia ${hour.weekDay}`}</p>
+                    </div>
+                    <p className="mt-2 text-sm text-ink-600">
+                      {hour.isClosed ? 'Fechada' : `${formatTime(hour.opensAt)} - ${formatTime(hour.closesAt)}`}
                     </p>
                   </div>
+                </div>
 
-                  <div className="grid flex-1 grid-cols-2 gap-3">
-                    <Field label="Abre">
-                      <input
-                        type="time"
-                        value={hour.opensAt.slice(0, 5)}
-                        disabled={hour.isClosed}
-                        onChange={(event) => updateHourField(hour.id, { opensAt: event.target.value })}
-                        className={inputClass}
-                      />
-                    </Field>
-                    <Field label="Fecha">
-                      <input
-                        type="time"
-                        value={hour.closesAt.slice(0, 5)}
-                        disabled={hour.isClosed}
-                        onChange={(event) => updateHourField(hour.id, { closesAt: event.target.value })}
-                        className={inputClass}
-                      />
-                    </Field>
-                  </div>
-
-                  <label className="flex h-[48px] items-center gap-2 rounded-xl border border-[#d9d9d9] bg-white px-4 text-[13px] font-semibold text-[#4f4f4f]">
+                <div className="hours-editor-panel mt-4 grid gap-3 rounded-3xl bg-ink-50 p-4">
+                  <label className="block">
+                    <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-500">
+                      Abre
+                    </span>
                     <input
-                      type="checkbox"
-                      checked={hour.isClosed}
-                      onChange={(event) => updateHourField(hour.id, { isClosed: event.target.checked })}
+                      type="time"
+                      value={formatTime(hour.opensAt)}
+                      disabled={hour.isClosed}
+                      onChange={(event) => updateHourField(hour.id, { opensAt: event.target.value })}
+                      className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm font-semibold text-ink-900 outline-none transition focus:border-coral-400 disabled:cursor-not-allowed disabled:bg-ink-100"
                     />
-                    Fechada
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-2 block text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-500">
+                      Fecha
+                    </span>
+                    <input
+                      type="time"
+                      value={formatTime(hour.closesAt)}
+                      disabled={hour.isClosed}
+                      onChange={(event) => updateHourField(hour.id, { closesAt: event.target.value })}
+                      className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm font-semibold text-ink-900 outline-none transition focus:border-coral-400 disabled:cursor-not-allowed disabled:bg-ink-100"
+                    />
+                  </label>
+
+                  <label className="flex items-end">
+                    <span className="flex h-12 w-full items-center gap-3 rounded-2xl border border-ink-100 bg-white px-4">
+                      <input
+                        type="checkbox"
+                        checked={hour.isClosed}
+                        onChange={(event) => updateHourField(hour.id, { isClosed: event.target.checked })}
+                        className="h-4 w-4 rounded border-ink-300 text-coral-500 focus:ring-coral-400"
+                      />
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-500">
+                        Fechada
+                      </span>
+                    </span>
                   </label>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
-
-          <button
-            type="button"
-            onClick={() => void handleSaveHoursStep()}
-            disabled={savingStep === 'horarios'}
-            className="h-[52px] w-full rounded-2xl bg-[#ea1d2c] text-[15px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {savingStep === 'horarios' ? 'Salvando...' : 'Salvar etapa'}
-          </button>
         </div>
       )
     }
