@@ -54,7 +54,7 @@ export function StoreSelectionPage() {
       return
     }
     selectStore(store.id)
-    navigate('/app')
+    navigate(store.firstAccess ? '/app' : '/primeiro-acesso')
   }
 
   return (

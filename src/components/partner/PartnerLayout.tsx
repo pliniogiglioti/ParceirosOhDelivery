@@ -1,6 +1,6 @@
 import { Menu, X } from 'lucide-react'
 import { useEffect } from 'react'
-import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { Outlet } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { LoadingScreen } from '@/components/partner/LoadingScreen'
 import { PartnerSidebar } from '@/components/partner/PartnerSidebar'
@@ -13,7 +13,6 @@ import { usePartnerUiStore } from '@/hooks/usePartnerUiStore'
 import { cn, isSameUtcDate } from '@/lib/utils'
 
 export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
-  const location = useLocation()
   const { selectedStoreId } = usePartnerAuth()
   const { data, loading, error, source } = usePartnerDashboard(selectedStoreId)
   const { sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCollapsed } = usePartnerUiStore()
@@ -52,10 +51,6 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
 
   if (loading) {
     return <LoadingScreen />
-  }
-
-  if (data && !data.store.active) {
-    return <Navigate to="/lojas" replace />
   }
 
   if (!data) {

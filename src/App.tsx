@@ -2,6 +2,8 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from
 import { PartnerLayout } from '@/components/partner/PartnerLayout'
 import { LoadingScreen } from '@/components/partner/LoadingScreen'
 import { usePartnerAuth } from '@/hooks/usePartnerAuth'
+import { usePartnerDashboard } from '@/hooks/usePartnerDashboard'
+import { PartnerFirstAccessPage } from '@/pages/PartnerFirstAccessPage'
 import { PartnerCatalogPage } from '@/pages/app/PartnerCatalogPage'
 import { PartnerDeliveryAreasPage } from '@/pages/app/PartnerDeliveryAreasPage'
 import { PartnerFinancePage } from '@/pages/app/PartnerFinancePage'
@@ -97,6 +99,39 @@ function ProtectedLayoutRoute() {
   return <PartnerLayout onSignOut={() => void auth.signOut()} />
 }
 
+function AppIndexRoute() {
+  const auth = usePartnerAuth()
+  const { data, loading } = usePartnerDashboard(auth.selectedStoreId)
+
+  if (loading) {
+    return <LoadingScreen />
+  }
+
+  if (!data) {
+    return <Navigate to="/lojas" replace />
+  }
+
+  return data.store.firstAccess ? <PartnerOverviewPage /> : <Navigate to="/primeiro-acesso" replace />
+}
+
+function FirstAccessRoute() {
+  const auth = usePartnerAuth()
+
+  if (auth.loading) {
+    return <LoadingScreen />
+  }
+
+  if (!auth.user) {
+    return <Navigate to="/" state={{ from: '/primeiro-acesso' }} replace />
+  }
+
+  if (!auth.selectedStoreId) {
+    return <Navigate to="/lojas" replace />
+  }
+
+  return <PartnerFirstAccessPage />
+}
+
 export function App() {
   return (
     <BrowserRouter>
@@ -104,8 +139,9 @@ export function App() {
         <Route path="/" element={<LoginRoute />} />
         <Route path="/lojas" element={<StoreSelectionRoute />} />
         <Route path="/cadastro" element={<StoreRegisterRoute />} />
+        <Route path="/primeiro-acesso" element={<FirstAccessRoute />} />
         <Route path="/app" element={<ProtectedLayoutRoute />}>
-          <Route index element={<PartnerOverviewPage />} />
+          <Route index element={<AppIndexRoute />} />
           <Route path="pedidos" element={<PartnerOrdersPage />} />
           <Route path="financeiro" element={<PartnerFinancePage />} />
           <Route path="cardapio" element={<PartnerCatalogPage />} />
