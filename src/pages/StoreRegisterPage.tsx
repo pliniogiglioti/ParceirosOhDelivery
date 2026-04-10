@@ -122,7 +122,6 @@ export function StoreRegisterPage() {
     responsavelCpf: '',
     categoryId: '',
     categoryName: '',
-    tagline: '',
     addressStreet: '',
     addressNumber: '',
     addressComplement: '',
@@ -334,16 +333,6 @@ export function StoreRegisterPage() {
                     </select>
                     <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8b8b8b]" />
                   </div>
-                </Field>
-
-                <Field label="Slogan (opcional)">
-                  <input
-                    type="text"
-                    placeholder="Ex: O melhor burger da cidade"
-                    value={form.tagline}
-                    onChange={(e) => set('tagline', e.target.value)}
-                    className={inputClass}
-                  />
                 </Field>
               </div>
             )}

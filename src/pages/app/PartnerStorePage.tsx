@@ -149,7 +149,7 @@ function StoreEditorTab() {
             <div
               className="h-[260px] w-full bg-cover bg-center"
               style={{
-                backgroundColor: data.store.accentColor,
+                backgroundColor: '#f4f4f5',
                 backgroundImage: draftStore.coverImageUrl ? `url('${draftStore.coverImageUrl}')` : undefined,
                 filter: draftStore.isOpen ? undefined : 'grayscale(1)',
               }}
@@ -206,7 +206,6 @@ function StoreEditorTab() {
               </button>
               <div className="min-w-0">
                 <h3 className="text-[28px] font-bold tracking-[-0.04em] text-ink-900">{draftStore.name}</h3>
-                <p className="mt-2 text-sm leading-6 text-ink-500">{draftStore.tagline}</p>
               </div>
             </div>
           </div>

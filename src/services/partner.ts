@@ -28,10 +28,7 @@ function emptyDashboard(): PartnerDashboardData {
       categoryId: '',
       categoryName: '',
       name: 'Loja nao configurada',
-      slug: '',
-      tagline: '',
       description: '',
-      accentColor: '#ea1d2c',
       deliveryFee: 0,
       minOrderAmount: 0,
       etaMin: 0,
@@ -117,17 +114,6 @@ function calculateMetrics(orders: PartnerOrder[]) {
   }
 }
 
-function generateSlug(name: string): string {
-  return name
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .trim()
-}
-
 export async function getStoresByEmail(email: string): Promise<PartnerStoreCard[]> {
   if (!isSupabaseConfigured || !supabase) {
     return []
@@ -135,7 +121,7 @@ export async function getStoresByEmail(email: string): Promise<PartnerStoreCard[
 
   const { data, error } = await supabase
     .from('stores')
-    .select('id, name, category_name, logo_image_url, is_open, active, slug, registration_status, rejection_reason')
+    .select('id, name, category_name, logo_image_url, is_open, active, registration_status, rejection_reason')
     .eq('partner_email', email)
     .order('created_at', { ascending: false })
 
@@ -148,7 +134,6 @@ export async function getStoresByEmail(email: string): Promise<PartnerStoreCard[
     logoImageUrl: row.logo_image_url ? String(row.logo_image_url) : undefined,
     isOpen: Boolean(row.is_open),
     active: Boolean(row.active),
-    slug: String(row.slug),
     registrationStatus: (row.registration_status ?? 'pendente') as import('@/types').RegistrationStatus,
     rejectionReason: row.rejection_reason ? String(row.rejection_reason) : null,
   }))
@@ -164,9 +149,6 @@ export async function registerStore(
     throw new Error('Supabase nao configurado.')
   }
 
-  const baseSlug = generateSlug(input.name)
-  const slug = `${baseSlug}-${Date.now().toString(36)}`
-
   const { data: store, error } = await supabase
     .from('stores')
     .insert({
@@ -176,10 +158,8 @@ export async function registerStore(
       nome_fantasia: input.nomeFantasia || null,
       responsavel_nome: input.responsavelNome || null,
       responsavel_cpf: input.responsavelCpf || null,
-      slug,
       category_id: input.categoryId || null,
       category_name: input.categoryName,
-      tagline: input.tagline,
       address_street: input.addressStreet,
       address_number: input.addressNumber,
       address_complement: input.addressComplement || null,
@@ -223,9 +203,7 @@ export async function saveStore(storeId: string, patch: Partial<import('@/types'
       ...(patch.name !== undefined && { name: patch.name }),
       ...(patch.categoryId !== undefined && { category_id: patch.categoryId }),
       ...(patch.categoryName !== undefined && { category_name: patch.categoryName }),
-      ...(patch.tagline !== undefined && { tagline: patch.tagline }),
       ...(patch.description !== undefined && { description_long: patch.description }),
-      ...(patch.accentColor !== undefined && { accent_color: patch.accentColor }),
       ...(patch.deliveryFee !== undefined && { delivery_fee: patch.deliveryFee }),
       ...(patch.minOrderAmount !== undefined && { min_order_amount: patch.minOrderAmount }),
       ...(patch.etaMin !== undefined && { eta_min: patch.etaMin }),
@@ -420,10 +398,7 @@ export async function loadPartnerDashboard(storeId: string): Promise<{
       categoryId: String(storeRow.category_id ?? ''),
       categoryName: String(storeRow.category_name ?? ''),
       name: String(storeRow.name),
-      slug: String(storeRow.slug),
-      tagline: String(storeRow.tagline ?? ''),
       description: String(storeRow.description_long ?? storeRow.description ?? ''),
-      accentColor: String(storeRow.accent_color ?? '#ea1d2c'),
       deliveryFee: Number(storeRow.delivery_fee ?? 0),
       minOrderAmount: Number(storeRow.min_order_amount ?? 0),
       etaMin: Number(storeRow.eta_min ?? 20),

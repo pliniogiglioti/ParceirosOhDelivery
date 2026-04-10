@@ -43,8 +43,7 @@ export function PartnerTopbar({ data }: { data: PartnerDashboardData }) {
           className="flex items-center gap-2.5 rounded-2xl border border-ink-100 bg-ink-50 px-3 py-2 text-sm font-semibold text-ink-900 transition hover:bg-ink-100"
         >
           <span
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
-            style={{ backgroundColor: data.store.accentColor || '#ea1d2c' }}
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-coral-500 text-[10px] font-bold text-white"
           >
             {currentStoreName.charAt(0).toUpperCase()}
           </span>

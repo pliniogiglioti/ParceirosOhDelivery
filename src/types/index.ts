@@ -29,10 +29,7 @@ export interface PartnerStore {
   categoryId: string
   categoryName: string
   name: string
-  slug: string
-  tagline: string
   description: string
-  accentColor: string
   deliveryFee: number
   minOrderAmount: number
   etaMin: number
@@ -203,7 +200,6 @@ export interface PartnerStoreCard {
   logoImageUrl?: string
   isOpen: boolean
   active: boolean
-  slug: string
   registrationStatus: RegistrationStatus
   rejectionReason: string | null
 }
@@ -217,7 +213,6 @@ export interface StoreRegistrationInput {
   responsavelCpf: string
   categoryId: string
   categoryName: string
-  tagline: string
   addressStreet: string
   addressNumber: string
   addressComplement: string

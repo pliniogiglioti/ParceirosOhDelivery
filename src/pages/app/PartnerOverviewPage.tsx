@@ -221,7 +221,6 @@ export function PartnerOverviewPage() {
           <div className="panel-card p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-400">Sua loja</p>
             <p className="mt-2 font-display text-base font-bold text-ink-900">{data.store.name}</p>
-            <p className="mt-1 text-xs leading-relaxed text-ink-500 line-clamp-2">{data.store.tagline}</p>
             <div className="mt-4 grid grid-cols-3 gap-2">
               <div className="rounded-2xl bg-ink-50 p-3 text-center">
                 <Star className="mx-auto h-4 w-4 text-yellow-400" />
