@@ -706,7 +706,7 @@ export function PartnerFirstAccessPage() {
     <div className="min-h-dvh bg-[#f5f5f5]">
       <StepperBar current={activeStep} />
 
-      <main className="mx-auto flex max-w-3xl flex-col px-4 py-8 sm:px-6">
+      <main className="mx-auto flex max-w-5xl flex-col px-4 py-8 sm:px-6">
         <div className="mb-5 flex items-center justify-between gap-3">
           <div>
             <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#ea1d2c]">Primeiro acesso</p>
