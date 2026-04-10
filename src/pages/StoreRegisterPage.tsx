@@ -263,16 +263,21 @@ export function StoreRegisterPage() {
 
   async function handleNext() {
     if (!validateStep(step)) return
-    if (step === 2 && form.lat === null) {
-      setCepLoading(true)
-      try {
-        const coords = await geocodeAddress(`${form.addressStreet}, ${form.addressNeighborhood}, ${form.addressCity}, ${form.addressState}, Brasil`)
-        if (coords) setForm((prev) => ({ ...prev, lat: coords.lat, lng: coords.lng }))
-      } finally {
-        setCepLoading(false)
+    try {
+      if (step === 2 && form.lat === null) {
+        setCepLoading(true)
+        try {
+          const coords = await geocodeAddress(`${form.addressStreet}, ${form.addressNeighborhood}, ${form.addressCity}, ${form.addressState}, Brasil`)
+          if (coords) setForm((prev) => ({ ...prev, lat: coords.lat, lng: coords.lng }))
+        } finally {
+          setCepLoading(false)
+        }
       }
+      setStep((s) => s + 1)
+    } catch (err) {
+      setCepLoading(false)
+      toast.error(err instanceof Error ? err.message : 'Erro ao avançar.')
     }
-    setStep((s) => s + 1)
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -564,10 +569,10 @@ export function StoreRegisterPage() {
                 <button
                   type="button"
                   onClick={() => void handleNext()}
-                  disabled={cepLoading}
+                  disabled={step === 2 && cepLoading}
                   className="h-[52px] flex-1 rounded-2xl bg-[#ea1d2c] text-[15px] font-bold text-white transition hover:brightness-95 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  {cepLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Próximo <ArrowRight className="h-4 w-4" /></>}
+                  {step === 2 && cepLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Próximo <ArrowRight className="h-4 w-4" /></>}
                 </button>
               ) : (
                 <button
