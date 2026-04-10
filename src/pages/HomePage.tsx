@@ -295,6 +295,7 @@ export function HomePage({
   onSendCode,
   onVerifyCode,
   onEnterPanel,
+  onSignOut,
 }: HomePageProps) {
   const [email, setEmail] = useState(pendingEmail)
   const [code, setCode] = useState('')
