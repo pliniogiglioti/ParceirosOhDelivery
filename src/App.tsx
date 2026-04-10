@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { PartnerLayout } from '@/components/partner/PartnerLayout'
 import { LoadingScreen } from '@/components/partner/LoadingScreen'
 import { usePartnerAuth } from '@/hooks/usePartnerAuth'
@@ -24,13 +24,15 @@ import { StoreRegisterPage } from '@/pages/StoreRegisterPage'
 
 function LoginRoute() {
   const auth = usePartnerAuth()
+  const location = useLocation()
 
   if (auth.loading) {
     return <LoadingScreen />
   }
 
   if (auth.user) {
-    return <Navigate to="/lojas" replace />
+    const from = (location.state as { from?: string } | null)?.from
+    return <Navigate to={from ?? '/lojas'} replace />
   }
 
   return (
@@ -62,13 +64,14 @@ function StoreSelectionRoute() {
 
 function StoreRegisterRoute() {
   const auth = usePartnerAuth()
+  const location = useLocation()
 
   if (auth.loading) {
     return <LoadingScreen />
   }
 
   if (!auth.user) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/" state={{ from: location.pathname }} replace />
   }
 
   return <StoreRegisterPage />

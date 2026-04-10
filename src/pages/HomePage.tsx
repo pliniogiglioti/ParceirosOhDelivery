@@ -2,6 +2,7 @@ import type { FormEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { Mail } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useNavigate } from 'react-router-dom'
 import { LoadingScreen } from '@/components/partner/LoadingScreen'
 
 type HomePageProps = {
@@ -100,6 +101,19 @@ function VerificationCodeField({
   )
 }
 
+function RegisterLink() {
+  const navigate = useNavigate()
+  return (
+    <button
+      type="button"
+      onClick={() => navigate('/cadastro', { state: { from: '/cadastro' } })}
+      className="font-medium text-[#ea1d2c] underline underline-offset-2"
+    >
+      Cadastre sua loja
+    </button>
+  )
+}
+
 function AuthCard({
   codeSent,
   sending,
@@ -153,9 +167,7 @@ function AuthCard({
 
           <div className="border-t border-[#ececec] px-6 py-5 text-center text-[13px] text-[#2f2f2f]">
             Ainda nao tem cadastro?{' '}
-            <button type="button" className="font-medium text-[#ea1d2c] underline underline-offset-2">
-              Cadastre sua loja
-            </button>
+            <RegisterLink />
           </div>
         </form>
       ) : (
