@@ -3,6 +3,7 @@ import toast from 'react-hot-toast'
 import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
 import { usePartnerPageData } from '@/hooks/usePartnerPageData'
 import { formatTime } from '@/lib/utils'
+import { saveStoreHours } from '@/services/partner'
 import type { PartnerHour } from '@/types'
 import { SectionFrame, weekDays } from '@/components/partner/PartnerUi'
 
@@ -10,14 +11,33 @@ function normalizeTimeValue(value: string) {
   return value.length === 5 ? `${value}:00` : value.slice(0, 8)
 }
 
+function hasHoursChanges(current: PartnerHour[], initial: PartnerHour[]) {
+  if (current.length !== initial.length) return true
+
+  return current.some((hour) => {
+    const originalHour = initial.find((item) => item.id === hour.id)
+
+    if (!originalHour) return true
+
+    return (
+      originalHour.opensAt !== hour.opensAt ||
+      originalHour.closesAt !== hour.closesAt ||
+      originalHour.isClosed !== hour.isClosed
+    )
+  })
+}
+
 export function PartnerHoursPage() {
   const { data } = usePartnerPageData()
   const { updateStoreHour } = usePartnerDraftStore()
   const [draftHours, setDraftHours] = useState<PartnerHour[]>(data.hours)
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     setDraftHours(data.hours)
   }, [data.hours])
+
+  const hasChanges = hasHoursChanges(draftHours, data.hours)
 
   function updateHourField(
     hourId: string,
@@ -50,27 +70,41 @@ export function PartnerHoursPage() {
     )
   }
 
-  function handleSaveHours() {
-    draftHours.forEach((hour) => {
+  async function handleSaveHours() {
+    if (!hasChanges || isSaving) return
+
+    const changedHours = draftHours.filter((hour) => {
       const originalHour = data.hours.find((item) => item.id === hour.id)
-      if (!originalHour) return
 
-      if (
-        originalHour.opensAt === hour.opensAt &&
-        originalHour.closesAt === hour.closesAt &&
-        originalHour.isClosed === hour.isClosed
-      ) {
-        return
-      }
+      if (!originalHour) return false
 
-      updateStoreHour(data.store.id, hour.id, {
-        opensAt: hour.opensAt,
-        closesAt: hour.closesAt,
-        isClosed: hour.isClosed,
-      })
+      return (
+        originalHour.opensAt !== hour.opensAt ||
+        originalHour.closesAt !== hour.closesAt ||
+        originalHour.isClosed !== hour.isClosed
+      )
     })
 
-    toast.success('Horarios salvos com sucesso.')
+    if (changedHours.length === 0) return
+
+    setIsSaving(true)
+    try {
+      await saveStoreHours(data.store.id, changedHours)
+
+      changedHours.forEach((hour) => {
+        updateStoreHour(data.store.id, hour.id, {
+          opensAt: hour.opensAt,
+          closesAt: hour.closesAt,
+          isClosed: hour.isClosed,
+        })
+      })
+
+      toast.success('Horarios salvos com sucesso.')
+    } catch {
+      toast.error('Nao foi possivel salvar os horarios. Tente novamente.')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -85,10 +119,16 @@ export function PartnerHoursPage() {
           </div>
           <button
             type="button"
-            onClick={handleSaveHours}
-            className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
+            onClick={() => void handleSaveHours()}
+            disabled={!hasChanges || isSaving}
+            className={[
+              'inline-flex h-11 items-center justify-center rounded-2xl px-5 text-sm font-semibold transition',
+              hasChanges && !isSaving
+                ? 'bg-coral-500 text-white hover:bg-coral-600'
+                : 'cursor-not-allowed bg-ink-200 text-ink-500',
+            ].join(' ')}
           >
-            Salvar horarios
+            {isSaving ? 'Salvando...' : 'Salvar horarios'}
           </button>
         </div>
 

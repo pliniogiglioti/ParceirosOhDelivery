@@ -226,6 +226,32 @@ export async function saveStore(storeId: string, patch: Partial<import('@/types'
   if (error) throw error
 }
 
+export async function saveStoreHours(
+  storeId: string,
+  hours: Array<Pick<PartnerHour, 'id' | 'opensAt' | 'closesAt' | 'isClosed'>>
+): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
+  const client = supabase
+
+  const results = await Promise.all(
+    hours.map((hour) =>
+      client
+        .from('store_hours')
+        .update({
+          opens_at: hour.opensAt,
+          closes_at: hour.closesAt,
+          is_closed: hour.isClosed,
+        })
+        .eq('id', hour.id)
+        .eq('store_id', storeId)
+    )
+  )
+
+  const firstError = results.find((result) => result.error)?.error
+
+  if (firstError) throw firstError
+}
+
 export async function loadPartnerDashboard(storeId: string): Promise<{
   data: PartnerDashboardData
   source: 'supabase'

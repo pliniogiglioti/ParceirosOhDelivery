@@ -107,10 +107,21 @@ function VerificationCodeField({
 
 function RegisterLink({ label = 'Cadastre sua loja', to = '/cadastro' }: { label?: string; to?: string }) {
   const navigate = useNavigate()
+
+  function handleClick() {
+    if (to === '/cadastro') {
+      toast('Entre com o email para cadastrar sua loja.')
+      navigate('/', { state: { from: '/cadastro' } })
+      return
+    }
+
+    navigate(to)
+  }
+
   return (
     <button
       type="button"
-      onClick={() => navigate(to, { state: { from: '/cadastro' } })}
+      onClick={handleClick}
       className="font-medium text-[#ea1d2c] underline underline-offset-2"
     >
       {label}
