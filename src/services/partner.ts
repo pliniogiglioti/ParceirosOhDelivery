@@ -8,6 +8,7 @@ import type {
   PartnerDashboardData,
   PartnerHour,
   PartnerOrder,
+  PartnerOrderItem,
   PartnerProduct,
 } from '@/types'
 
@@ -133,10 +134,21 @@ export async function loadPartnerDashboard(): Promise<{
   ])
 
   const itemCountByOrder = new Map<string, number>()
+  const itemsByOrder = new Map<string, PartnerOrderItem[]>()
 
   ;(orderItemRows ?? []).forEach((row) => {
     const orderId = String(row.order_id)
     itemCountByOrder.set(orderId, (itemCountByOrder.get(orderId) ?? 0) + Number(row.quantity ?? 0))
+    itemsByOrder.set(orderId, [
+      ...(itemsByOrder.get(orderId) ?? []),
+      {
+        id: String(row.id),
+        name: String(row.product_name ?? 'Produto'),
+        quantity: Number(row.quantity ?? 0),
+        unitPrice: Number(row.unit_price ?? 0),
+        totalPrice: Number(row.total_price ?? 0),
+      },
+    ])
   })
 
   const categories: PartnerCategory[] =
@@ -173,6 +185,7 @@ export async function loadPartnerDashboard(): Promise<{
       fulfillmentType: String(row.fulfillment_type ?? 'delivery'),
       createdAt: String(row.created_at ?? new Date().toISOString()),
       itemsCount: itemCountByOrder.get(String(row.id)) ?? 0,
+      items: itemsByOrder.get(String(row.id)) ?? [],
     })) ?? []
 
   const hours: PartnerHour[] =

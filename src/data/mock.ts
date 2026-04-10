@@ -37,6 +37,11 @@ export const mockPartnerDashboard: PartnerDashboardData = {
       fulfillmentType: 'delivery',
       createdAt: '2026-04-08T18:20:00.000Z',
       itemsCount: 3,
+      items: [
+        { id: 'mock-item-1', name: 'Combo Oh Bacon', quantity: 1, unitPrice: 34.9, totalPrice: 34.9 },
+        { id: 'mock-item-2', name: 'Batata da Casa', quantity: 1, unitPrice: 17.9, totalPrice: 17.9 },
+        { id: 'mock-item-3', name: 'Pink Lemonade', quantity: 1, unitPrice: 9.6, totalPrice: 9.6 },
+      ],
     },
     {
       id: 'order-2',
@@ -48,6 +53,10 @@ export const mockPartnerDashboard: PartnerDashboardData = {
       fulfillmentType: 'pickup',
       createdAt: '2026-04-08T18:02:00.000Z',
       itemsCount: 2,
+      items: [
+        { id: 'mock-item-4', name: 'Combo Oh Bacon', quantity: 1, unitPrice: 34.9, totalPrice: 34.9 },
+        { id: 'mock-item-5', name: 'Pink Lemonade', quantity: 1, unitPrice: 7, totalPrice: 7 },
+      ],
     },
     {
       id: 'order-3',
@@ -59,6 +68,10 @@ export const mockPartnerDashboard: PartnerDashboardData = {
       fulfillmentType: 'delivery',
       createdAt: '2026-04-08T17:51:00.000Z',
       itemsCount: 4,
+      items: [
+        { id: 'mock-item-6', name: 'Combo Oh Bacon', quantity: 2, unitPrice: 34.9, totalPrice: 69.8 },
+        { id: 'mock-item-7', name: 'Pink Lemonade', quantity: 2, unitPrice: 4.35, totalPrice: 8.7 },
+      ],
     },
     {
       id: 'order-4',
@@ -70,6 +83,10 @@ export const mockPartnerDashboard: PartnerDashboardData = {
       fulfillmentType: 'delivery',
       createdAt: '2026-04-08T17:18:00.000Z',
       itemsCount: 2,
+      items: [
+        { id: 'mock-item-8', name: 'Batata da Casa', quantity: 1, unitPrice: 17.9, totalPrice: 17.9 },
+        { id: 'mock-item-9', name: 'Combo Oh Bacon', quantity: 1, unitPrice: 38, totalPrice: 38 },
+      ],
     },
   ],
   categories: [

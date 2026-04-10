@@ -170,6 +170,7 @@ export function PartnerSidebar({
   className?: string
 }) {
   const [signOutModalOpen, setSignOutModalOpen] = useState(false)
+  const acceptOrdersCount = data.orders.filter((order) => order.status === 'aguardando').length
 
   useEffect(() => {
     if (!signOutModalOpen) return
@@ -243,14 +244,14 @@ export function PartnerSidebar({
                   <>
                     <span className="relative">
                       <Icon className="h-5 w-5" />
-                      {item.id === 'pedidos' && data.metrics.pendingOrders > 0 ? (
+                      {item.id === 'pedidos' && acceptOrdersCount > 0 ? (
                         <span
                           className={cn(
                             'absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white',
                             isActive ? 'bg-coral-600' : 'bg-coral-500'
                           )}
                         >
-                          {data.metrics.pendingOrders}
+                          {acceptOrdersCount}
                         </span>
                       ) : null}
                     </span>

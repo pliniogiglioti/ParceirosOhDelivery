@@ -57,7 +57,16 @@ export interface PartnerOrder {
   fulfillmentType: string
   createdAt: string
   itemsCount: number
+  items?: PartnerOrderItem[]
   stageStartedAt?: string
+}
+
+export interface PartnerOrderItem {
+  id: string
+  name: string
+  quantity: number
+  unitPrice: number
+  totalPrice: number
 }
 
 export interface PartnerCategory {
@@ -89,11 +98,14 @@ export interface PartnerHour {
   isClosed: boolean
 }
 
-export type SoundModel = 'balcao' | 'chime' | 'ding' | 'melodia' | 'alerta'
+export type SoundModel = 'balcao' | 'chime' | 'ding' | 'melodia' | 'alerta' | 'sirene' | 'critico'
 
 export interface PartnerOrderSettings {
   acceptTime: number
+  prepareTime: number
   playSound: boolean
+  playLateOrderSound: boolean
+  lateOrderSoundModel: SoundModel
   soundModel: SoundModel
   showNotification: boolean
   printAutomatically: boolean

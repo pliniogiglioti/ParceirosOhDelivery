@@ -15,6 +15,7 @@ interface PartnerSimulationStoreState {
   hydrateStoreHours: (storeId: string, hours: PartnerHour[]) => void
   updateStoreHour: (storeId: string, hourId: string, patch: Partial<PartnerHour>) => void
   hydrateOrders: (storeId: string, orders: PartnerOrder[]) => void
+  addOrder: (storeId: string, order: PartnerOrder) => void
   updateOrder: (storeId: string, orderId: string, patch: Partial<PartnerOrder>) => void
   hydrateOrderSettings: (storeId: string, settings: PartnerOrderSettings) => void
   updateOrderSettings: (storeId: string, patch: Partial<PartnerOrderSettings>) => void
@@ -95,6 +96,22 @@ export const usePartnerSimulationStore = create<PartnerSimulationStoreState>()(
           }))
         }
       },
+      addOrder: (storeId, order) => {
+        const currentOrders = get().ordersByStoreId[storeId] ?? []
+
+        set((state) => ({
+          ordersByStoreId: {
+            ...state.ordersByStoreId,
+            [storeId]: [
+              {
+                ...order,
+                stageStartedAt: order.stageStartedAt ?? order.createdAt,
+              },
+              ...currentOrders,
+            ],
+          },
+        }))
+      },
       updateOrder: (storeId, orderId, patch) => {
         const currentOrders = get().ordersByStoreId[storeId] ?? []
 
@@ -116,15 +133,14 @@ export const usePartnerSimulationStore = create<PartnerSimulationStoreState>()(
       },
       updateOrderSettings: (storeId, patch) => {
         const currentSettings = get().orderSettingsByStoreId[storeId]
-        if (!currentSettings) return
 
         set((state) => ({
           orderSettingsByStoreId: {
             ...state.orderSettingsByStoreId,
             [storeId]: {
-              ...currentSettings,
+              ...(currentSettings ?? {}),
               ...patch,
-            },
+            } as PartnerOrderSettings,
           },
         }))
       },

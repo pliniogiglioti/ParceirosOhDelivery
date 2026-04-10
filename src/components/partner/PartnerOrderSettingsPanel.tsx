@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { usePartnerSimulationStore } from '@/hooks/usePartnerSimulationStore'
 import { usePartnerPageData } from '@/hooks/usePartnerPageData'
-import { playOrderSound, SOUND_MODELS } from '@/lib/orderSound'
+import { playOrderSound, LATE_ORDER_SOUND_MODELS, SOUND_MODELS } from '@/lib/orderSound'
 import type { PartnerOrderSettings } from '@/types'
 
 function parseInteger(value: string) {
@@ -50,7 +50,10 @@ export function PartnerOrderSettingsPanel() {
   function createDefaultSettings(): PartnerOrderSettings {
     return {
       acceptTime: 10,
+      prepareTime: 5,
       playSound: true,
+      playLateOrderSound: true,
+      lateOrderSoundModel: 'alerta' as const,
       soundModel: 'balcao' as const,
       showNotification: true,
       printAutomatically: false,
@@ -233,10 +236,8 @@ export function PartnerOrderSettingsPanel() {
                 <p className="mb-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-ink-400">Modelo de som</p>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   {SOUND_MODELS.map((s) => (
-                    <button
+                    <div
                       key={s.id}
-                      type="button"
-                      onClick={() => handleOrderSettingsPatch({ soundModel: s.id })}
                       className={[
                         'flex items-start gap-3 rounded-2xl border px-3 py-2.5 text-left transition',
                         draftSettings.soundModel === s.id
@@ -252,17 +253,73 @@ export function PartnerOrderSettingsPanel() {
                       >
                         <Play className="h-2.5 w-2.5" />
                       </button>
-                      <div className="min-w-0">
+                      <button
+                        type="button"
+                        onClick={() => handleOrderSettingsPatch({ soundModel: s.id })}
+                        className="min-w-0 flex-1 text-left"
+                      >
                         <p className={['text-xs font-semibold', draftSettings.soundModel === s.id ? 'text-coral-700' : 'text-ink-900'].join(' ')}>
                           {s.label}
                         </p>
                         <p className="mt-0.5 text-[10px] leading-relaxed text-ink-400">{s.description}</p>
-                      </div>
-                    </button>
+                      </button>
+                    </div>
                   ))}
                 </div>
               </div>
             )}
+          </div>
+
+          <div className="space-y-4 rounded-2xl border border-ink-100 bg-ink-50 px-4 py-4">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-ink-900">Emitir som quando um pedido atrasar</p>
+                <p className="mt-1 text-sm text-ink-500">Toca o alerta quando uma etapa passa do tempo.</p>
+              </div>
+              <ThemeSwitch
+                checked={draftSettings.playLateOrderSound}
+                onChange={(nextValue) => handleOrderSettingsPatch({ playLateOrderSound: nextValue })}
+                ariaLabel="Alternar som de pedido atrasado"
+              />
+            </div>
+
+            {draftSettings.playLateOrderSound ? (
+              <div>
+                <p className="mb-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-ink-400">Modelo de som</p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {LATE_ORDER_SOUND_MODELS.map((s) => (
+                    <div
+                      key={`late-${s.id}`}
+                      className={[
+                        'flex items-start gap-3 rounded-2xl border px-3 py-2.5 text-left transition',
+                        draftSettings.lateOrderSoundModel === s.id
+                          ? 'border-coral-300 bg-coral-50'
+                          : 'border-ink-100 bg-white hover:bg-ink-50',
+                      ].join(' ')}
+                    >
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); playOrderSound(s.id) }}
+                        className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-xl bg-ink-100 text-ink-600 transition hover:bg-coral-100 hover:text-coral-600"
+                        title={`Ouvir ${s.label}`}
+                      >
+                        <Play className="h-2.5 w-2.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleOrderSettingsPatch({ lateOrderSoundModel: s.id })}
+                        className="min-w-0 flex-1 text-left"
+                      >
+                        <p className={['text-xs font-semibold', draftSettings.lateOrderSoundModel === s.id ? 'text-coral-700' : 'text-ink-900'].join(' ')}>
+                          {s.label}
+                        </p>
+                        <p className="mt-0.5 text-[10px] leading-relaxed text-ink-400">{s.description}</p>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
 
           <label className="flex items-center justify-between gap-4 rounded-2xl border border-ink-100 bg-ink-50 px-4 py-4">
