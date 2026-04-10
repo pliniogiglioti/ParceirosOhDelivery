@@ -115,20 +115,44 @@ function MapPicker({ lat, lng, onChange }: { lat: number | null; lng: number | n
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
-    const initLat = lat ?? -23.5505
-    const initLng = lng ?? -46.6333
-    const map = L.map(containerRef.current, { zoomControl: true }).setView([initLat, initLng], lat ? 16 : 12)
+
+    // Começa com coords do endereço (se já geocodificado) ou São Paulo como fallback
+    const fallbackLat = lat ?? -23.5505
+    const fallbackLng = lng ?? -46.6333
+    const initialZoom = lat ? 16 : 12
+
+    const map = L.map(containerRef.current, { zoomControl: true }).setView([fallbackLat, fallbackLng], initialZoom)
+
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
     }).addTo(map)
-    lastCenterRef.current = { lat: initLat, lng: initLng }
-    onChangeRef.current(initLat, initLng)
+
+    lastCenterRef.current = { lat: fallbackLat, lng: fallbackLng }
+    onChangeRef.current(fallbackLat, fallbackLng)
+
     map.on('moveend', () => {
       const c = map.getCenter()
       lastCenterRef.current = { lat: c.lat, lng: c.lng }
       onChangeRef.current(c.lat, c.lng)
     })
+
     mapRef.current = map
+
+    // Se não há coordenadas do endereço, tenta posição atual do usuário
+    if (lat === null && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          if (!mapRef.current) return
+          const { latitude, longitude } = pos.coords
+          lastCenterRef.current = { lat: latitude, lng: longitude }
+          mapRef.current.setView([latitude, longitude], 16)
+          onChangeRef.current(latitude, longitude)
+        },
+        () => { /* negado ou indisponível — mantém fallback */ },
+        { timeout: 6000 }
+      )
+    }
+
     return () => { map.remove(); mapRef.current = null }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
