@@ -8,7 +8,6 @@ import { usePartnerSimulationStore } from '@/hooks/usePartnerSimulationStore'
 const REPEAT_MS = 10_000
 
 export function useOrderNotifications(storeId: string) {
-  // Single store subscription — avoids unstable selector hooks
   const { ordersByStoreId, orderSettingsByStoreId } = usePartnerSimulationStore()
 
   const orders   = ordersByStoreId[storeId]   ?? []
@@ -17,19 +16,22 @@ export function useOrderNotifications(storeId: string) {
   const seenIds  = useRef<Set<string>>(new Set())
   const interval = useRef<ReturnType<typeof setInterval> | null>(null)
 
+  const soundEnabled = settings?.playSound !== false
+  const model        = settings?.soundModel ?? 'balcao'
+  const notifEnabled = settings?.showNotification !== false
+  const hasPending   = orders.some((o) => o.status === 'aguardando')
+
+  // ── Detect new arriving orders → play once + show toast ──
   useEffect(() => {
     if (!storeId) return
 
-    const soundEnabled = settings?.playSound !== false
-    const model        = settings?.soundModel ?? 'balcao'
-    const notifEnabled = settings?.showNotification !== false
+    const newOrders = orders
+      .filter((o) => o.status === 'aguardando' && !seenIds.current.has(o.id))
 
-    // ── Detect genuinely new pending orders ──
-    const pending   = orders.filter((o) => o.status === 'aguardando')
-    const newOrders = pending.filter((o) => !seenIds.current.has(o.id))
-
-    // Always register all known ids so we don't re-fire on re-render
+    // Register all known IDs to avoid re-firing
     orders.forEach((o) => seenIds.current.add(o.id))
+
+    if (newOrders.length === 0) return
 
     newOrders.forEach((order) => {
       if (soundEnabled) playOrderSound(model)
@@ -57,23 +59,27 @@ export function useOrderNotifications(storeId: string) {
                 createElement('p', { className: 'text-xs text-ink-500' }, `#${order.code} · ${order.customerName}`)
               )
             ),
-          { duration: 6000, position: 'top-right' }
+          { duration: 8000, position: 'top-right' }
         )
       }
     })
+  }, [orders, storeId, soundEnabled, notifEnabled, model]) // eslint-disable-line react-hooks/exhaustive-deps
 
-    // ── Repeat every 10 s while any order is still pending ──
-    const hasPending = pending.length > 0
-
-    if (hasPending && soundEnabled) {
-      if (!interval.current) {
-        interval.current = setInterval(() => playOrderSound(model), REPEAT_MS)
-      }
-    } else {
+  // ── Repeat sound every 10 s while orders remain pending ──
+  useEffect(() => {
+    if (!storeId || !soundEnabled || !hasPending) {
       if (interval.current) {
         clearInterval(interval.current)
         interval.current = null
       }
+      return
+    }
+
+    // Start interval only if not already running
+    if (!interval.current) {
+      interval.current = setInterval(() => {
+        playOrderSound(model)
+      }, REPEAT_MS)
     }
 
     return () => {
@@ -82,5 +88,5 @@ export function useOrderNotifications(storeId: string) {
         interval.current = null
       }
     }
-  })   // ← intentionally no dep array: runs every render, interval managed by ref
+  }, [hasPending, soundEnabled, model, storeId])
 }

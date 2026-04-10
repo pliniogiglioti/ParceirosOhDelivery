@@ -52,7 +52,7 @@ export function PartnerOrderSettingsPanel() {
       acceptTime: 10,
       playSound: true,
       soundModel: 'balcao' as const,
-      showNotification: false,
+      showNotification: true,
       printAutomatically: false,
       acceptAutomatically: false,
     }
