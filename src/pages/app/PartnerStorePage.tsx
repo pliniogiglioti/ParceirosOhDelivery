@@ -87,6 +87,37 @@ function storeActivationBlockers(store: PartnerStore, hasActiveProduct: boolean)
   return missing
 }
 
+function hasStoreEditorChanges(current: PartnerStore, initial: PartnerStore) {
+  return (
+    current.name !== initial.name ||
+    current.categoryId !== initial.categoryId ||
+    current.categoryName !== initial.categoryName ||
+    current.description !== initial.description ||
+    current.deliveryFee !== initial.deliveryFee ||
+    current.minOrderAmount !== initial.minOrderAmount ||
+    current.etaMin !== initial.etaMin ||
+    current.etaMax !== initial.etaMax ||
+    current.pickupEta !== initial.pickupEta ||
+    current.active !== initial.active ||
+    current.coverImageUrl !== initial.coverImageUrl ||
+    current.logoImageUrl !== initial.logoImageUrl
+  )
+}
+
+function hasStoreAddressChanges(current: PartnerStore, initial: PartnerStore) {
+  return (
+    current.addressStreet !== initial.addressStreet ||
+    current.addressNumber !== initial.addressNumber ||
+    current.addressComplement !== initial.addressComplement ||
+    current.addressNeighborhood !== initial.addressNeighborhood ||
+    current.addressCity !== initial.addressCity ||
+    current.addressState !== initial.addressState ||
+    current.addressZip !== initial.addressZip ||
+    current.lat !== initial.lat ||
+    current.lng !== initial.lng
+  )
+}
+
 function StoreEditorTab() {
   const { data } = usePartnerPageData()
   const { updateStore } = usePartnerDraftStore()
@@ -94,6 +125,7 @@ function StoreEditorTab() {
   const logoInputRef = useRef<HTMLInputElement | null>(null)
   const [draftStore, setDraftStore] = useState<PartnerStore>(data.store)
   const [categories, setCategories] = useState<StoreCategory[]>([])
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
     setDraftStore(data.store)
@@ -111,14 +143,20 @@ function StoreEditorTab() {
   const hasActiveProduct = data.products.some((p) => p.active)
   const blockers = storeActivationBlockers(data.store, hasActiveProduct)
   const canActivate = blockers.length === 0
+  const hasChanges = hasStoreEditorChanges(draftStore, data.store)
 
   async function handleSaveStore() {
+    if (!hasChanges || isSaving) return
+
+    setIsSaving(true)
     try {
       await saveStore(data.store.id, draftStore)
       updateStore(data.store.id, draftStore)
       toast.success('Dados da loja salvos com sucesso.')
     } catch {
       toast.error('Nao foi possivel salvar. Tente novamente.')
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -408,9 +446,15 @@ function StoreEditorTab() {
           <button
             type="button"
             onClick={() => void handleSaveStore()}
-            className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-8 text-sm font-semibold text-white transition hover:bg-coral-600"
+            disabled={!hasChanges || isSaving}
+            className={[
+              'inline-flex h-11 items-center justify-center rounded-2xl px-8 text-sm font-semibold text-white transition',
+              hasChanges && !isSaving
+                ? 'bg-coral-500 hover:bg-coral-600'
+                : 'cursor-not-allowed bg-ink-200 text-ink-500',
+            ].join(' ')}
           >
-            Salvar
+            {isSaving ? 'Salvando...' : 'Salvar'}
           </button>
         </div>
       </article>
@@ -425,6 +469,7 @@ function StoreAddressTab() {
   const { data } = usePartnerPageData()
   const { updateStore } = usePartnerDraftStore()
   const [draft, setDraft] = useState<PartnerStore>(data.store)
+  const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => { setDraft(data.store) }, [data.store])
 
@@ -432,13 +477,20 @@ function StoreAddressTab() {
     setDraft((cur) => ({ ...cur, ...p }))
   }
 
+  const hasChanges = hasStoreAddressChanges(draft, data.store)
+
   async function handleSave() {
+    if (!hasChanges || isSaving) return
+
+    setIsSaving(true)
     try {
       await saveStore(data.store.id, draft)
       updateStore(data.store.id, draft)
       toast.success('Endereco salvo com sucesso.')
     } catch {
       toast.error('Nao foi possivel salvar. Tente novamente.')
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -532,9 +584,15 @@ function StoreAddressTab() {
           <button
             type="button"
             onClick={() => void handleSave()}
-            className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-8 text-sm font-semibold text-white transition hover:bg-coral-600"
+            disabled={!hasChanges || isSaving}
+            className={[
+              'inline-flex h-11 items-center justify-center rounded-2xl px-8 text-sm font-semibold text-white transition',
+              hasChanges && !isSaving
+                ? 'bg-coral-500 hover:bg-coral-600'
+                : 'cursor-not-allowed bg-ink-200 text-ink-500',
+            ].join(' ')}
           >
-            Salvar
+            {isSaving ? 'Salvando...' : 'Salvar'}
           </button>
         </div>
       </article>

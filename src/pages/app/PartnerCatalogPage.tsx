@@ -965,8 +965,8 @@ const normalizedSearch = search.trim().toLowerCase()
 
                 {visibleCategories.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-coral-200 bg-white px-5 py-10 text-center">
-                    <p className="text-base font-semibold text-ink-800">Nenhuma categoria encontrada</p>
-                    <p className="mt-2 text-sm text-ink-500">Ajuste os filtros para encontrar categorias e produtos do cardapio.</p>
+                    <p className="text-base font-semibold text-ink-800">Você ainda não tem nenhuma categoria cadastrada.</p>
+                    <p className="mt-2 text-sm text-ink-500">Comece clicando em "Adicionar categoria" para começar.</p>
                   </div>
                 ) : null}
               </div>
