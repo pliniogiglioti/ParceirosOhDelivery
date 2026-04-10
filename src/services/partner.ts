@@ -232,6 +232,30 @@ export async function saveStore(storeId: string, patch: Partial<import('@/types'
   if (error) throw error
 }
 
+export async function initializeStoreHours(storeId: string): Promise<PartnerHour[]> {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
+
+  const rows = Array.from({ length: 7 }, (_, weekDay) => ({
+    store_id: storeId,
+    week_day: weekDay,
+    opens_at: '08:00:00',
+    closes_at: '22:00:00',
+    is_closed: weekDay === 0,
+  }))
+
+  const { data, error } = await supabase.from('store_hours').insert(rows).select('*')
+
+  if (error) throw error
+
+  return (data ?? []).map((row) => ({
+    id: String(row.id),
+    weekDay: Number(row.week_day),
+    opensAt: String(row.opens_at),
+    closesAt: String(row.closes_at),
+    isClosed: Boolean(row.is_closed),
+  }))
+}
+
 export async function saveStoreHours(
   storeId: string,
   hours: Array<Pick<PartnerHour, 'id' | 'opensAt' | 'closesAt' | 'isClosed'>>

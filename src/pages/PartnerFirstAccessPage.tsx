@@ -11,6 +11,7 @@ import { formatTime } from '@/lib/utils'
 import {
   createProduct,
   createProductCategory,
+  initializeStoreHours,
   saveDeliveryArea,
   saveStore,
   saveStoreHours,
@@ -135,7 +136,15 @@ export function PartnerFirstAccessPage() {
     if (!data) return
 
     setStoreDraft(data.store)
-    setHoursDraft(data.hours)
+
+    if (data.hours.length === 0) {
+      void initializeStoreHours(data.store.id).then((created) => {
+        setHoursDraft(created)
+      })
+    } else {
+      setHoursDraft(data.hours)
+    }
+
     setDeliveryAreasDraft(data.deliveryAreas)
     setProductCategoriesDraft(data.categories)
     setProductsDraft(data.products)
