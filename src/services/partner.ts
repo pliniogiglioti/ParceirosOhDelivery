@@ -1,4 +1,5 @@
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
+import { addRoleToProfile } from '@/services/profile'
 import { isSameUtcDate } from '@/lib/utils'
 import type {
   DeliveryArea,
@@ -9,7 +10,9 @@ import type {
   PartnerOrder,
   PartnerOrderItem,
   PartnerProduct,
+  PartnerStoreCard,
   ReviewItem,
+  StoreRegistrationInput,
 } from '@/types'
 
 const defaultPaymentMethods = [
@@ -109,7 +112,88 @@ function calculateMetrics(orders: PartnerOrder[]) {
   }
 }
 
-export async function loadPartnerDashboard(): Promise<{
+function generateSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .trim()
+}
+
+export async function getStoresByEmail(email: string): Promise<PartnerStoreCard[]> {
+  if (!isSupabaseConfigured || !supabase) {
+    return []
+  }
+
+  const { data, error } = await supabase
+    .from('stores')
+    .select('id, name, category_name, logo_image_url, is_open, active, slug')
+    .eq('partner_email', email)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+
+  return (data ?? []).map((row) => ({
+    id: String(row.id),
+    name: String(row.name),
+    categoryName: String(row.category_name ?? ''),
+    logoImageUrl: row.logo_image_url ? String(row.logo_image_url) : undefined,
+    isOpen: Boolean(row.is_open),
+    active: Boolean(row.active),
+    slug: String(row.slug),
+  }))
+}
+
+export async function registerStore(
+  input: StoreRegistrationInput,
+  partnerId: string,
+  partnerEmail: string,
+  partnerName: string
+): Promise<string> {
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('Supabase nao configurado.')
+  }
+
+  const baseSlug = generateSlug(input.name)
+  const slug = `${baseSlug}-${Date.now().toString(36)}`
+
+  const { data: store, error } = await supabase
+    .from('stores')
+    .insert({
+      name: input.name,
+      slug,
+      category_id: input.categoryId || null,
+      category_name: input.categoryName,
+      tagline: input.tagline,
+      address_street: input.addressStreet,
+      address_neighborhood: input.addressNeighborhood,
+      address_city: input.addressCity,
+      address_state: input.addressState,
+      address_zip: input.addressZip,
+      delivery_fee: input.deliveryFee,
+      eta_min: input.etaMin,
+      eta_max: input.etaMax,
+      pickup_eta: input.pickupEta,
+      min_order_amount: input.minOrderAmount,
+      partner_email: partnerEmail,
+      partner_name: partnerName,
+      is_open: false,
+      active: true,
+    })
+    .select('id')
+    .single()
+
+  if (error) throw error
+
+  await addRoleToProfile(partnerId, 'store_owner')
+
+  return String(store.id)
+}
+
+export async function loadPartnerDashboard(storeId: string): Promise<{
   data: PartnerDashboardData
   source: 'supabase'
 }> {
@@ -117,14 +201,11 @@ export async function loadPartnerDashboard(): Promise<{
     throw new Error('Supabase nao configurado.')
   }
 
-  const { data: storeRows, error: storeError } = await supabase
+  const { data: storeRow, error: storeError } = await supabase
     .from('stores')
     .select('*')
-    .eq('active', true)
-    .order('sort_order', { ascending: true })
-    .limit(1)
-
-  const storeRow = storeRows?.[0]
+    .eq('id', storeId)
+    .single()
 
   if (storeError) {
     throw storeError

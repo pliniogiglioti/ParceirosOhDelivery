@@ -21,12 +21,13 @@ export async function getCurrentAuthUser(): Promise<PartnerAuthUser | null> {
     data: { session },
   } = await supabase.auth.getSession()
 
-  const email = session?.user?.email
-  if (!email) return null
+  const user = session?.user
+  if (!user?.email) return null
 
   return {
-    email,
-    name: String(session.user.user_metadata?.full_name ?? parseNameFromEmail(email)),
+    id: user.id,
+    email: user.email,
+    name: String(user.user_metadata?.full_name ?? parseNameFromEmail(user.email)),
   }
 }
 
@@ -64,11 +65,13 @@ export async function verifyLoginCode(email: string, code: string): Promise<Part
     throw error
   }
 
-  const userEmail = data.user?.email ?? email
+  const authUser = data.user!
+  const userEmail = authUser.email ?? email
 
   return {
+    id: authUser.id,
     email: userEmail,
-    name: String(data.user?.user_metadata?.full_name ?? parseNameFromEmail(userEmail)),
+    name: String(authUser.user_metadata?.full_name ?? parseNameFromEmail(userEmail)),
   }
 }
 

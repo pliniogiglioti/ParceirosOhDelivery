@@ -166,8 +166,54 @@ export interface PartnerMetrics {
 }
 
 export interface PartnerAuthUser {
+  id: string
   email: string
   name: string
+}
+
+export type UserRole = 'customer' | 'store_owner' | 'delivery'
+
+export interface Profile {
+  id: string
+  email: string
+  name: string | null
+  phone: string | null
+  avatarUrl: string | null
+  roles: UserRole[]
+  createdAt: string
+}
+
+export interface StoreCategory {
+  id: string
+  name: string
+  icon: string
+}
+
+export interface PartnerStoreCard {
+  id: string
+  name: string
+  categoryName: string
+  logoImageUrl?: string
+  isOpen: boolean
+  active: boolean
+  slug: string
+}
+
+export interface StoreRegistrationInput {
+  name: string
+  categoryId: string
+  categoryName: string
+  tagline: string
+  addressStreet: string
+  addressNeighborhood: string
+  addressCity: string
+  addressState: string
+  addressZip: string
+  deliveryFee: number
+  etaMin: number
+  etaMax: number
+  pickupEta: number
+  minOrderAmount: number
 }
 
 export interface PartnerDashboardData {

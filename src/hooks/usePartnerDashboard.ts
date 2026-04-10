@@ -9,7 +9,7 @@ interface PartnerDashboardState {
   error: string | null
 }
 
-export function usePartnerDashboard(enabled = true) {
+export function usePartnerDashboard(storeId: string | null) {
   const [state, setState] = useState<PartnerDashboardState>({
     data: null,
     source: 'supabase',
@@ -18,7 +18,7 @@ export function usePartnerDashboard(enabled = true) {
   })
 
   useEffect(() => {
-    if (!enabled) {
+    if (!storeId) {
       setState({
         data: null,
         source: 'supabase',
@@ -31,8 +31,10 @@ export function usePartnerDashboard(enabled = true) {
     let active = true
 
     void (async () => {
+      setState((current) => ({ ...current, loading: true, error: null }))
+
       try {
-        const result = await loadPartnerDashboard()
+        const result = await loadPartnerDashboard(storeId)
         if (!active) return
 
         setState({
@@ -55,7 +57,7 @@ export function usePartnerDashboard(enabled = true) {
     return () => {
       active = false
     }
-  }, [enabled])
+  }, [storeId])
 
   return state
 }

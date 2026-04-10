@@ -2,10 +2,13 @@ import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { usePartnerAuthStore } from '@/hooks/usePartnerAuthStore'
 import { getCurrentAuthUser, sendLoginCode, signOutAuth, verifyLoginCode } from '@/services/auth'
-import type { PartnerAuthUser } from '@/types'
+import { getOrCreateProfile } from '@/services/profile'
+import type { PartnerAuthUser, Profile } from '@/types'
 
 interface PartnerAuthState {
   user: PartnerAuthUser | null
+  profile: Profile | null
+  selectedStoreId: string | null
   pendingEmail: string
   codeSent: boolean
   loading: boolean
@@ -14,6 +17,7 @@ interface PartnerAuthState {
   sendCode: (email: string) => Promise<void>
   verifyCode: (email: string, code: string) => Promise<void>
   signOut: () => Promise<void>
+  selectStore: (storeId: string) => void
 }
 
 function getErrorMessage(error: unknown, defaultMessage: string) {
@@ -25,7 +29,19 @@ function getErrorMessage(error: unknown, defaultMessage: string) {
 }
 
 export function usePartnerAuth(): PartnerAuthState {
-  const { user, pendingEmail, codeSent, setUser, setPendingEmail, setCodeSent, resetFlow } = usePartnerAuthStore()
+  const {
+    user,
+    profile,
+    selectedStoreId,
+    pendingEmail,
+    codeSent,
+    setUser,
+    setProfile,
+    setSelectedStoreId,
+    setPendingEmail,
+    setCodeSent,
+    resetFlow,
+  } = usePartnerAuthStore()
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
   const [verifying, setVerifying] = useState(false)
@@ -37,14 +53,14 @@ export function usePartnerAuth(): PartnerAuthState {
       try {
         const currentUser = await getCurrentAuthUser()
 
-        if (!active) {
-          return
-        }
+        if (!active) return
 
         setUser(currentUser)
 
         if (currentUser) {
           resetFlow()
+          const userProfile = await getOrCreateProfile(currentUser.id, currentUser.email, currentUser.name)
+          if (active) setProfile(userProfile)
         }
       } catch (error) {
         if (active) {
@@ -62,7 +78,7 @@ export function usePartnerAuth(): PartnerAuthState {
     return () => {
       active = false
     }
-  }, [resetFlow, setUser])
+  }, [resetFlow, setUser, setProfile])
 
   async function handleSendCode(email: string) {
     const normalizedEmail = email.trim().toLowerCase()
@@ -87,6 +103,10 @@ export function usePartnerAuth(): PartnerAuthState {
       const userData = await verifyLoginCode(email.trim().toLowerCase(), code.trim())
       setUser(userData)
       resetFlow()
+
+      const userProfile = await getOrCreateProfile(userData.id, userData.email, userData.name)
+      setProfile(userProfile)
+
       toast.success('Login realizado com sucesso.')
     } catch (error) {
       toast.error(getErrorMessage(error, 'Nao foi possivel validar o codigo.'))
@@ -101,6 +121,8 @@ export function usePartnerAuth(): PartnerAuthState {
     try {
       await signOutAuth()
       setUser(null)
+      setProfile(null)
+      setSelectedStoreId(null)
       resetFlow()
       toast.success('Sessao encerrada com sucesso.')
     } catch (error) {
@@ -112,6 +134,8 @@ export function usePartnerAuth(): PartnerAuthState {
 
   return {
     user,
+    profile,
+    selectedStoreId,
     pendingEmail,
     codeSent,
     loading,
@@ -120,5 +144,6 @@ export function usePartnerAuth(): PartnerAuthState {
     sendCode: handleSendCode,
     verifyCode: handleVerifyCode,
     signOut: handleSignOut,
+    selectStore: setSelectedStoreId,
   }
 }

@@ -1,0 +1,153 @@
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { ChevronRight, LogOut, Plus, Store } from 'lucide-react'
+import { usePartnerAuth } from '@/hooks/usePartnerAuth'
+import { getStoresByEmail } from '@/services/partner'
+import type { PartnerStoreCard, UserRole } from '@/types'
+
+const ROLE_LABELS: Record<UserRole, string> = {
+  store_owner: 'Parceiro',
+  customer: 'Comprador',
+  delivery: 'Entregador',
+}
+
+const ROLE_COLORS: Record<UserRole, string> = {
+  store_owner: 'bg-[#fff1f2] text-[#ea1d2c]',
+  customer: 'bg-[#eff6ff] text-[#2563eb]',
+  delivery: 'bg-[#f0fdf4] text-[#16a34a]',
+}
+
+export function StoreSelectionPage() {
+  const navigate = useNavigate()
+  const { user, profile, selectStore, signOut } = usePartnerAuth()
+  const [stores, setStores] = useState<PartnerStoreCard[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    if (!user?.email) return
+
+    void getStoresByEmail(user.email)
+      .then(setStores)
+      .finally(() => setLoading(false))
+  }, [user?.email])
+
+  function handleSelectStore(storeId: string) {
+    selectStore(storeId)
+    navigate('/app')
+  }
+
+  return (
+    <div className="min-h-dvh bg-[#f5f5f5]">
+      <header className="bg-white border-b border-[#ececec] px-4 py-4 sm:px-6">
+        <div className="mx-auto flex max-w-2xl items-center justify-between">
+          <span className="text-[1.4rem] font-black italic tracking-[-0.06em] text-[#ea1d2c]">
+            ohdelivery
+          </span>
+          <button
+            type="button"
+            onClick={() => void signOut()}
+            className="flex items-center gap-2 rounded-xl px-3 py-2 text-[13px] font-semibold text-[#686868] transition hover:bg-[#f5f5f5]"
+          >
+            <LogOut className="h-4 w-4" />
+            Sair
+          </button>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
+        <div className="mb-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#ea1d2c] text-white font-bold text-lg">
+              {(profile?.name ?? user?.name ?? 'P').charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <p className="font-bold text-[#1d1d1d] text-[15px]">
+                {profile?.name ?? user?.name ?? user?.email}
+              </p>
+              <p className="text-[12px] text-[#8b8b8b]">{user?.email}</p>
+            </div>
+          </div>
+
+          {profile && profile.roles.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {profile.roles.map((role) => (
+                <span
+                  key={role}
+                  className={`rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] ${ROLE_COLORS[role]}`}
+                >
+                  {ROLE_LABELS[role]}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <h1 className="mb-4 text-[1.1rem] font-bold text-[#1d1d1d]">Suas lojas</h1>
+
+        {loading ? (
+          <div className="space-y-3">
+            {[1, 2].map((i) => (
+              <div key={i} className="h-[80px] animate-pulse rounded-2xl bg-white" />
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {stores.map((store) => (
+              <button
+                key={store.id}
+                type="button"
+                onClick={() => handleSelectStore(store.id)}
+                className="flex w-full items-center gap-4 rounded-2xl bg-white px-4 py-4 shadow-sm transition hover:shadow-md active:scale-[0.99]"
+              >
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#f5f5f5] overflow-hidden">
+                  {store.logoImageUrl ? (
+                    <img
+                      src={store.logoImageUrl}
+                      alt={store.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <Store className="h-5 w-5 text-[#8b8b8b]" />
+                  )}
+                </div>
+
+                <div className="flex-1 text-left">
+                  <p className="font-bold text-[#1d1d1d] text-[15px]">{store.name}</p>
+                  {store.categoryName && (
+                    <p className="text-[12px] text-[#8b8b8b]">{store.categoryName}</p>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                      store.isOpen
+                        ? 'bg-[#f0fdf4] text-[#16a34a]'
+                        : 'bg-[#f5f5f5] text-[#8b8b8b]'
+                    }`}
+                  >
+                    {store.isOpen ? 'Aberta' : 'Fechada'}
+                  </span>
+                  <ChevronRight className="h-4 w-4 text-[#b3b3b3]" />
+                </div>
+              </button>
+            ))}
+
+            <button
+              type="button"
+              onClick={() => navigate('/cadastro')}
+              className="flex w-full items-center gap-4 rounded-2xl border-2 border-dashed border-[#d9d9d9] bg-white px-4 py-4 transition hover:border-[#ea1d2c] hover:bg-[#fff5f5] group"
+            >
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#f5f5f5] group-hover:bg-[#fff1f2]">
+                <Plus className="h-5 w-5 text-[#8b8b8b] group-hover:text-[#ea1d2c]" />
+              </div>
+              <p className="font-semibold text-[#686868] group-hover:text-[#ea1d2c] text-[15px]">
+                Cadastrar nova loja
+              </p>
+            </button>
+          </div>
+        )}
+      </main>
+    </div>
+  )
+}

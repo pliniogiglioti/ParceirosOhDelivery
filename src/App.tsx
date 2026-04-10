@@ -19,6 +19,8 @@ import { PartnerNotificationsPage } from '@/pages/app/PartnerNotificationsPage'
 import { PartnerStorePage } from '@/pages/app/PartnerStorePage'
 import { PartnerSupportPage } from '@/pages/app/PartnerSupportPage'
 import { HomePage } from '@/pages/HomePage'
+import { StoreSelectionPage } from '@/pages/StoreSelectionPage'
+import { StoreRegisterPage } from '@/pages/StoreRegisterPage'
 
 function LoginRoute() {
   const auth = usePartnerAuth()
@@ -28,7 +30,7 @@ function LoginRoute() {
   }
 
   if (auth.user) {
-    return <Navigate to="/app" replace />
+    return <Navigate to="/lojas" replace />
   }
 
   return (
@@ -44,6 +46,34 @@ function LoginRoute() {
   )
 }
 
+function StoreSelectionRoute() {
+  const auth = usePartnerAuth()
+
+  if (auth.loading) {
+    return <LoadingScreen />
+  }
+
+  if (!auth.user) {
+    return <Navigate to="/" replace />
+  }
+
+  return <StoreSelectionPage />
+}
+
+function StoreRegisterRoute() {
+  const auth = usePartnerAuth()
+
+  if (auth.loading) {
+    return <LoadingScreen />
+  }
+
+  if (!auth.user) {
+    return <Navigate to="/" replace />
+  }
+
+  return <StoreRegisterPage />
+}
+
 function ProtectedLayoutRoute() {
   const auth = usePartnerAuth()
 
@@ -55,6 +85,10 @@ function ProtectedLayoutRoute() {
     return <Navigate to="/" replace />
   }
 
+  if (!auth.selectedStoreId) {
+    return <Navigate to="/lojas" replace />
+  }
+
   return <PartnerLayout onSignOut={() => void auth.signOut()} />
 }
 
@@ -63,6 +97,8 @@ export function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LoginRoute />} />
+        <Route path="/lojas" element={<StoreSelectionRoute />} />
+        <Route path="/cadastro" element={<StoreRegisterRoute />} />
         <Route path="/app" element={<ProtectedLayoutRoute />}>
           <Route index element={<PartnerOverviewPage />} />
           <Route path="pedidos" element={<PartnerOrdersPage />} />

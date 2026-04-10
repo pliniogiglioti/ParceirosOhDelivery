@@ -6,6 +6,7 @@ import { LoadingScreen } from '@/components/partner/LoadingScreen'
 import { PartnerSidebar } from '@/components/partner/PartnerSidebar'
 import { PartnerTopbar } from '@/components/partner/PartnerTopbar'
 import { useOrderNotifications } from '@/hooks/useOrderNotifications'
+import { usePartnerAuth } from '@/hooks/usePartnerAuth'
 import { usePartnerDashboard } from '@/hooks/usePartnerDashboard'
 import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
 import { usePartnerUiStore } from '@/hooks/usePartnerUiStore'
@@ -13,7 +14,8 @@ import { cn, isSameUtcDate } from '@/lib/utils'
 
 export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
   const location = useLocation()
-  const { data, loading, error, source } = usePartnerDashboard(true)
+  const { selectedStoreId } = usePartnerAuth()
+  const { data, loading, error, source } = usePartnerDashboard(selectedStoreId)
   const { sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCollapsed } = usePartnerUiStore()
   const {
     storeOpen,
