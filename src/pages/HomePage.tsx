@@ -11,8 +11,11 @@ type HomePageProps = {
   sending: boolean
   verifying: boolean
   pendingEmail: string
+  loggedInName?: string
+  loggedInEmail?: string
   onSendCode: (email: string) => Promise<void>
   onVerifyCode: (email: string, code: string) => Promise<void>
+  onEnterPanel?: () => void
 }
 
 function EmailField({
@@ -101,16 +104,67 @@ function VerificationCodeField({
   )
 }
 
-function RegisterLink() {
+function RegisterLink({ label = 'Cadastre sua loja', to = '/cadastro' }: { label?: string; to?: string }) {
   const navigate = useNavigate()
   return (
     <button
       type="button"
-      onClick={() => navigate('/cadastro', { state: { from: '/cadastro' } })}
+      onClick={() => navigate(to, { state: { from: '/cadastro' } })}
       className="font-medium text-[#ea1d2c] underline underline-offset-2"
     >
-      Cadastre sua loja
+      {label}
     </button>
+  )
+}
+
+function LoggedInCard({
+  name,
+  email,
+  onEnterPanel,
+}: {
+  name: string
+  email: string
+  onEnterPanel: () => void
+}) {
+  return (
+    <div className="overflow-hidden rounded-xl bg-white shadow-[0_18px_50px_rgba(0,0,0,0.32)]">
+      <div className="px-8 pb-7 pt-8">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-[1.3rem] font-bold text-[#181818]">Bem-vindo de volta</h2>
+            <p className="mt-2 text-[14px] leading-6 text-[#686868]">
+              Voce ja esta conectado como
+            </p>
+          </div>
+          <div className="rounded-full bg-[#fff1f2] px-3 py-1 text-[12px] font-bold uppercase tracking-[0.16em] text-[#ea1d2c]">
+            Parceiro
+          </div>
+        </div>
+
+        <div className="mt-5 flex items-center gap-3 rounded-xl border border-[#e8e8e8] bg-[#f9f9f9] px-4 py-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#ea1d2c] text-[13px] font-bold text-white">
+            {name.charAt(0).toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <p className="truncate text-[14px] font-semibold text-[#1d1d1d]">{name}</p>
+            <p className="truncate text-[12px] text-[#8b8b8b]">{email}</p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onEnterPanel}
+          className="mt-5 h-[50px] w-full rounded-xl bg-[#ea1d2c] text-[15px] font-bold text-white transition hover:brightness-95"
+        >
+          Entrar no painel
+        </button>
+      </div>
+
+      <div className="border-t border-[#ececec] px-6 py-5 text-center text-[13px] text-[#2f2f2f]">
+        Nao e voce?{' '}
+        <RegisterLink label="Usar outra conta" to="/" />
+      </div>
+    </div>
   )
 }
 
@@ -224,8 +278,11 @@ export function HomePage({
   sending,
   verifying,
   pendingEmail,
+  loggedInName,
+  loggedInEmail,
   onSendCode,
   onVerifyCode,
+  onEnterPanel,
 }: HomePageProps) {
   const [email, setEmail] = useState(pendingEmail)
   const [code, setCode] = useState('')
@@ -294,18 +351,22 @@ export function HomePage({
           </section>
 
           <section className="hidden w-full max-w-[462px] lg:block">
-            <AuthCard
-              codeSent={codeSent}
-              sending={sending}
-              verifying={verifying}
-              email={email}
-              code={filledCode}
-              onEmailChange={setEmail}
-              onCodeChange={setCode}
-              onSend={handleSend}
-              onVerify={handleVerify}
-              onResend={handleResend}
-            />
+            {loggedInName && loggedInEmail && onEnterPanel ? (
+              <LoggedInCard name={loggedInName} email={loggedInEmail} onEnterPanel={onEnterPanel} />
+            ) : (
+              <AuthCard
+                codeSent={codeSent}
+                sending={sending}
+                verifying={verifying}
+                email={email}
+                code={filledCode}
+                onEmailChange={setEmail}
+                onCodeChange={setCode}
+                onSend={handleSend}
+                onVerify={handleVerify}
+                onResend={handleResend}
+              />
+            )}
           </section>
         </div>
 
@@ -330,18 +391,22 @@ export function HomePage({
 
         <section className="mt-auto block pt-10 lg:hidden">
           <div className="mx-auto w-full max-w-[462px]">
-            <AuthCard
-              codeSent={codeSent}
-              sending={sending}
-              verifying={verifying}
-              email={email}
-              code={filledCode}
-              onEmailChange={setEmail}
-              onCodeChange={setCode}
-              onSend={handleSend}
-              onVerify={handleVerify}
-              onResend={handleResend}
-            />
+            {loggedInName && loggedInEmail && onEnterPanel ? (
+              <LoggedInCard name={loggedInName} email={loggedInEmail} onEnterPanel={onEnterPanel} />
+            ) : (
+              <AuthCard
+                codeSent={codeSent}
+                sending={sending}
+                verifying={verifying}
+                email={email}
+                code={filledCode}
+                onEmailChange={setEmail}
+                onCodeChange={setCode}
+                onSend={handleSend}
+                onVerify={handleVerify}
+                onResend={handleResend}
+              />
+            )}
           </div>
         </section>
       </div>
