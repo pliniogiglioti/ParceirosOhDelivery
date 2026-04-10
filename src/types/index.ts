@@ -189,6 +189,8 @@ export interface StoreCategory {
   icon: string
 }
 
+export type RegistrationStatus = 'pendente' | 'aprovado' | 'rejeitado'
+
 export interface PartnerStoreCard {
   id: string
   name: string
@@ -197,6 +199,8 @@ export interface PartnerStoreCard {
   isOpen: boolean
   active: boolean
   slug: string
+  registrationStatus: RegistrationStatus
+  rejectionReason: string | null
 }
 
 export interface StoreRegistrationInput {

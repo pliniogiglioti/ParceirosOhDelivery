@@ -1,9 +1,16 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ChevronRight, LogOut, Plus, Store } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { usePartnerAuth } from '@/hooks/usePartnerAuth'
 import { getStoresByEmail } from '@/services/partner'
-import type { PartnerStoreCard, UserRole } from '@/types'
+import type { PartnerStoreCard, RegistrationStatus, UserRole } from '@/types'
+
+const STATUS_CONFIG: Record<RegistrationStatus, { label: string; className: string }> = {
+  pendente: { label: 'Em análise', className: 'bg-[#fffbeb] text-[#d97706]' },
+  aprovado: { label: 'Aprovada', className: 'bg-[#f0fdf4] text-[#16a34a]' },
+  rejeitado: { label: 'Rejeitada', className: 'bg-[#fff1f2] text-[#ea1d2c]' },
+}
 
 const ROLE_LABELS: Record<UserRole, string> = {
   store_owner: 'Parceiro',
@@ -31,8 +38,16 @@ export function StoreSelectionPage() {
       .finally(() => setLoading(false))
   }, [user?.email])
 
-  function handleSelectStore(storeId: string) {
-    selectStore(storeId)
+  function handleSelectStore(store: PartnerStoreCard) {
+    if (store.registrationStatus === 'pendente') {
+      toast.error('Sua loja ainda está em análise. Aguarde a aprovação.')
+      return
+    }
+    if (store.registrationStatus === 'rejeitado') {
+      toast.error(store.rejectionReason ?? 'Cadastro rejeitado. Entre em contato com o suporte.')
+      return
+    }
+    selectStore(store.id)
     navigate('/app')
   }
 
@@ -92,46 +107,50 @@ export function StoreSelectionPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {stores.map((store) => (
-              <button
-                key={store.id}
-                type="button"
-                onClick={() => handleSelectStore(store.id)}
-                className="flex w-full items-center gap-4 rounded-2xl bg-white px-4 py-4 shadow-sm transition hover:shadow-md active:scale-[0.99]"
-              >
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#f5f5f5] overflow-hidden">
-                  {store.logoImageUrl ? (
-                    <img
-                      src={store.logoImageUrl}
-                      alt={store.name}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <Store className="h-5 w-5 text-[#8b8b8b]" />
-                  )}
-                </div>
+            {stores.map((store) => {
+              const statusCfg = STATUS_CONFIG[store.registrationStatus]
+              const isClickable = store.registrationStatus === 'aprovado'
 
-                <div className="flex-1 text-left">
-                  <p className="font-bold text-[#1d1d1d] text-[15px]">{store.name}</p>
-                  {store.categoryName && (
-                    <p className="text-[12px] text-[#8b8b8b]">{store.categoryName}</p>
-                  )}
-                </div>
+              return (
+                <button
+                  key={store.id}
+                  type="button"
+                  onClick={() => handleSelectStore(store)}
+                  className={`flex w-full items-center gap-4 rounded-2xl bg-white px-4 py-4 shadow-sm transition active:scale-[0.99] ${
+                    isClickable ? 'hover:shadow-md cursor-pointer' : 'cursor-default opacity-80'
+                  }`}
+                >
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#f5f5f5] overflow-hidden">
+                    {store.logoImageUrl ? (
+                      <img
+                        src={store.logoImageUrl}
+                        alt={store.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <Store className="h-5 w-5 text-[#8b8b8b]" />
+                    )}
+                  </div>
 
-                <div className="flex items-center gap-3">
-                  <span
-                    className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${
-                      store.isOpen
-                        ? 'bg-[#f0fdf4] text-[#16a34a]'
-                        : 'bg-[#f5f5f5] text-[#8b8b8b]'
-                    }`}
-                  >
-                    {store.isOpen ? 'Aberta' : 'Fechada'}
-                  </span>
-                  <ChevronRight className="h-4 w-4 text-[#b3b3b3]" />
-                </div>
-              </button>
-            ))}
+                  <div className="flex-1 text-left">
+                    <p className="font-bold text-[#1d1d1d] text-[15px]">{store.name}</p>
+                    {store.categoryName && (
+                      <p className="text-[12px] text-[#8b8b8b]">{store.categoryName}</p>
+                    )}
+                    {store.registrationStatus === 'rejeitado' && store.rejectionReason && (
+                      <p className="text-[11px] text-[#ea1d2c] mt-0.5">{store.rejectionReason}</p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${statusCfg.className}`}>
+                      {statusCfg.label}
+                    </span>
+                    {isClickable && <ChevronRight className="h-4 w-4 text-[#b3b3b3]" />}
+                  </div>
+                </button>
+              )
+            })}
 
             <button
               type="button"

@@ -130,7 +130,7 @@ export async function getStoresByEmail(email: string): Promise<PartnerStoreCard[
 
   const { data, error } = await supabase
     .from('stores')
-    .select('id, name, category_name, logo_image_url, is_open, active, slug')
+    .select('id, name, category_name, logo_image_url, is_open, active, slug, registration_status, rejection_reason')
     .eq('partner_email', email)
     .order('created_at', { ascending: false })
 
@@ -144,6 +144,8 @@ export async function getStoresByEmail(email: string): Promise<PartnerStoreCard[
     isOpen: Boolean(row.is_open),
     active: Boolean(row.active),
     slug: String(row.slug),
+    registrationStatus: (row.registration_status ?? 'pendente') as import('@/types').RegistrationStatus,
+    rejectionReason: row.rejection_reason ? String(row.rejection_reason) : null,
   }))
 }
 
@@ -181,7 +183,8 @@ export async function registerStore(
       partner_email: partnerEmail,
       partner_name: partnerName,
       is_open: false,
-      active: true,
+      active: false,
+      registration_status: 'pendente',
     })
     .select('id')
     .single()
