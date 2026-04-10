@@ -1,6 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, Check, ChevronDown, Loader2, MapPin } from 'lucide-react'
+import { ArrowRight, ChevronDown, Loader2, MapPin } from 'lucide-react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import toast from 'react-hot-toast'
@@ -68,36 +68,20 @@ const STEPS = ['CNPJ', 'Dados da Loja', 'Endereço', 'Localização', 'Configura
 
 function StepperBar({ current }: { current: number }) {
   return (
-    <div className="bg-white border-b border-[#ececec] px-4 py-4">
-      <div className="mx-auto flex max-w-2xl items-center justify-center">
+    <div className="bg-white border-b border-[#ececec] px-4">
+      <div className="mx-auto flex max-w-2xl">
         {STEPS.map((label, i) => (
-          <div key={i} className="flex items-center">
-            <div className="flex flex-col items-center gap-1" style={{ minWidth: 52 }}>
-              <div
-                className={`h-8 w-8 rounded-full flex items-center justify-center text-[12px] font-bold transition-all ${
-                  i < current
-                    ? 'bg-[#ea1d2c] text-white'
-                    : i === current
-                    ? 'bg-[#ea1d2c] text-white ring-4 ring-[#ea1d2c]/15'
-                    : 'bg-[#f0f0f0] text-[#aaa]'
-                }`}
-              >
-                {i < current ? <Check className="h-3.5 w-3.5" /> : <span className="h-2 w-2 rounded-full bg-current opacity-60 inline-block" />}
-              </div>
-              <span
-                className={`text-[10px] font-semibold whitespace-nowrap leading-tight text-center ${
-                  i === current ? 'text-[#ea1d2c]' : i < current ? 'text-[#686868]' : 'text-[#bbb]'
-                }`}
-              >
-                {label}
-              </span>
-            </div>
-            {i < STEPS.length - 1 && (
-              <div
-                className={`h-0.5 mb-4 mx-1 transition-all ${i < current ? 'bg-[#ea1d2c]' : 'bg-[#e5e5e5]'}`}
-                style={{ width: 24 }}
-              />
-            )}
+          <div
+            key={i}
+            className={`flex-1 py-3 text-center text-[13px] font-semibold border-b-2 transition-all ${
+              i === current
+                ? 'border-[#ea1d2c] text-[#ea1d2c]'
+                : i < current
+                ? 'border-transparent text-[#686868]'
+                : 'border-transparent text-[#bbb]'
+            }`}
+          >
+            {label}
           </div>
         ))}
       </div>
