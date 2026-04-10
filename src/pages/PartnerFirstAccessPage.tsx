@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useState } from 'react'
+import { type ReactNode, useState } from 'react'
 import { ArrowRight, Box, CheckCircle2, Clock3, LogOut, Map, Store } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Navigate, useNavigate } from 'react-router-dom'
@@ -181,16 +181,14 @@ export function PartnerFirstAccessPage() {
 
   const firstIncompleteIndex = steps.findIndex((step) => !step.complete)
   const suggestedStep = firstIncompleteIndex === -1 ? steps.length - 1 : firstIncompleteIndex
+  const currentStepIndex =
+    activeStep > suggestedStep
+      ? suggestedStep
+      : steps[activeStep]?.complete && suggestedStep > activeStep
+      ? suggestedStep
+      : activeStep
 
-  useEffect(() => {
-    setActiveStep((current) => {
-      if (current > suggestedStep) return suggestedStep
-      if (steps[current]?.complete && suggestedStep > current) return suggestedStep
-      return current
-    })
-  }, [suggestedStep, steps])
-
-  const currentStep = steps[activeStep] ?? steps[0]
+  const currentStep = steps[currentStepIndex] ?? steps[0]
   const completedSteps = steps.filter((step) => step.complete).length
   const allStepsCompleted = completedSteps === steps.length
   const Icon = currentStep.icon
@@ -211,12 +209,12 @@ export function PartnerFirstAccessPage() {
   }
 
   function handleNextStep() {
-    setActiveStep((current) => Math.min(current + 1, steps.length - 1))
+    setActiveStep(Math.min(currentStepIndex + 1, steps.length - 1))
   }
 
   return (
     <div className="min-h-dvh bg-[#f5f5f5]">
-      <StepperBar current={activeStep} steps={steps} />
+      <StepperBar current={currentStepIndex} steps={steps} />
 
       <main className="mx-auto flex max-w-3xl flex-col px-4 py-8 sm:px-6">
         <div className="mb-5 flex items-center justify-between gap-3">
@@ -241,7 +239,7 @@ export function PartnerFirstAccessPage() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#8b8b8b]">
-                Etapa {activeStep + 1} de {steps.length}
+                Etapa {currentStepIndex + 1} de {steps.length}
               </p>
               <h1 className="mt-3 text-[26px] font-bold tracking-[-0.04em] text-[#1d1d1d]">
                 {currentStep.title}
@@ -278,10 +276,10 @@ export function PartnerFirstAccessPage() {
         <div className="mt-5 flex gap-3">
           <button
             type="button"
-            onClick={() => (activeStep === 0 ? navigate('/lojas') : setActiveStep((current) => current - 1))}
+            onClick={() => (currentStepIndex === 0 ? navigate('/lojas') : setActiveStep(currentStepIndex - 1))}
             className="h-[52px] flex-1 rounded-2xl border border-[#d9d9d9] text-[14px] font-semibold text-[#303030] transition hover:bg-[#f5f5f5]"
           >
-            {activeStep === 0 ? 'Voltar para lojas' : 'Voltar'}
+            {currentStepIndex === 0 ? 'Voltar para lojas' : 'Voltar'}
           </button>
 
           <button
@@ -299,7 +297,7 @@ export function PartnerFirstAccessPage() {
             <button
               type="button"
               onClick={handleNextStep}
-              disabled={!currentStep.complete || activeStep === steps.length - 1}
+              disabled={!currentStep.complete || currentStepIndex === steps.length - 1}
               className="h-[52px] w-full rounded-2xl border border-[#d9d9d9] bg-white text-[14px] font-semibold text-[#303030] transition hover:bg-[#f5f5f5] disabled:cursor-not-allowed disabled:opacity-60"
             >
               Proxima etapa
