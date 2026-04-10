@@ -291,8 +291,8 @@ export function StoreRegisterPage() {
     <div className="min-h-dvh bg-[#f5f5f5] flex flex-col">
       <StepperBar current={step} />
 
-      <main className="flex-1 px-4 py-8 sm:px-6">
-        <div className="mx-auto w-full max-w-2xl">
+      <main className="flex-1 flex items-center justify-center px-4 py-10 sm:px-6">
+        <div className="w-full max-w-2xl">
           <form onSubmit={(e) => void handleSubmit(e)}>
 
             {/* Step 0 — CNPJ */}
