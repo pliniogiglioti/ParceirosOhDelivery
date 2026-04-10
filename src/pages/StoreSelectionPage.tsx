@@ -33,10 +33,13 @@ export function StoreSelectionPage() {
   useEffect(() => {
     if (!user?.email) return
 
-    void getStoresByEmail(user.email)
-      .then(setStores)
-      .finally(() => setLoading(false))
-  }, [user?.email])
+    void getStoresByEmail(user.email).then((result) => {
+      setStores(result)
+      if (result.length === 0) {
+        navigate('/cadastro', { replace: true })
+      }
+    }).finally(() => setLoading(false))
+  }, [user?.email, navigate])
 
   function handleSelectStore(store: PartnerStoreCard) {
     if (store.registrationStatus === 'pendente') {
