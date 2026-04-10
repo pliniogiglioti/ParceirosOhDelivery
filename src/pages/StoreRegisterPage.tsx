@@ -121,11 +121,9 @@ function MapPicker({ lat, lng, onChange }: { lat: number | null; lng: number | n
     const fallbackLng = lng ?? -46.6333
     const initialZoom = lat ? 16 : 12
 
-    const map = L.map(containerRef.current, { zoomControl: true }).setView([fallbackLat, fallbackLng], initialZoom)
+    const map = L.map(containerRef.current, { zoomControl: false, attributionControl: false }).setView([fallbackLat, fallbackLng], initialZoom)
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© <a href="https://openstreetmap.org">OpenStreetMap</a>',
-    }).addTo(map)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map)
 
     lastCenterRef.current = { lat: fallbackLat, lng: fallbackLng }
     onChangeRef.current(fallbackLat, fallbackLng)
