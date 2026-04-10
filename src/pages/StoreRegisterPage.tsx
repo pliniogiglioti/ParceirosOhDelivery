@@ -1,6 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, Building2, Check, ChevronDown, Loader2, MapPin } from 'lucide-react'
+import { ArrowRight, Check, ChevronDown, Loader2, MapPin } from 'lucide-react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import toast from 'react-hot-toast'
@@ -9,7 +9,7 @@ import { getStoreCategories } from '@/services/profile'
 import { registerStore } from '@/services/partner'
 import type { StoreCategory, StoreRegistrationInput } from '@/types'
 
-// ─── Utilities ────────────────────────────────────────────────────────────────
+// ─── Masks ────────────────────────────────────────────────────────────────────
 
 function formatCnpj(value: string) {
   const d = value.replace(/\D/g, '').slice(0, 14)
@@ -20,54 +20,20 @@ function formatCnpj(value: string) {
     .replace(/(\d{4})(\d)/, '$1-$2')
 }
 
+function formatCpf(value: string) {
+  const d = value.replace(/\D/g, '').slice(0, 11)
+  return d
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+    .replace(/(\d{3})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3-$4')
+}
+
 function formatCep(value: string) {
   const d = value.replace(/\D/g, '').slice(0, 8)
   return d.replace(/(\d{5})(\d)/, '$1-$2')
 }
 
-interface CnpjResult {
-  razaoSocial: string
-  nomeFantasia: string
-  situacao: string
-  natureza: string
-  abertura: string
-  atividadePrincipal: string
-  cep: string
-  logradouro: string
-  numero: string
-  complemento: string
-  bairro: string
-  municipio: string
-  uf: string
-}
-
-async function fetchCnpj(cnpj: string): Promise<CnpjResult | null> {
-  const digits = cnpj.replace(/\D/g, '')
-  if (digits.length !== 14) return null
-  try {
-    const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`)
-    if (!res.ok) return null
-    const d = (await res.json()) as Record<string, unknown>
-    const atividades = d.cnae_fiscal_descricao as string ?? ''
-    return {
-      razaoSocial: String(d.razao_social ?? ''),
-      nomeFantasia: String(d.nome_fantasia ?? ''),
-      situacao: String(d.descricao_situacao_cadastral ?? ''),
-      natureza: String(d.natureza_juridica ?? ''),
-      abertura: String(d.data_inicio_atividade ?? ''),
-      atividadePrincipal: atividades,
-      cep: String(d.cep ?? '').replace(/\D/g, ''),
-      logradouro: String(d.logradouro ?? ''),
-      numero: String(d.numero ?? ''),
-      complemento: String(d.complemento ?? ''),
-      bairro: String(d.bairro ?? ''),
-      municipio: String(d.municipio ?? ''),
-      uf: String(d.uf ?? ''),
-    }
-  } catch {
-    return null
-  }
-}
+// ─── APIs ────────────────────────────────────────────────────────────────────
 
 async function fetchViaCEP(cep: string) {
   const digits = cep.replace(/\D/g, '')
@@ -103,10 +69,10 @@ const STEPS = ['CNPJ', 'Dados da Loja', 'Endereço', 'Localização', 'Configura
 function StepperBar({ current }: { current: number }) {
   return (
     <div className="bg-white border-b border-[#ececec] px-4 py-4">
-      <div className="mx-auto flex max-w-lg items-center justify-center">
+      <div className="mx-auto flex max-w-2xl items-center justify-center">
         {STEPS.map((label, i) => (
           <div key={i} className="flex items-center">
-            <div className="flex flex-col items-center gap-1" style={{ minWidth: 48 }}>
+            <div className="flex flex-col items-center gap-1" style={{ minWidth: 52 }}>
               <div
                 className={`h-8 w-8 rounded-full flex items-center justify-center text-[12px] font-bold transition-all ${
                   i < current
@@ -116,7 +82,7 @@ function StepperBar({ current }: { current: number }) {
                     : 'bg-[#f0f0f0] text-[#aaa]'
                 }`}
               >
-                {i < current ? <Check className="h-3.5 w-3.5" /> : i + 1}
+                {i < current ? <Check className="h-3.5 w-3.5" /> : <span className="h-2 w-2 rounded-full bg-current opacity-60 inline-block" />}
               </div>
               <span
                 className={`text-[10px] font-semibold whitespace-nowrap leading-tight text-center ${
@@ -129,7 +95,7 @@ function StepperBar({ current }: { current: number }) {
             {i < STEPS.length - 1 && (
               <div
                 className={`h-0.5 mb-4 mx-1 transition-all ${i < current ? 'bg-[#ea1d2c]' : 'bg-[#e5e5e5]'}`}
-                style={{ width: 20 }}
+                style={{ width: 24 }}
               />
             )}
           </div>
@@ -200,7 +166,9 @@ function MapPicker({ lat, lng, onChange }: { lat: number | null; lng: number | n
       </div>
       <div className="pointer-events-none absolute rounded-full bg-white border-2 border-[#ea1d2c]" style={{ left: '50%', top: '50%', width: 8, height: 8, transform: 'translate(-50%, -50%)', zIndex: 9999 }} />
       <p className="mt-1.5 text-[11px] text-[#8b8b8b]">
-        {lat !== null && lng !== null ? `${lat.toFixed(5)}, ${lng.toFixed(5)} — mova o mapa para ajustar` : 'Mova o mapa para posicionar o pino da loja'}
+        {lat !== null && lng !== null
+          ? `${lat.toFixed(5)}, ${lng.toFixed(5)} — mova o mapa para ajustar`
+          : 'Mova o mapa para posicionar o pino da loja'}
       </p>
     </div>
   )
@@ -215,13 +183,15 @@ export function StoreRegisterPage() {
   const [step, setStep] = useState(0)
   const [categories, setCategories] = useState<StoreCategory[]>([])
   const [submitting, setSubmitting] = useState(false)
-  const [cnpjLoading, setCnpjLoading] = useState(false)
   const [cepLoading, setCepLoading] = useState(false)
-  const [cnpjResult, setCnpjResult] = useState<CnpjResult | null>(null)
 
   const [form, setForm] = useState<StoreRegistrationInput>({
     name: '',
     cnpj: '',
+    razaoSocial: '',
+    nomeFantasia: '',
+    responsavelNome: '',
+    responsavelCpf: '',
     categoryId: '',
     categoryName: '',
     tagline: '',
@@ -247,42 +217,6 @@ export function StoreRegisterPage() {
     setForm((prev) => ({ ...prev, [key]: value }))
   }
 
-  async function handleCnpjBlur() {
-    const digits = form.cnpj.replace(/\D/g, '')
-    if (digits.length !== 14) return
-    setCnpjLoading(true)
-    setCnpjResult(null)
-    try {
-      const data = await fetchCnpj(digits)
-      if (!data) { toast.error('CNPJ não encontrado ou inválido.'); return }
-      setCnpjResult(data)
-      // Pré-preenche nome da loja se vazio
-      if (!form.name.trim()) {
-        const suggested = data.nomeFantasia || data.razaoSocial
-        if (suggested) setForm((prev) => ({ ...prev, name: suggested }))
-      }
-      // Pré-preenche endereço a partir do CNPJ
-      if (data.cep) {
-        const cepFormatted = data.cep.replace(/(\d{5})(\d{3})/, '$1-$2')
-        setForm((prev) => ({
-          ...prev,
-          addressZip: cepFormatted,
-          addressStreet: data.logradouro,
-          addressNumber: data.numero,
-          addressComplement: data.complemento,
-          addressNeighborhood: data.bairro,
-          addressCity: data.municipio,
-          addressState: data.uf,
-        }))
-        const query = `${data.logradouro}, ${data.bairro}, ${data.municipio}, ${data.uf}, Brasil`
-        const coords = await geocodeAddress(query)
-        if (coords) setForm((prev) => ({ ...prev, lat: coords.lat, lng: coords.lng }))
-      }
-    } finally {
-      setCnpjLoading(false)
-    }
-  }
-
   async function handleCepBlur() {
     const digits = form.addressZip.replace(/\D/g, '')
     if (digits.length !== 8) return
@@ -305,7 +239,9 @@ export function StoreRegisterPage() {
   function validateStep(s: number): boolean {
     if (s === 0) {
       if (form.cnpj.replace(/\D/g, '').length !== 14) { toast.error('Informe um CNPJ válido.'); return false }
-      if (!cnpjResult) { toast.error('Consulte o CNPJ antes de continuar.'); return false }
+      if (!form.razaoSocial.trim()) { toast.error('Informe a Razão Social.'); return false }
+      if (!form.responsavelNome.trim()) { toast.error('Informe o nome do responsável.'); return false }
+      if (form.responsavelCpf.replace(/\D/g, '').length !== 11) { toast.error('Informe um CPF válido.'); return false }
     }
     if (s === 1) {
       if (!form.name.trim()) { toast.error('Informe o nome da loja.'); return false }
@@ -350,111 +286,90 @@ export function StoreRegisterPage() {
   }
 
   const isLastStep = step === STEPS.length - 1
-  const isLoading = cnpjLoading || cepLoading
-  const isAtiva = cnpjResult?.situacao.toLowerCase().includes('ativa')
 
   return (
     <div className="min-h-dvh bg-[#f5f5f5] flex flex-col">
-      {/* Stepper como header */}
       <StepperBar current={step} />
 
-      {/* Form centralizado */}
-      <main className="flex flex-1 justify-center px-4 py-8 sm:px-6">
-        <div className="w-full max-w-2xl">
+      <main className="flex-1 px-4 py-8 sm:px-6">
+        <div className="mx-auto w-full max-w-2xl">
           <form onSubmit={(e) => void handleSubmit(e)}>
 
             {/* Step 0 — CNPJ */}
             {step === 0 && (
-              <div className="rounded-2xl bg-white p-6 shadow-sm space-y-4 animate-rise">
+              <div className="rounded-2xl bg-white p-8 shadow-sm space-y-5 animate-rise">
                 <div>
-                  <h2 className="text-[16px] font-bold text-[#1d1d1d]">Identificação</h2>
-                  <p className="text-[13px] text-[#8b8b8b] mt-0.5">Digite o CNPJ para consultar os dados da empresa</p>
+                  <h2 className="text-[18px] font-bold text-[#1d1d1d]">Dados da Empresa</h2>
+                  <p className="text-[13px] text-[#8b8b8b] mt-1">Informações do CNPJ e do responsável pela loja</p>
                 </div>
 
-                <Field label="CNPJ *">
-                  <div className="relative">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <Field label="CNPJ *">
                     <input
                       type="text"
                       placeholder="00.000.000/0001-00"
                       value={form.cnpj}
-                      onChange={(e) => { set('cnpj', formatCnpj(e.target.value)); setCnpjResult(null) }}
-                      onBlur={() => void handleCnpjBlur()}
+                      onChange={(e) => set('cnpj', formatCnpj(e.target.value))}
                       className={inputClass}
                       autoFocus
                     />
-                    {cnpjLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-[#ea1d2c]" />}
-                  </div>
+                  </Field>
+
+                  <Field label="Nome Fantasia">
+                    <input
+                      type="text"
+                      placeholder="Como é conhecida no mercado"
+                      value={form.nomeFantasia}
+                      onChange={(e) => set('nomeFantasia', e.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+                </div>
+
+                <Field label="Razão Social *">
+                  <input
+                    type="text"
+                    placeholder="Razão Social conforme CNPJ"
+                    value={form.razaoSocial}
+                    onChange={(e) => set('razaoSocial', e.target.value)}
+                    className={inputClass}
+                  />
                 </Field>
 
-                {cnpjResult && (
-                  <div className={`rounded-xl border px-4 py-4 space-y-3 ${isAtiva ? 'border-green-200 bg-green-50' : 'border-amber-200 bg-amber-50'}`}>
-                    <div className="flex items-center gap-2">
-                      <Building2 className={`h-4 w-4 shrink-0 ${isAtiva ? 'text-green-600' : 'text-amber-600'}`} />
-                      <span className={`text-[11px] font-bold uppercase tracking-wide ${isAtiva ? 'text-green-700' : 'text-amber-700'}`}>
-                        {cnpjResult.situacao}
-                      </span>
-                    </div>
+                <div className="border-t border-[#f0f0f0] pt-4">
+                  <p className="text-[13px] font-bold text-[#1d1d1d] mb-4">Responsável pela loja</p>
 
-                    {cnpjResult.nomeFantasia && (
-                      <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-[#8b8b8b] mb-0.5">Nome Fantasia</p>
-                        <p className="text-[14px] font-semibold text-[#1d1d1d]">{cnpjResult.nomeFantasia}</p>
-                      </div>
-                    )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Field label="Nome completo *">
+                      <input
+                        type="text"
+                        placeholder="Nome do responsável"
+                        value={form.responsavelNome}
+                        onChange={(e) => set('responsavelNome', e.target.value)}
+                        className={inputClass}
+                      />
+                    </Field>
 
-                    <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-wide text-[#8b8b8b] mb-0.5">Razão Social</p>
-                      <p className="text-[13px] text-[#303030]">{cnpjResult.razaoSocial}</p>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
-                      {cnpjResult.natureza && (
-                        <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-wide text-[#8b8b8b] mb-0.5">Natureza Jurídica</p>
-                          <p className="text-[12px] text-[#303030]">{cnpjResult.natureza}</p>
-                        </div>
-                      )}
-                      {cnpjResult.abertura && (
-                        <div>
-                          <p className="text-[10px] font-semibold uppercase tracking-wide text-[#8b8b8b] mb-0.5">Abertura</p>
-                          <p className="text-[12px] text-[#303030]">{cnpjResult.abertura}</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {cnpjResult.atividadePrincipal && (
-                      <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-[#8b8b8b] mb-0.5">Atividade Principal</p>
-                        <p className="text-[12px] text-[#303030]">{cnpjResult.atividadePrincipal}</p>
-                      </div>
-                    )}
-
-                    {cnpjResult.municipio && (
-                      <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-wide text-[#8b8b8b] mb-0.5">Endereço Registrado</p>
-                        <p className="text-[12px] text-[#303030]">
-                          {cnpjResult.logradouro}{cnpjResult.numero ? `, ${cnpjResult.numero}` : ''} — {cnpjResult.bairro}
-                        </p>
-                        <p className="text-[12px] text-[#686868]">{cnpjResult.municipio}/{cnpjResult.uf} · CEP {cnpjResult.cep.replace(/(\d{5})(\d{3})/, '$1-$2')}</p>
-                      </div>
-                    )}
+                    <Field label="CPF *">
+                      <input
+                        type="text"
+                        placeholder="000.000.000-00"
+                        value={form.responsavelCpf}
+                        onChange={(e) => set('responsavelCpf', formatCpf(e.target.value))}
+                        className={inputClass}
+                      />
+                    </Field>
                   </div>
-                )}
-
-                {!cnpjResult && !cnpjLoading && (
-                  <p className="text-[12px] text-[#8b8b8b] text-center">
-                    O endereço e dados da empresa serão preenchidos automaticamente.
-                  </p>
-                )}
+                </div>
               </div>
             )}
 
             {/* Step 1 — Dados da Loja */}
             {step === 1 && (
-              <div className="rounded-2xl bg-white p-6 shadow-sm space-y-4 animate-rise">
+              <div className="rounded-2xl bg-white p-8 shadow-sm space-y-5 animate-rise">
                 <div>
-                  <h2 className="text-[16px] font-bold text-[#1d1d1d]">Dados da Loja</h2>
-                  <p className="text-[13px] text-[#8b8b8b] mt-0.5">Como sua loja vai aparecer para os clientes</p>
+                  <h2 className="text-[18px] font-bold text-[#1d1d1d]">Dados da Loja</h2>
+                  <p className="text-[13px] text-[#8b8b8b] mt-1">Como sua loja vai aparecer para os clientes</p>
                 </div>
 
                 <Field label="Nome da loja *">
@@ -501,10 +416,10 @@ export function StoreRegisterPage() {
 
             {/* Step 2 — Endereço */}
             {step === 2 && (
-              <div className="rounded-2xl bg-white p-6 shadow-sm space-y-4 animate-rise">
+              <div className="rounded-2xl bg-white p-8 shadow-sm space-y-5 animate-rise">
                 <div>
-                  <h2 className="text-[16px] font-bold text-[#1d1d1d]">Endereço</h2>
-                  <p className="text-[13px] text-[#8b8b8b] mt-0.5">Confirme o endereço da loja</p>
+                  <h2 className="text-[18px] font-bold text-[#1d1d1d]">Endereço</h2>
+                  <p className="text-[13px] text-[#8b8b8b] mt-1">Onde sua loja está localizada</p>
                 </div>
 
                 <Field label="CEP *">
@@ -535,7 +450,7 @@ export function StoreRegisterPage() {
                   <p className="text-[12px] text-[#8b8b8b] text-center py-1">Digite o CEP para preencher o endereço automaticamente.</p>
                 )}
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   <Field label="Número *">
                     <input
                       type="text"
@@ -560,10 +475,10 @@ export function StoreRegisterPage() {
 
             {/* Step 3 — Localização */}
             {step === 3 && (
-              <div className="rounded-2xl bg-white p-6 shadow-sm space-y-4 animate-rise">
+              <div className="rounded-2xl bg-white p-8 shadow-sm space-y-5 animate-rise">
                 <div>
-                  <h2 className="text-[16px] font-bold text-[#1d1d1d]">Localização</h2>
-                  <p className="text-[13px] text-[#8b8b8b] mt-0.5">Mova o mapa até o pino estar sobre o local exato</p>
+                  <h2 className="text-[18px] font-bold text-[#1d1d1d]">Localização</h2>
+                  <p className="text-[13px] text-[#8b8b8b] mt-1">Mova o mapa até o pino estar sobre o local exato da loja</p>
                 </div>
 
                 <MapPicker
@@ -588,13 +503,13 @@ export function StoreRegisterPage() {
 
             {/* Step 4 — Configurações */}
             {step === 4 && (
-              <div className="rounded-2xl bg-white p-6 shadow-sm space-y-4 animate-rise">
+              <div className="rounded-2xl bg-white p-8 shadow-sm space-y-5 animate-rise">
                 <div>
-                  <h2 className="text-[16px] font-bold text-[#1d1d1d]">Configurações</h2>
-                  <p className="text-[13px] text-[#8b8b8b] mt-0.5">Ajuste os valores padrão da sua loja</p>
+                  <h2 className="text-[18px] font-bold text-[#1d1d1d]">Configurações</h2>
+                  <p className="text-[13px] text-[#8b8b8b] mt-1">Ajuste os valores padrão da sua loja</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-2 gap-4">
                   <Field label="Taxa de entrega (R$)">
                     <input type="number" min={0} step={0.5} placeholder="0,00" value={form.deliveryFee} onChange={(e) => set('deliveryFee', Number(e.target.value))} className={inputClass} autoFocus />
                   </Field>
@@ -603,7 +518,7 @@ export function StoreRegisterPage() {
                   </Field>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-3 gap-4">
                   <Field label="Entrega mín.">
                     <div className="relative">
                       <input type="number" min={1} placeholder="30" value={form.etaMin} onChange={(e) => set('etaMin', Number(e.target.value))} className={`${inputClass} pr-10`} />
@@ -629,8 +544,7 @@ export function StoreRegisterPage() {
             )}
 
             {/* Navegação */}
-            <div className="mt-4 flex gap-3">
-              {/* Botão esquerdo: "Voltar ao site" no step 0, "Voltar" nos demais */}
+            <div className="mt-5 flex gap-3">
               <button
                 type="button"
                 onClick={() => step === 0 ? navigate('/lojas') : setStep((s) => s - 1)}
@@ -639,15 +553,14 @@ export function StoreRegisterPage() {
                 {step === 0 ? 'Voltar ao site' : 'Voltar'}
               </button>
 
-              {/* Botão direito: "Próximo" ou "Cadastrar loja" */}
               {!isLastStep ? (
                 <button
                   type="button"
                   onClick={() => void handleNext()}
-                  disabled={isLoading}
+                  disabled={cepLoading}
                   className="h-[52px] flex-1 rounded-2xl bg-[#ea1d2c] text-[15px] font-bold text-white transition hover:brightness-95 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Próximo <ArrowRight className="h-4 w-4" /></>}
+                  {cepLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Próximo <ArrowRight className="h-4 w-4" /></>}
                 </button>
               ) : (
                 <button

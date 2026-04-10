@@ -167,6 +167,10 @@ export async function registerStore(
     .insert({
       name: input.name,
       cnpj: input.cnpj || null,
+      razao_social: input.razaoSocial || null,
+      nome_fantasia: input.nomeFantasia || null,
+      responsavel_nome: input.responsavelNome || null,
+      responsavel_cpf: input.responsavelCpf || null,
       slug,
       category_id: input.categoryId || null,
       category_name: input.categoryName,

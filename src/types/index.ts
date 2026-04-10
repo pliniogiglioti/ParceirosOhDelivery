@@ -206,6 +206,10 @@ export interface PartnerStoreCard {
 export interface StoreRegistrationInput {
   name: string
   cnpj: string
+  razaoSocial: string
+  nomeFantasia: string
+  responsavelNome: string
+  responsavelCpf: string
   categoryId: string
   categoryName: string
   tagline: string
