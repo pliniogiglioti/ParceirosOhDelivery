@@ -45,6 +45,7 @@ function LoginRoute() {
       onSendCode={auth.sendCode}
       onVerifyCode={auth.verifyCode}
       onEnterPanel={() => navigate(from ?? '/lojas')}
+      onSignOut={() => void auth.signOut()}
     />
   )
 }

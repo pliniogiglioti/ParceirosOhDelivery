@@ -16,6 +16,7 @@ type HomePageProps = {
   onSendCode: (email: string) => Promise<void>
   onVerifyCode: (email: string, code: string) => Promise<void>
   onEnterPanel?: () => void
+  onSignOut?: () => void
 }
 
 function EmailField({
@@ -121,10 +122,12 @@ function LoggedInCard({
   name,
   email,
   onEnterPanel,
+  onSignOut,
 }: {
   name: string
   email: string
   onEnterPanel: () => void
+  onSignOut?: () => void
 }) {
   return (
     <div className="overflow-hidden rounded-xl bg-white shadow-[0_18px_50px_rgba(0,0,0,0.32)]">
@@ -145,10 +148,19 @@ function LoggedInCard({
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#ea1d2c] text-[13px] font-bold text-white">
             {name.charAt(0).toUpperCase()}
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="truncate text-[14px] font-semibold text-[#1d1d1d]">{name}</p>
             <p className="truncate text-[12px] text-[#8b8b8b]">{email}</p>
           </div>
+          {onSignOut && (
+            <button
+              type="button"
+              onClick={onSignOut}
+              className="shrink-0 rounded-lg border border-[#e0e0e0] px-3 py-1.5 text-[12px] font-semibold text-[#686868] transition hover:border-[#ea1d2c] hover:text-[#ea1d2c]"
+            >
+              Sair
+            </button>
+          )}
         </div>
 
         <button
@@ -352,7 +364,7 @@ export function HomePage({
 
           <section className="hidden w-full max-w-[462px] lg:block">
             {loggedInName && loggedInEmail && onEnterPanel ? (
-              <LoggedInCard name={loggedInName} email={loggedInEmail} onEnterPanel={onEnterPanel} />
+              <LoggedInCard name={loggedInName} email={loggedInEmail} onEnterPanel={onEnterPanel} onSignOut={onSignOut} />
             ) : (
               <AuthCard
                 codeSent={codeSent}
@@ -392,7 +404,7 @@ export function HomePage({
         <section className="mt-auto block pt-10 lg:hidden">
           <div className="mx-auto w-full max-w-[462px]">
             {loggedInName && loggedInEmail && onEnterPanel ? (
-              <LoggedInCard name={loggedInName} email={loggedInEmail} onEnterPanel={onEnterPanel} />
+              <LoggedInCard name={loggedInName} email={loggedInEmail} onEnterPanel={onEnterPanel} onSignOut={onSignOut} />
             ) : (
               <AuthCard
                 codeSent={codeSent}
