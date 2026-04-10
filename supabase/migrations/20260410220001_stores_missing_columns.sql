@@ -9,3 +9,8 @@ alter table public.stores
   add column if not exists partner_email text,
   add column if not exists partner_role text,
   add column if not exists logistics_courier_mode text;
+
+alter table public.stores
+  add column if not exists address_number text,
+  add column if not exists lat double precision,
+  add column if not exists lng double precision;

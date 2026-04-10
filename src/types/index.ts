@@ -209,10 +209,13 @@ export interface StoreRegistrationInput {
   categoryName: string
   tagline: string
   addressStreet: string
+  addressNumber: string
   addressNeighborhood: string
   addressCity: string
   addressState: string
   addressZip: string
+  lat: number | null
+  lng: number | null
   deliveryFee: number
   etaMin: number
   etaMax: number
