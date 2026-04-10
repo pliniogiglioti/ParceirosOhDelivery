@@ -193,7 +193,7 @@ function MapPicker({ lat, lng, onChange }: { lat: number | null; lng: number | n
 
   return (
     <div className="relative">
-      <div ref={containerRef} className="h-[280px] w-full rounded-xl overflow-hidden border border-[#e0e0e0]" />
+      <div ref={containerRef} className="h-[480px] w-full rounded-xl overflow-hidden border border-[#e0e0e0]" />
       {/* Fixed center pin */}
       <div className="pointer-events-none absolute" style={{ left: '50%', top: '50%', transform: 'translate(-50%, -100%)', zIndex: 9999, width: 26, height: 26 }}>
         <div style={{ width: '100%', height: '100%', background: '#ea1d2c', borderRadius: '50% 50% 50% 0', transform: 'rotate(-45deg)', border: '3px solid white', boxShadow: '0 2px 10px rgba(0,0,0,0.4)' }} />
@@ -359,8 +359,8 @@ export function StoreRegisterPage() {
       <StepperBar current={step} />
 
       {/* Form centralizado */}
-      <main className="flex flex-1 items-center justify-center px-4 py-8 sm:px-6">
-        <div className="w-full max-w-md">
+      <main className="flex flex-1 justify-center px-4 py-8 sm:px-6">
+        <div className="w-full max-w-2xl">
           <form onSubmit={(e) => void handleSubmit(e)}>
 
             {/* Step 0 — CNPJ */}
