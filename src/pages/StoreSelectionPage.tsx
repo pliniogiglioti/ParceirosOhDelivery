@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronRight, LogOut, Plus, Store } from 'lucide-react'
+import { ChevronRight, Clock, LogOut, Plus, Store } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { usePartnerAuth } from '@/hooks/usePartnerAuth'
 import { getStoresByEmail } from '@/services/partner'
 import type { PartnerStoreCard, RegistrationStatus, UserRole } from '@/types'
 
 const STATUS_CONFIG: Record<RegistrationStatus, { label: string; className: string }> = {
-  pendente: { label: 'Em análise', className: 'bg-[#fffbeb] text-[#d97706]' },
+  pendente: { label: 'Pendente de aceitação', className: 'bg-[#fffbeb] text-[#d97706]' },
   aprovado: { label: 'Aprovada', className: 'bg-[#f0fdf4] text-[#16a34a]' },
   rejeitado: { label: 'Rejeitada', className: 'bg-[#fff1f2] text-[#ea1d2c]' },
 }
@@ -40,6 +40,9 @@ export function StoreSelectionPage() {
       }
     }).finally(() => setLoading(false))
   }, [user?.email, navigate])
+
+  const hasNoApprovedStore = !loading && stores.length > 0 && stores.every((s) => s.registrationStatus !== 'aprovado')
+  const onlyOnePending = stores.length === 1 && stores[0]?.registrationStatus === 'pendente'
 
   function handleSelectStore(store: PartnerStoreCard) {
     if (store.registrationStatus === 'pendente') {
@@ -101,6 +104,30 @@ export function StoreSelectionPage() {
         </div>
 
         <h1 className="mb-4 text-[1.1rem] font-bold text-[#1d1d1d]">Suas lojas</h1>
+
+        {onlyOnePending && (
+          <div className="mb-4 flex items-start gap-3 rounded-2xl border border-[#fde68a] bg-[#fffbeb] px-4 py-4">
+            <Clock className="mt-0.5 h-5 w-5 shrink-0 text-[#d97706]" />
+            <div>
+              <p className="font-bold text-[#92400e] text-[14px]">Cadastro em análise</p>
+              <p className="mt-0.5 text-[13px] text-[#b45309]">
+                Sua loja foi enviada para avaliação. Assim que for aprovada pela nossa equipe, você poderá acessar o painel. Em geral o processo leva até 24 horas.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {!onlyOnePending && hasNoApprovedStore && (
+          <div className="mb-4 flex items-start gap-3 rounded-2xl border border-[#fde68a] bg-[#fffbeb] px-4 py-4">
+            <Clock className="mt-0.5 h-5 w-5 shrink-0 text-[#d97706]" />
+            <div>
+              <p className="font-bold text-[#92400e] text-[14px]">Nenhuma loja aprovada ainda</p>
+              <p className="mt-0.5 text-[13px] text-[#b45309]">
+                Suas lojas estão aguardando avaliação ou foram rejeitadas. Cadastre uma nova loja ou aguarde a aprovação.
+              </p>
+            </div>
+          </div>
+        )}
 
         {loading ? (
           <div className="space-y-3">
