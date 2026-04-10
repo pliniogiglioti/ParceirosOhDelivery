@@ -277,6 +277,7 @@ export function StoreRegisterPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (step !== STEPS.length - 1) return
     if (!user || !profile) { toast.error('Sessão inválida.'); return }
     setSubmitting(true)
     try {
