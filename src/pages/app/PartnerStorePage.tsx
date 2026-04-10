@@ -141,7 +141,7 @@ function StoreEditorTab() {
   }
 
   const hasActiveProduct = data.products.some((p) => p.active)
-  const blockers = storeActivationBlockers(data.store, hasActiveProduct)
+  const blockers = storeActivationBlockers(draftStore, hasActiveProduct)
   const canActivate = blockers.length === 0
   const hasChanges = hasStoreEditorChanges(draftStore, data.store)
 
