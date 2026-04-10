@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
-import { usePartnerSimulationStore } from '@/hooks/usePartnerSimulationStore'
+import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
 import { usePartnerPageData } from '@/hooks/usePartnerPageData'
 import { formatTime } from '@/lib/utils'
 import type { PartnerHour } from '@/types'
@@ -12,7 +12,7 @@ function normalizeTimeValue(value: string) {
 
 export function PartnerHoursPage() {
   const { data } = usePartnerPageData()
-  const { updateStoreHour } = usePartnerSimulationStore()
+  const { updateStoreHour } = usePartnerDraftStore()
   const [draftHours, setDraftHours] = useState<PartnerHour[]>(data.hours)
 
   useEffect(() => {

@@ -45,6 +45,11 @@ export interface PartnerStore {
   tags: string[]
   coverImageUrl?: string
   logoImageUrl?: string
+  addressStreet: string
+  addressNeighborhood: string
+  addressCity: string
+  addressState: string
+  addressZip: string
 }
 
 export interface PartnerOrder {

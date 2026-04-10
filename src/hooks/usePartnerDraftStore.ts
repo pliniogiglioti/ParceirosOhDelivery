@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { PartnerHour, PartnerOrder, PartnerOrderSettings, PartnerStore } from '@/types'
 
-interface PartnerSimulationStoreState {
+interface PartnerDraftStoreState {
   storeOpen: boolean | null
   storeByStoreId: Record<string, PartnerStore>
   storeHoursByStoreId: Record<string, PartnerHour[]>
@@ -21,7 +21,7 @@ interface PartnerSimulationStoreState {
   updateOrderSettings: (storeId: string, patch: Partial<PartnerOrderSettings>) => void
 }
 
-export const usePartnerSimulationStore = create<PartnerSimulationStoreState>()(
+export const usePartnerDraftStore = create<PartnerDraftStoreState>()(
   persist(
     (set, get) => ({
       storeOpen: null,
@@ -146,7 +146,7 @@ export const usePartnerSimulationStore = create<PartnerSimulationStoreState>()(
       },
     }),
     {
-      name: 'partner-oh-simulation',
+      name: 'partner-oh-drafts',
       partialize: (state) => ({
         storeOpen: state.storeOpen,
         storeByStoreId: state.storeByStoreId,

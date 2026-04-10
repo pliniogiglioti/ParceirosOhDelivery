@@ -1,7 +1,5 @@
-import { isSupabaseConfigured, simulationModeEnabled, supabase } from '@/lib/supabase'
+import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 import type { PartnerAuthUser } from '@/types'
-
-const MOCK_CODE = '123456'
 
 function parseNameFromEmail(email: string) {
   const prefix = email.split('@')[0] ?? 'parceiro'
@@ -15,7 +13,7 @@ function parseNameFromEmail(email: string) {
 }
 
 export async function getCurrentAuthUser(): Promise<PartnerAuthUser | null> {
-  if (simulationModeEnabled || !isSupabaseConfigured || !supabase) {
+  if (!isSupabaseConfigured || !supabase) {
     return null
   }
 
@@ -33,8 +31,8 @@ export async function getCurrentAuthUser(): Promise<PartnerAuthUser | null> {
 }
 
 export async function sendLoginCode(email: string) {
-  if (simulationModeEnabled || !isSupabaseConfigured || !supabase) {
-    return { mode: 'mock' as const, code: MOCK_CODE }
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('Supabase nao configurado.')
   }
 
   const { error } = await supabase.auth.signInWithOtp({
@@ -52,15 +50,8 @@ export async function sendLoginCode(email: string) {
 }
 
 export async function verifyLoginCode(email: string, code: string): Promise<PartnerAuthUser> {
-  if (simulationModeEnabled || !isSupabaseConfigured || !supabase) {
-    if (code !== MOCK_CODE) {
-      throw new Error('Codigo invalido. Use o codigo demo 123456.')
-    }
-
-    return {
-      email,
-      name: parseNameFromEmail(email),
-    }
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('Supabase nao configurado.')
   }
 
   const { data, error } = await supabase.auth.verifyOtp({
@@ -82,7 +73,7 @@ export async function verifyLoginCode(email: string, code: string): Promise<Part
 }
 
 export async function signOutAuth() {
-  if (simulationModeEnabled || !isSupabaseConfigured || !supabase) {
+  if (!isSupabaseConfigured || !supabase) {
     return
   }
 

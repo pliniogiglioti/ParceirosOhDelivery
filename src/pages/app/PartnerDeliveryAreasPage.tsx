@@ -3,15 +3,7 @@ import { usePartnerPageData } from '@/hooks/usePartnerPageData'
 import { cn, formatCurrency } from '@/lib/utils'
 import { SectionFrame } from '@/components/partner/PartnerUi'
 
-const STORE_ADDRESS = {
-  street: 'Rua das Flores, 142',
-  neighborhood: 'Vila Mariana',
-  city: 'São Paulo',
-  state: 'SP',
-  zip: '04110-000',
-}
-
-function SimulatedMap() {
+function CoverageMap() {
   const cx = 260
   const cy = 210
 
@@ -77,10 +69,9 @@ function SimulatedMap() {
         <text x="50"  y="120" fontSize="7" fill="#9ba8b5" fontFamily="sans-serif" transform="rotate(-90,50,120)">Rua Verde</text>
       </svg>
 
-      {/* Zoom hint */}
       <span className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-xl bg-white/80 px-2.5 py-1.5 text-[11px] font-medium text-ink-600 backdrop-blur-sm">
         <Navigation className="h-3 w-3 text-blue-500" />
-        Simulação de área
+        Area de entrega
       </span>
     </div>
   )
@@ -95,7 +86,7 @@ export function PartnerDeliveryAreasPage() {
 
         {/* Map */}
         <div className="panel-card overflow-hidden p-0">
-          <SimulatedMap />
+          <CoverageMap />
 
           {/* Areas list below map */}
           <div className="grid grid-cols-2 gap-px border-t border-ink-100 bg-ink-100 sm:grid-cols-3">
@@ -128,10 +119,14 @@ export function PartnerDeliveryAreasPage() {
             <div className="mt-4 flex items-start gap-2.5">
               <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-coral-500" />
               <div className="text-sm text-ink-600 leading-relaxed">
-                <p className="font-medium text-ink-900">{STORE_ADDRESS.street}</p>
-                <p>{STORE_ADDRESS.neighborhood}</p>
-                <p>{STORE_ADDRESS.city} – {STORE_ADDRESS.state}</p>
-                <p className="mt-1 text-xs text-ink-400">CEP {STORE_ADDRESS.zip}</p>
+                <p className="font-medium text-ink-900">{data.store.addressStreet || 'Endereco nao configurado'}</p>
+                {data.store.addressNeighborhood ? <p>{data.store.addressNeighborhood}</p> : null}
+                {data.store.addressCity || data.store.addressState ? (
+                  <p>
+                    {[data.store.addressCity, data.store.addressState].filter(Boolean).join(' - ')}
+                  </p>
+                ) : null}
+                {data.store.addressZip ? <p className="mt-1 text-xs text-ink-400">CEP {data.store.addressZip}</p> : null}
               </div>
             </div>
           </div>

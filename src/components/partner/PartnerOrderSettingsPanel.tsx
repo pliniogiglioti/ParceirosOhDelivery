@@ -1,7 +1,7 @@
 import { Info, Play } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
-import { usePartnerSimulationStore } from '@/hooks/usePartnerSimulationStore'
+import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
 import { usePartnerPageData } from '@/hooks/usePartnerPageData'
 import { playOrderSound, LATE_ORDER_SOUND_MODELS, SOUND_MODELS } from '@/lib/orderSound'
 import type { PartnerOrderSettings } from '@/types'
@@ -44,7 +44,7 @@ function ThemeSwitch({
 
 export function PartnerOrderSettingsPanel() {
   const { data } = usePartnerPageData()
-  const { orderSettingsByStoreId, hydrateOrderSettings, updateOrderSettings, updateStore } = usePartnerSimulationStore()
+  const { orderSettingsByStoreId, hydrateOrderSettings, updateOrderSettings, updateStore } = usePartnerDraftStore()
   const persistedSettings = orderSettingsByStoreId[data.store.id]
 
   function createDefaultSettings(): PartnerOrderSettings {

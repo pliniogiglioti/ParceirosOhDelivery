@@ -7,7 +7,7 @@ import type { OrderStatus, PartnerOrder, PartnerOrderSettings } from '@/types'
 import { AnimatedModal } from '@/components/partner/AnimatedModal'
 import { SectionFrame } from '@/components/partner/PartnerUi'
 import { usePartnerPageData } from '@/hooks/usePartnerPageData'
-import { usePartnerSimulationStore } from '@/hooks/usePartnerSimulationStore'
+import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
 import { cn, formatCurrency, formatDateTime } from '@/lib/utils'
 
 type KanbanColumnId = 'aceitar' | 'preparo' | 'pronto' | 'rota' | 'finalizado'
@@ -149,7 +149,7 @@ function isStageExpired(status: OrderStatus, stageStartedAt?: string, now = Date
 
 export function PartnerOrdersPage() {
   const { data } = usePartnerPageData()
-  const { addOrder, hydrateOrderSettings, orderSettingsByStoreId, updateOrder, updateOrderSettings } = usePartnerSimulationStore()
+  const { addOrder, hydrateOrderSettings, orderSettingsByStoreId, updateOrder, updateOrderSettings } = usePartnerDraftStore()
   const [searchParams, setSearchParams] = useSearchParams()
   const panelRef = useRef<HTMLDivElement | null>(null)
   const boardScrollRef = useRef<HTMLDivElement | null>(null)

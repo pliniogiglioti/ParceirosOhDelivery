@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { usePartnerAuthStore } from '@/hooks/usePartnerAuthStore'
-import { simulationModeEnabled } from '@/lib/supabase'
 import { getCurrentAuthUser, sendLoginCode, signOutAuth, verifyLoginCode } from '@/services/auth'
 import type { PartnerAuthUser } from '@/types'
 
@@ -17,12 +16,12 @@ interface PartnerAuthState {
   signOut: () => Promise<void>
 }
 
-function getErrorMessage(error: unknown, fallback: string) {
+function getErrorMessage(error: unknown, defaultMessage: string) {
   if (error instanceof Error && error.message) {
     return error.message
   }
 
-  return fallback
+  return defaultMessage
 }
 
 export function usePartnerAuth(): PartnerAuthState {
@@ -35,13 +34,6 @@ export function usePartnerAuth(): PartnerAuthState {
     let active = true
 
     async function hydrateAuth() {
-      if (simulationModeEnabled) {
-        if (active) {
-          setLoading(false)
-        }
-        return
-      }
-
       try {
         const currentUser = await getCurrentAuthUser()
 
@@ -77,15 +69,10 @@ export function usePartnerAuth(): PartnerAuthState {
     setSending(true)
 
     try {
-      const result = await sendLoginCode(normalizedEmail)
+      await sendLoginCode(normalizedEmail)
       setPendingEmail(normalizedEmail)
       setCodeSent(true)
-
-      if (result.mode === 'mock') {
-        toast.success(`Codigo demo enviado: ${result.code}`)
-      } else {
-        toast.success('Codigo enviado para o seu email.')
-      }
+      toast.success('Codigo enviado para o seu email.')
     } catch (error) {
       toast.error(getErrorMessage(error, 'Nao foi possivel enviar o codigo.'))
     } finally {

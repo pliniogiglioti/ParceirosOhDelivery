@@ -3,7 +3,7 @@ import type { PartnerDashboardData } from '@/types'
 
 export interface PartnerPageContext {
   data: PartnerDashboardData
-  source: 'supabase' | 'fallback'
+  source: 'supabase'
 }
 
 export function usePartnerPageData() {

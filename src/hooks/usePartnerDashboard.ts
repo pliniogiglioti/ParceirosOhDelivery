@@ -4,7 +4,7 @@ import type { PartnerDashboardData } from '@/types'
 
 interface PartnerDashboardState {
   data: PartnerDashboardData | null
-  source: 'supabase' | 'fallback'
+  source: 'supabase'
   loading: boolean
   error: string | null
 }
@@ -12,7 +12,7 @@ interface PartnerDashboardState {
 export function usePartnerDashboard(enabled = true) {
   const [state, setState] = useState<PartnerDashboardState>({
     data: null,
-    source: 'fallback',
+    source: 'supabase',
     loading: true,
     error: null,
   })
@@ -21,7 +21,7 @@ export function usePartnerDashboard(enabled = true) {
     if (!enabled) {
       setState({
         data: null,
-        source: 'fallback',
+        source: 'supabase',
         loading: false,
         error: null,
       })

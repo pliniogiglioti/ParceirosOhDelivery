@@ -1,5 +1,4 @@
-import { mockPartnerDashboard } from '@/data/mock'
-import { isSupabaseConfigured, simulationModeEnabled, supabase } from '@/lib/supabase'
+import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 import { isSameUtcDate } from '@/lib/utils'
 import type {
   DeliveryArea,
@@ -10,6 +9,7 @@ import type {
   PartnerOrder,
   PartnerOrderItem,
   PartnerProduct,
+  ReviewItem,
 } from '@/types'
 
 const defaultPaymentMethods = [
@@ -18,34 +18,62 @@ const defaultPaymentMethods = [
   { id: 'cash', label: 'Dinheiro', active: true, detail: 'Troco configuravel ate R$ 100,00' },
 ]
 
-function fallbackDashboard(): PartnerDashboardData {
-  return mockPartnerDashboard
-}
-
-function buildDeliveryAreas(baseFee: number, etaMin: number, etaMax: number): DeliveryArea[] {
-  return [
-    {
-      id: 'dynamic-1',
-      name: 'Centro',
-      etaLabel: `${etaMin}-${etaMin + 5} min`,
-      fee: Math.max(baseFee - 2, 0),
-      active: true,
-    },
-    {
-      id: 'dynamic-2',
-      name: 'Regiao Norte',
-      etaLabel: `${etaMin + 5}-${etaMax} min`,
-      fee: baseFee,
-      active: true,
-    },
-    {
-      id: 'dynamic-3',
-      name: 'Regiao Sul',
-      etaLabel: `${etaMax}-${etaMax + 10} min`,
-      fee: baseFee + 3,
+function emptyDashboard(): PartnerDashboardData {
+  return {
+    store: {
+      id: '',
+      categoryName: '',
+      name: 'Loja nao configurada',
+      slug: '',
+      tagline: '',
+      description: '',
+      accentColor: '#ea1d2c',
+      deliveryFee: 0,
+      minOrderAmount: 0,
+      etaMin: 0,
+      etaMax: 0,
+      pickupEta: 0,
+      rating: 0,
+      reviewCount: 0,
+      isOpen: false,
       active: false,
+      isFeatured: false,
+      tags: [],
+      addressStreet: '',
+      addressNeighborhood: '',
+      addressCity: '',
+      addressState: '',
+      addressZip: '',
     },
-  ]
+    orders: [],
+    categories: [],
+    products: [],
+    hours: [],
+    deliveryAreas: [],
+    paymentMethods: defaultPaymentMethods.map((method) => ({ ...method, active: false })),
+    reviews: [],
+    logistics: {
+      averagePrepTime: '0 min',
+      onTimeRate: '0%',
+      courierMode: 'Nao configurado',
+    },
+    support: {
+      openChats: 0,
+      unreadMessages: 0,
+      lastUpdateAt: new Date().toISOString(),
+    },
+    profile: {
+      name: '',
+      email: '',
+      role: '',
+    },
+    metrics: {
+      grossRevenue: 0,
+      todayOrders: 0,
+      averageTicket: 0,
+      pendingOrders: 0,
+    },
+  }
 }
 
 function mapStatus(value: unknown): OrderStatus {
@@ -83,10 +111,10 @@ function calculateMetrics(orders: PartnerOrder[]) {
 
 export async function loadPartnerDashboard(): Promise<{
   data: PartnerDashboardData
-  source: 'supabase' | 'fallback'
+  source: 'supabase'
 }> {
-  if (simulationModeEnabled || !isSupabaseConfigured || !supabase) {
-    return { data: fallbackDashboard(), source: 'fallback' }
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('Supabase nao configurado.')
   }
 
   const { data: storeRows, error: storeError } = await supabase
@@ -98,16 +126,22 @@ export async function loadPartnerDashboard(): Promise<{
 
   const storeRow = storeRows?.[0]
 
-  if (storeError || !storeRow) {
-    return { data: fallbackDashboard(), source: 'fallback' }
+  if (storeError) {
+    throw storeError
+  }
+
+  if (!storeRow) {
+    return { data: emptyDashboard(), source: 'supabase' }
   }
 
   const [
-    { data: hourRows },
-    { data: categoryRows },
-    { data: productRows },
-    { data: orderRows },
-    { data: chatRows },
+    hourResult,
+    categoryResult,
+    productResult,
+    orderResult,
+    chatResult,
+    deliveryAreaResult,
+    reviewResult,
   ] = await Promise.all([
     supabase.from('store_hours').select('*').eq('store_id', storeRow.id).order('week_day', { ascending: true }),
     supabase
@@ -119,7 +153,30 @@ export async function loadPartnerDashboard(): Promise<{
     supabase.from('products').select('*').eq('store_id', storeRow.id).order('sort_order', { ascending: true }),
     supabase.from('orders').select('*').eq('store_id', storeRow.id).order('created_at', { ascending: false }).limit(8),
     supabase.from('chat_sessions').select('*').eq('store_id', storeRow.id).order('updated_at', { ascending: false }).limit(20),
+    supabase.from('delivery_areas').select('*').eq('store_id', storeRow.id).order('sort_order', { ascending: true }),
+    supabase.from('store_reviews').select('*').eq('store_id', storeRow.id).order('created_at', { ascending: false }).limit(50),
   ])
+
+  const firstError =
+    hourResult.error ??
+    categoryResult.error ??
+    productResult.error ??
+    orderResult.error ??
+    chatResult.error ??
+    deliveryAreaResult.error ??
+    reviewResult.error
+
+  if (firstError) {
+    throw firstError
+  }
+
+  const hourRows = hourResult.data
+  const categoryRows = categoryResult.data
+  const productRows = productResult.data
+  const orderRows = orderResult.data
+  const chatRows = chatResult.data
+  const deliveryAreaRows = deliveryAreaResult.data
+  const reviewRows = reviewResult.data
 
   const orderIds = (orderRows ?? []).map((row) => String(row.id))
   const chatIds = (chatRows ?? []).map((row) => String(row.id))
@@ -195,9 +252,31 @@ export async function loadPartnerDashboard(): Promise<{
       opensAt: String(row.opens_at ?? '18:00:00'),
       closesAt: String(row.closes_at ?? '23:00:00'),
       isClosed: Boolean(row.is_closed),
-    })) ?? mockPartnerDashboard.hours
+    })) ?? []
+
+  const deliveryAreas: DeliveryArea[] =
+    deliveryAreaRows?.map((row) => ({
+      id: String(row.id),
+      name: String(row.name),
+      etaLabel: String(row.eta_label ?? ''),
+      fee: Number(row.fee ?? 0),
+      active: Boolean(row.active ?? true),
+    })) ?? []
+
+  const reviews: ReviewItem[] =
+    reviewRows?.map((row) => ({
+      id: String(row.id),
+      author: String(row.author_name ?? ''),
+      rating: Number(row.rating ?? 0),
+      comment: String(row.comment ?? ''),
+      createdAt: String(row.created_at ?? ''),
+    })) ?? []
 
   const availablePaymentMethods = Array.from(new Set(orders.map((order) => order.paymentMethod)))
+  const deliveredOrders = orders.filter((order) => order.status === 'entregue')
+  const onTimeRate = deliveredOrders.length
+    ? Math.round((deliveredOrders.length / orders.filter((order) => order.status !== 'cancelado').length) * 100)
+    : 0
 
   const data: PartnerDashboardData = {
     store: {
@@ -221,28 +300,26 @@ export async function loadPartnerDashboard(): Promise<{
       tags: Array.isArray(storeRow.tags) ? storeRow.tags.map((tag: unknown) => String(tag)) : [],
       coverImageUrl: storeRow.cover_image_url ? String(storeRow.cover_image_url) : undefined,
       logoImageUrl: storeRow.logo_image_url ? String(storeRow.logo_image_url) : undefined,
+      addressStreet: String(storeRow.address_street ?? ''),
+      addressNeighborhood: String(storeRow.address_neighborhood ?? ''),
+      addressCity: String(storeRow.address_city ?? ''),
+      addressState: String(storeRow.address_state ?? ''),
+      addressZip: String(storeRow.address_zip ?? ''),
     },
-    orders: orders.length ? orders : mockPartnerDashboard.orders,
-    categories: categories.length ? categories : mockPartnerDashboard.categories,
-    products: products.length ? products : mockPartnerDashboard.products,
+    orders,
+    categories,
+    products,
     hours,
-    deliveryAreas: buildDeliveryAreas(
-      Number(storeRow.delivery_fee ?? 0),
-      Number(storeRow.eta_min ?? 20),
-      Number(storeRow.eta_max ?? 40)
-    ),
-    paymentMethods:
-      availablePaymentMethods.length > 0
-        ? defaultPaymentMethods.map((method) => ({
-            ...method,
-            active: availablePaymentMethods.includes(method.label),
-          }))
-        : defaultPaymentMethods,
-    reviews: mockPartnerDashboard.reviews,
+    deliveryAreas,
+    paymentMethods: defaultPaymentMethods.map((method) => ({
+      ...method,
+      active: availablePaymentMethods.includes(method.label),
+    })),
+    reviews,
     logistics: {
-      averagePrepTime: `${Math.max(Number(storeRow.eta_min ?? 20) - 4, 10)} min`,
-      onTimeRate: '94%',
-      courierMode: 'Operacao integrada ao marketplace',
+      averagePrepTime: `${Math.max(Number(storeRow.eta_min ?? 0) - 4, 0)} min`,
+      onTimeRate: `${onTimeRate}%`,
+      courierMode: String(storeRow.logistics_courier_mode ?? 'Nao configurado'),
     },
     support: {
       openChats: chatRows?.length ?? 0,
@@ -250,11 +327,11 @@ export async function loadPartnerDashboard(): Promise<{
       lastUpdateAt: String(chatRows?.[0]?.updated_at ?? new Date().toISOString()),
     },
     profile: {
-      name: `${String(storeRow.name)} Partner`,
-      email: `contato+${String(storeRow.slug)}@ohdelivery.local`,
-      role: 'Gestor da operacao',
+      name: String(storeRow.partner_name ?? ''),
+      email: String(storeRow.partner_email ?? ''),
+      role: String(storeRow.partner_role ?? ''),
     },
-    metrics: calculateMetrics(orders.length ? orders : mockPartnerDashboard.orders),
+    metrics: calculateMetrics(orders),
   }
 
   return { data, source: 'supabase' }

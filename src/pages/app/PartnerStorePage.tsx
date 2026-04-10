@@ -2,7 +2,7 @@ import type { ChangeEvent } from 'react'
 import { Camera, Clock3, Star } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
-import { usePartnerSimulationStore } from '@/hooks/usePartnerSimulationStore'
+import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
 import { usePartnerPageData } from '@/hooks/usePartnerPageData'
 import type { PartnerStore } from '@/types'
 import { formatCurrency, formatTime } from '@/lib/utils'
@@ -69,7 +69,7 @@ function ThemeSwitch({
 
 function StoreEditorTab() {
   const { data } = usePartnerPageData()
-  const { updateStore } = usePartnerSimulationStore()
+  const { updateStore } = usePartnerDraftStore()
   const coverInputRef = useRef<HTMLInputElement | null>(null)
   const logoInputRef = useRef<HTMLInputElement | null>(null)
   const [draftStore, setDraftStore] = useState<PartnerStore>(data.store)

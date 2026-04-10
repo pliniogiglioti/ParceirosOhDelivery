@@ -161,7 +161,7 @@ export function PartnerSidebar({
   className,
 }: {
   data: PartnerDashboardData
-  source: 'supabase' | 'fallback'
+  source: 'supabase'
   onSignOut: () => void
   onToggleStoreStatus: () => void
   collapsed: boolean

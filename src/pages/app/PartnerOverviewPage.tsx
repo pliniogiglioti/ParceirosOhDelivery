@@ -35,7 +35,6 @@ const STATUS_COLOR: Record<string, string> = {
   cancelado:  'bg-ink-100 text-ink-500',
 }
 
-// Simulated multipliers per period so KPIs react to filter
 const PERIOD_MULTIPLIER: Record<Period, number> = { hoje: 1, semana: 6.4, mes: 27 }
 const PERIOD_LABEL: Record<Period, string> = { hoje: 'hoje', semana: 'esta semana', mes: 'este mês' }
 

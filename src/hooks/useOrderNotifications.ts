@@ -4,7 +4,7 @@ import { AlertTriangle, ShoppingBag, X } from 'lucide-react'
 import { createElement } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { playOrderSound } from '@/lib/orderSound'
-import { usePartnerSimulationStore } from '@/hooks/usePartnerSimulationStore'
+import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
 import type { PartnerOrder, PartnerOrderSettings } from '@/types'
 
 const REPEAT_MS = 10_000
@@ -32,7 +32,7 @@ function isLateOrder(order: PartnerOrder, settings?: PartnerOrderSettings, now =
 
 export function useOrderNotifications(storeId: string) {
   const navigate = useNavigate()
-  const { ordersByStoreId, orderSettingsByStoreId } = usePartnerSimulationStore()
+  const { ordersByStoreId, orderSettingsByStoreId } = usePartnerDraftStore()
 
   const orders   = ordersByStoreId[storeId]   ?? []
   const settings = orderSettingsByStoreId[storeId]

@@ -36,6 +36,15 @@ create table if not exists public.stores (
   active boolean not null default true,
   sort_order integer not null default 0,
   tags text[] not null default '{}',
+  address_street text,
+  address_neighborhood text,
+  address_city text,
+  address_state text,
+  address_zip text,
+  partner_name text,
+  partner_email text,
+  partner_role text,
+  logistics_courier_mode text,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
@@ -56,6 +65,8 @@ create table if not exists public.product_categories (
   store_id uuid not null references public.stores(id) on delete cascade,
   name text not null,
   icon text not null default 'MENU',
+  template text not null default 'padrao'
+    check (template in ('padrao', 'pizza')),
   sort_order integer not null default 0,
   active boolean not null default true,
   created_at timestamptz not null default timezone('utc', now())
@@ -70,6 +81,7 @@ create table if not exists public.products (
   image_url text,
   price numeric(10,2) not null,
   compare_at_price numeric(10,2),
+  stock_quantity integer not null default 0,
   prep_time_label text,
   badge text,
   featured boolean not null default false,
@@ -139,6 +151,27 @@ create table if not exists public.chat_messages (
   created_at timestamptz not null default timezone('utc', now())
 );
 
+create table if not exists public.delivery_areas (
+  id uuid primary key default gen_random_uuid(),
+  store_id uuid not null references public.stores(id) on delete cascade,
+  name text not null,
+  eta_label text,
+  fee numeric(10,2) not null default 0,
+  active boolean not null default true,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.store_reviews (
+  id uuid primary key default gen_random_uuid(),
+  store_id uuid not null references public.stores(id) on delete cascade,
+  author_name text not null,
+  rating integer not null check (rating between 1 and 5),
+  comment text,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
 create index if not exists idx_stores_active_sort on public.stores(active, sort_order);
 create index if not exists idx_store_hours_store_day on public.store_hours(store_id, week_day);
 create index if not exists idx_products_store_sort on public.products(store_id, sort_order);
@@ -147,3 +180,5 @@ create index if not exists idx_orders_store_created on public.orders(store_id, c
 create index if not exists idx_order_items_order on public.order_items(order_id);
 create index if not exists idx_chat_sessions_store_updated on public.chat_sessions(store_id, updated_at desc);
 create index if not exists idx_chat_messages_chat_created on public.chat_messages(chat_id, created_at asc);
+create index if not exists idx_delivery_areas_store_sort on public.delivery_areas(store_id, sort_order);
+create index if not exists idx_store_reviews_store_created on public.store_reviews(store_id, created_at desc);

@@ -7,7 +7,7 @@ import { PartnerSidebar } from '@/components/partner/PartnerSidebar'
 import { PartnerTopbar } from '@/components/partner/PartnerTopbar'
 import { useOrderNotifications } from '@/hooks/useOrderNotifications'
 import { usePartnerDashboard } from '@/hooks/usePartnerDashboard'
-import { usePartnerSimulationStore } from '@/hooks/usePartnerSimulationStore'
+import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
 import { usePartnerUiStore } from '@/hooks/usePartnerUiStore'
 import { cn, isSameUtcDate } from '@/lib/utils'
 
@@ -25,7 +25,7 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
     hydrateStoreOpen,
     hydrateStoreHours,
     hydrateOrders,
-  } = usePartnerSimulationStore()
+  } = usePartnerDraftStore()
 
   useEffect(() => {
     if (data) {
@@ -48,29 +48,42 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
 
   useOrderNotifications(data?.store.id ?? '')
 
-  if (loading || !data) {
+  if (loading) {
     return <LoadingScreen />
   }
 
-  const simulatedStore = storeByStoreId[data.store.id] ?? data.store
-  const simulatedHours = storeHoursByStoreId[data.store.id] ?? data.hours
-  const simulatedOrders = ordersByStoreId[data.store.id] ?? data.orders
+  if (!data) {
+    return (
+      <div className="flex min-h-dvh items-center justify-center px-4">
+        <div className="panel-card max-w-md px-6 py-5 text-center">
+          <p className="font-display text-lg font-bold text-ink-900">Nao foi possivel carregar o painel.</p>
+          <p className="mt-2 text-sm text-ink-500">
+            {error ?? 'Confira a configuracao do Supabase e tente novamente.'}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  const draftStore = storeByStoreId[data.store.id] ?? data.store
+  const draftHours = storeHoursByStoreId[data.store.id] ?? data.hours
+  const draftOrders = ordersByStoreId[data.store.id] ?? data.orders
   const today = new Date()
-  const validOrders = simulatedOrders.filter((order) => order.status !== 'cancelado')
+  const validOrders = draftOrders.filter((order) => order.status !== 'cancelado')
   const todayOrders = validOrders.filter((order) => isSameUtcDate(order.createdAt, today))
   const grossRevenue = todayOrders.reduce((total, order) => total + order.total, 0)
-  const pendingOrders = simulatedOrders.filter((order) =>
+  const pendingOrders = draftOrders.filter((order) =>
     ['aguardando', 'confirmado', 'preparo'].includes(order.status)
   ).length
 
   const displayData = {
     ...data,
     store: {
-      ...simulatedStore,
-      isOpen: storeOpen ?? simulatedStore.isOpen,
+      ...draftStore,
+      isOpen: storeOpen ?? draftStore.isOpen,
     },
-    hours: simulatedHours,
-    orders: simulatedOrders,
+    hours: draftHours,
+    orders: draftOrders,
     metrics: {
       ...data.metrics,
       grossRevenue,
