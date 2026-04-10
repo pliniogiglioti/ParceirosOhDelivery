@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
 import { usePartnerPageData } from '@/hooks/usePartnerPageData'
 import { getStoreCategories } from '@/services/profile'
+import { saveStore } from '@/services/partner'
 import { MapPicker } from '@/components/MapPicker'
 import type { PartnerStore, StoreCategory } from '@/types'
 import { formatCurrency, formatTime } from '@/lib/utils'
@@ -111,9 +112,14 @@ function StoreEditorTab() {
   const blockers = storeActivationBlockers(data.store, hasActiveProduct)
   const canActivate = blockers.length === 0
 
-  function handleSaveStore() {
-    updateStore(data.store.id, draftStore)
-    toast.success('Dados da loja salvos com sucesso.')
+  async function handleSaveStore() {
+    try {
+      await saveStore(data.store.id, draftStore)
+      updateStore(data.store.id, draftStore)
+      toast.success('Dados da loja salvos com sucesso.')
+    } catch {
+      toast.error('Nao foi possivel salvar. Tente novamente.')
+    }
   }
 
   async function handleImageUpload(
@@ -294,17 +300,6 @@ function StoreEditorTab() {
           </label>
 
           <label className="block sm:col-span-2">
-            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Chamada da loja</span>
-            <input
-              type="text"
-              value={draftStore.tagline}
-              onChange={(event) => handleStorePatch({ tagline: event.target.value })}
-              placeholder="Frase curta para apresentar a loja"
-              className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition focus:border-coral-400"
-            />
-          </label>
-
-          <label className="block sm:col-span-2">
             <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">
               Descricao
             </span>
@@ -413,7 +408,7 @@ function StoreEditorTab() {
         <div className="mt-6 flex justify-end">
           <button
             type="button"
-            onClick={handleSaveStore}
+            onClick={() => void handleSaveStore()}
             className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-8 text-sm font-semibold text-white transition hover:bg-coral-600"
           >
             Salvar
@@ -438,9 +433,14 @@ function StoreAddressTab() {
     setDraft((cur) => ({ ...cur, ...p }))
   }
 
-  function handleSave() {
-    updateStore(data.store.id, draft)
-    toast.success('Endereco salvo com sucesso.')
+  async function handleSave() {
+    try {
+      await saveStore(data.store.id, draft)
+      updateStore(data.store.id, draft)
+      toast.success('Endereco salvo com sucesso.')
+    } catch {
+      toast.error('Nao foi possivel salvar. Tente novamente.')
+    }
   }
 
   return (
@@ -532,7 +532,7 @@ function StoreAddressTab() {
         <div className="mt-6 flex justify-end">
           <button
             type="button"
-            onClick={handleSave}
+            onClick={() => void handleSave()}
             className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-8 text-sm font-semibold text-white transition hover:bg-coral-600"
           >
             Salvar
@@ -574,10 +574,9 @@ function StoreAccessTab() {
 
       <article className="panel-card p-6">
         <p className="text-sm font-semibold text-ink-900">Gestao de acesso</p>
-        <div className="mt-5 grid gap-3 md:grid-cols-3">
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
           <MiniInfoCard label="Perfil" value={data.profile.role} />
           <MiniInfoCard label="Loja vinculada" value={data.store.name} />
-          <MiniInfoCard label="Slug" value={data.store.slug} />
         </div>
 
         <div className="mt-5 rounded-3xl border border-ink-100 bg-white p-5">

@@ -214,6 +214,40 @@ export async function registerStore(
   return String(store.id)
 }
 
+export async function saveStore(storeId: string, patch: Partial<import('@/types').PartnerStore>): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
+
+  const { error } = await supabase
+    .from('stores')
+    .update({
+      ...(patch.name !== undefined && { name: patch.name }),
+      ...(patch.categoryId !== undefined && { category_id: patch.categoryId }),
+      ...(patch.categoryName !== undefined && { category_name: patch.categoryName }),
+      ...(patch.tagline !== undefined && { tagline: patch.tagline }),
+      ...(patch.description !== undefined && { description_long: patch.description }),
+      ...(patch.accentColor !== undefined && { accent_color: patch.accentColor }),
+      ...(patch.deliveryFee !== undefined && { delivery_fee: patch.deliveryFee }),
+      ...(patch.minOrderAmount !== undefined && { min_order_amount: patch.minOrderAmount }),
+      ...(patch.etaMin !== undefined && { eta_min: patch.etaMin }),
+      ...(patch.etaMax !== undefined && { eta_max: patch.etaMax }),
+      ...(patch.pickupEta !== undefined && { pickup_eta: patch.pickupEta }),
+      ...(patch.active !== undefined && { active: patch.active }),
+      ...(patch.addressStreet !== undefined && { address_street: patch.addressStreet }),
+      ...(patch.addressNumber !== undefined && { address_number: patch.addressNumber }),
+      ...(patch.addressComplement !== undefined && { address_complement: patch.addressComplement }),
+      ...(patch.addressNeighborhood !== undefined && { address_neighborhood: patch.addressNeighborhood }),
+      ...(patch.addressCity !== undefined && { address_city: patch.addressCity }),
+      ...(patch.addressState !== undefined && { address_state: patch.addressState }),
+      ...(patch.addressZip !== undefined && { address_zip: patch.addressZip }),
+      ...(patch.lat !== undefined && { lat: patch.lat }),
+      ...(patch.lng !== undefined && { lng: patch.lng }),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', storeId)
+
+  if (error) throw error
+}
+
 export async function loadPartnerDashboard(storeId: string): Promise<{
   data: PartnerDashboardData
   source: 'supabase'
