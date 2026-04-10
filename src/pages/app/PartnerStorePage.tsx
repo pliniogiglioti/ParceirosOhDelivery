@@ -1,10 +1,11 @@
 import type { ChangeEvent } from 'react'
-import { Camera, Clock3, Star } from 'lucide-react'
+import { Camera, ChevronDown, Clock3, Star } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
 import { usePartnerPageData } from '@/hooks/usePartnerPageData'
-import type { PartnerStore } from '@/types'
+import { getStoreCategories } from '@/services/profile'
+import type { PartnerStore, StoreCategory } from '@/types'
 import { formatCurrency, formatTime } from '@/lib/utils'
 import { MiniInfoCard, SectionFrame } from '@/components/partner/PartnerUi'
 
@@ -40,10 +41,12 @@ function ThemeSwitch({
   checked,
   onChange,
   ariaLabel,
+  disabled = false,
 }: {
   checked: boolean
   onChange: (nextValue: boolean) => void
   ariaLabel: string
+  disabled?: boolean
 }) {
   return (
     <button
@@ -51,10 +54,12 @@ function ThemeSwitch({
       role="switch"
       aria-checked={checked}
       aria-label={ariaLabel}
-      onClick={() => onChange(!checked)}
+      disabled={disabled}
+      onClick={() => !disabled && onChange(!checked)}
       className={[
         'inline-flex h-5 w-9 items-center rounded-full px-0.5 transition',
         checked ? 'bg-coral-500' : 'bg-ink-200',
+        disabled ? 'cursor-not-allowed opacity-40' : '',
       ].join(' ')}
     >
       <span
@@ -67,16 +72,32 @@ function ThemeSwitch({
   )
 }
 
+function storeActivationBlockers(store: PartnerStore, hasActiveProduct: boolean): string[] {
+  const missing: string[] = []
+  if (!store.name.trim()) missing.push('Nome da loja')
+  if (!store.categoryId) missing.push('Categoria')
+  if (!store.addressStreet?.trim()) missing.push('Rua (endereço)')
+  if (!store.addressNeighborhood?.trim()) missing.push('Bairro')
+  if (!store.addressCity?.trim()) missing.push('Cidade')
+  if (!store.addressState?.trim()) missing.push('Estado')
+  if (!store.addressZip?.trim()) missing.push('CEP')
+  if (!hasActiveProduct) missing.push('Pelo menos 1 produto ativo')
+  return missing
+}
+
 function StoreEditorTab() {
   const { data } = usePartnerPageData()
   const { updateStore } = usePartnerDraftStore()
   const coverInputRef = useRef<HTMLInputElement | null>(null)
   const logoInputRef = useRef<HTMLInputElement | null>(null)
   const [draftStore, setDraftStore] = useState<PartnerStore>(data.store)
+  const [categories, setCategories] = useState<StoreCategory[]>([])
 
   useEffect(() => {
     setDraftStore(data.store)
   }, [data.store])
+
+  useEffect(() => { void getStoreCategories().then(setCategories) }, [])
 
   function handleStorePatch(patch: Partial<PartnerStore>) {
     setDraftStore((current) => ({
@@ -84,6 +105,10 @@ function StoreEditorTab() {
       ...patch,
     }))
   }
+
+  const hasActiveProduct = data.products.some((p) => p.active)
+  const blockers = storeActivationBlockers(data.store, hasActiveProduct)
+  const canActivate = blockers.length === 0
 
   function handleSaveStore() {
     updateStore(data.store.id, draftStore)
@@ -249,13 +274,22 @@ function StoreEditorTab() {
             <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">
               Categoria
             </span>
-            <input
-              type="text"
-              value={draftStore.categoryName}
-              onChange={(event) => handleStorePatch({ categoryName: event.target.value })}
-              placeholder="Ex.: Hamburgueria, Pizza, Mercado"
-              className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm font-semibold text-ink-900 outline-none transition focus:border-coral-400"
-            />
+            <div className="relative">
+              <select
+                value={draftStore.categoryId}
+                onChange={(event) => {
+                  const cat = categories.find((c) => c.id === event.target.value)
+                  handleStorePatch({ categoryId: event.target.value, categoryName: cat?.name ?? '' })
+                }}
+                className="h-12 w-full appearance-none rounded-2xl border border-ink-100 bg-white px-4 pr-10 text-sm font-semibold text-ink-900 outline-none transition focus:border-coral-400 cursor-pointer"
+              >
+                <option value="">Selecione uma categoria</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-400" />
+            </div>
           </label>
 
           <label className="block sm:col-span-2">
@@ -349,17 +383,30 @@ function StoreEditorTab() {
             />
           </label>
 
-          <label className="flex items-center justify-between gap-4 rounded-2xl border border-ink-100 bg-white px-4 py-3 sm:col-span-2">
-            <div>
-              <p className="text-sm font-semibold text-ink-900">Loja ativa</p>
-              <p className="mt-1 text-sm text-ink-500">Controla se a operacao aparece como ativa no painel.</p>
+          <div className="rounded-2xl border border-ink-100 bg-white px-4 py-3 sm:col-span-2">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-ink-900">Loja ativa</p>
+                <p className="mt-1 text-sm text-ink-500">Controla se a operacao aparece como ativa no painel.</p>
+              </div>
+              <ThemeSwitch
+                checked={draftStore.active}
+                onChange={(nextValue) => handleStorePatch({ active: nextValue })}
+                ariaLabel="Alternar loja ativa"
+                disabled={!canActivate && !draftStore.active}
+              />
             </div>
-            <ThemeSwitch
-              checked={draftStore.active}
-              onChange={(nextValue) => handleStorePatch({ active: nextValue })}
-              ariaLabel="Alternar loja ativa"
-            />
-          </label>
+            {!canActivate && (
+              <div className="mt-3 rounded-xl bg-amber-50 px-3 py-2.5">
+                <p className="text-xs font-semibold text-amber-700">Para ativar a loja, preencha:</p>
+                <ul className="mt-1.5 space-y-0.5">
+                  {blockers.map((b) => (
+                    <li key={b} className="text-xs text-amber-600">• {b}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="mt-6 flex justify-end">

@@ -26,6 +26,7 @@ export type PartnerSection =
 
 export interface PartnerStore {
   id: string
+  categoryId: string
   categoryName: string
   name: string
   slug: string

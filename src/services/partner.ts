@@ -25,6 +25,7 @@ function emptyDashboard(): PartnerDashboardData {
   return {
     store: {
       id: '',
+      categoryId: '',
       categoryName: '',
       name: 'Loja nao configurada',
       slug: '',
@@ -378,6 +379,7 @@ export async function loadPartnerDashboard(storeId: string): Promise<{
   const data: PartnerDashboardData = {
     store: {
       id: String(storeRow.id),
+      categoryId: String(storeRow.category_id ?? ''),
       categoryName: String(storeRow.category_name ?? ''),
       name: String(storeRow.name),
       slug: String(storeRow.slug),
