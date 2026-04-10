@@ -166,12 +166,14 @@ export async function registerStore(
     .from('stores')
     .insert({
       name: input.name,
+      cnpj: input.cnpj || null,
       slug,
       category_id: input.categoryId || null,
       category_name: input.categoryName,
       tagline: input.tagline,
       address_street: input.addressStreet,
       address_number: input.addressNumber,
+      address_complement: input.addressComplement || null,
       address_neighborhood: input.addressNeighborhood,
       address_city: input.addressCity,
       address_state: input.addressState,
@@ -194,7 +196,11 @@ export async function registerStore(
 
   if (error) throw error
 
-  await addRoleToProfile(partnerId, 'store_owner')
+  try {
+    await addRoleToProfile(partnerId, 'store_owner')
+  } catch {
+    // Non-critical — store was created, role update failed silently
+  }
 
   return String(store.id)
 }

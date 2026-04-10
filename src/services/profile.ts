@@ -52,9 +52,10 @@ export async function addRoleToProfile(userId: string, role: UserRole): Promise<
     .from('profiles')
     .select('roles')
     .eq('id', userId)
-    .single()
+    .maybeSingle()
 
   if (error) throw error
+  if (!data) return
 
   const roles = (data.roles as UserRole[]) ?? ['customer']
   if (roles.includes(role)) return

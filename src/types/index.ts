@@ -205,11 +205,13 @@ export interface PartnerStoreCard {
 
 export interface StoreRegistrationInput {
   name: string
+  cnpj: string
   categoryId: string
   categoryName: string
   tagline: string
   addressStreet: string
   addressNumber: string
+  addressComplement: string
   addressNeighborhood: string
   addressCity: string
   addressState: string

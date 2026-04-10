@@ -12,5 +12,6 @@ alter table public.stores
 
 alter table public.stores
   add column if not exists address_number text,
+  add column if not exists address_complement text,
   add column if not exists lat double precision,
   add column if not exists lng double precision;
