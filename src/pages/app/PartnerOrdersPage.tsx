@@ -1,6 +1,7 @@
 import type { DragEvent, MouseEvent as ReactMouseEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { ArrowRight, GripVertical, Maximize2, Minimize2, Search, X } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import type { OrderStatus, PartnerOrder } from '@/types'
 import { SectionFrame } from '@/components/partner/PartnerUi'
@@ -125,13 +126,17 @@ function isStageExpired(status: OrderStatus, stageStartedAt?: string, now = Date
 export function PartnerOrdersPage() {
   const { data } = usePartnerPageData()
   const { updateOrder } = usePartnerSimulationStore()
+  const [searchParams, setSearchParams] = useSearchParams()
   const panelRef = useRef<HTMLDivElement | null>(null)
   const boardScrollRef = useRef<HTMLDivElement | null>(null)
   const scrollbarTrackRef = useRef<HTMLDivElement | null>(null)
   const thumbDragRef = useRef<{ startX: number; startScrollLeft: number } | null>(null)
   const [draggingOrderId, setDraggingOrderId] = useState<string | null>(null)
   const [hoveredColumn, setHoveredColumn] = useState<KanbanColumnId | null>(null)
-  const [selectedOrder, setSelectedOrder] = useState<PartnerOrder | null>(null)
+  const [selectedOrder, setSelectedOrder] = useState<PartnerOrder | null>(() => {
+    const id = new URLSearchParams(window.location.search).get('orderId')
+    return id ? (data?.orders.find((o) => o.id === id) ?? null) : null
+  })
   const [search, setSearch] = useState('')
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [scrollMetrics, setScrollMetrics] = useState({
@@ -217,6 +222,7 @@ export function PartnerOrdersPage() {
     function handleEscape(event: KeyboardEvent) {
       if (event.key === 'Escape') {
         setSelectedOrder(null)
+        setSearchParams({})
       }
     }
 
@@ -554,7 +560,7 @@ export function PartnerOrdersPage() {
         {selectedOrder ? (
           <div
             className="absolute inset-0 z-40 flex items-center justify-center rounded-xl bg-ink-950/30 p-4 backdrop-blur-[2px]"
-            onClick={() => setSelectedOrder(null)}
+            onClick={() => { setSelectedOrder(null); setSearchParams({}) }}
           >
             <div
               className="w-full max-w-[520px] rounded-xl border border-ink-100 bg-white p-5 shadow-soft sm:p-6"
@@ -569,7 +575,7 @@ export function PartnerOrdersPage() {
 
                 <button
                   type="button"
-                  onClick={() => setSelectedOrder(null)}
+                  onClick={() => { setSelectedOrder(null); setSearchParams({}) }}
                   className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-ink-100 bg-ink-50 text-ink-700 transition hover:border-coral-200 hover:text-coral-600"
                   aria-label="Fechar detalhes do pedido"
                 >
