@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import { LoadingScreen } from '@/components/partner/LoadingScreen'
 import { PartnerSidebar } from '@/components/partner/PartnerSidebar'
 import { PartnerTopbar } from '@/components/partner/PartnerTopbar'
+import { useOrderNotifications } from '@/hooks/useOrderNotifications'
 import { usePartnerDashboard } from '@/hooks/usePartnerDashboard'
 import { usePartnerSimulationStore } from '@/hooks/usePartnerSimulationStore'
 import { usePartnerUiStore } from '@/hooks/usePartnerUiStore'
@@ -44,6 +45,8 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
     hydrateStoreHours,
     hydrateStoreOpen,
   ])
+
+  useOrderNotifications(data?.store.id ?? '')
 
   if (loading || !data) {
     return <LoadingScreen />

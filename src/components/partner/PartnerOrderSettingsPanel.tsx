@@ -1,8 +1,9 @@
-import { Info } from 'lucide-react'
+import { Info, Play } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { usePartnerSimulationStore } from '@/hooks/usePartnerSimulationStore'
 import { usePartnerPageData } from '@/hooks/usePartnerPageData'
+import { playOrderSound, SOUND_MODELS } from '@/lib/orderSound'
 import type { PartnerOrderSettings } from '@/types'
 
 function parseInteger(value: string) {
@@ -50,6 +51,7 @@ export function PartnerOrderSettingsPanel() {
     return {
       acceptTime: 10,
       playSound: true,
+      soundModel: 'balcao' as const,
       showNotification: false,
       printAutomatically: false,
       acceptAutomatically: false,
@@ -211,17 +213,57 @@ export function PartnerOrderSettingsPanel() {
       <div className="mt-6 rounded-2xl border border-ink-100 bg-white p-4 sm:p-5">
         <p className="text-sm font-semibold text-ink-900">Alertas da operacao</p>
         <div className="mt-5 space-y-4">
-          <label className="flex items-center justify-between gap-4 rounded-2xl border border-ink-100 bg-ink-50 px-4 py-4">
-            <div>
-              <p className="text-sm font-semibold text-ink-900">Emitir som ao receber pedidos</p>
-              <p className="mt-1 text-sm text-ink-500">Sinal sonoro para novos pedidos em espera.</p>
+          <div className="rounded-2xl border border-ink-100 bg-ink-50 px-4 py-4 space-y-4">
+            {/* Switch row */}
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-ink-900">Emitir som ao receber pedidos</p>
+                <p className="mt-1 text-sm text-ink-500">Sinal sonoro para novos pedidos em espera.</p>
+              </div>
+              <ThemeSwitch
+                checked={draftSettings.playSound}
+                onChange={(nextValue) => handleOrderSettingsPatch({ playSound: nextValue })}
+                ariaLabel="Alternar som ao receber pedidos"
+              />
             </div>
-            <ThemeSwitch
-              checked={draftSettings.playSound}
-              onChange={(nextValue) => handleOrderSettingsPatch({ playSound: nextValue })}
-              ariaLabel="Alternar som ao receber pedidos"
-            />
-          </label>
+
+            {/* Sound model selector */}
+            {draftSettings.playSound && (
+              <div>
+                <p className="mb-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-ink-400">Modelo de som</p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                  {SOUND_MODELS.map((s) => (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => handleOrderSettingsPatch({ soundModel: s.id })}
+                      className={[
+                        'flex items-start gap-3 rounded-2xl border px-3 py-2.5 text-left transition',
+                        draftSettings.soundModel === s.id
+                          ? 'border-coral-300 bg-coral-50'
+                          : 'border-ink-100 bg-white hover:bg-ink-50',
+                      ].join(' ')}
+                    >
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); playOrderSound(s.id) }}
+                        className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-xl bg-ink-100 text-ink-600 transition hover:bg-coral-100 hover:text-coral-600"
+                        title={`Ouvir ${s.label}`}
+                      >
+                        <Play className="h-2.5 w-2.5" />
+                      </button>
+                      <div className="min-w-0">
+                        <p className={['text-xs font-semibold', draftSettings.soundModel === s.id ? 'text-coral-700' : 'text-ink-900'].join(' ')}>
+                          {s.label}
+                        </p>
+                        <p className="mt-0.5 text-[10px] leading-relaxed text-ink-400">{s.description}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
           <label className="flex items-center justify-between gap-4 rounded-2xl border border-ink-100 bg-ink-50 px-4 py-4">
             <div>

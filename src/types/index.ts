@@ -89,9 +89,12 @@ export interface PartnerHour {
   isClosed: boolean
 }
 
+export type SoundModel = 'balcao' | 'chime' | 'ding' | 'melodia' | 'alerta'
+
 export interface PartnerOrderSettings {
   acceptTime: number
   playSound: boolean
+  soundModel: SoundModel
   showNotification: boolean
   printAutomatically: boolean
   acceptAutomatically: boolean
