@@ -706,7 +706,7 @@ export function PartnerFirstAccessPage() {
     <div className="min-h-dvh bg-[#f5f5f5]">
       <StepperBar current={activeStep} />
 
-      <main className="mx-auto flex max-w-7xl flex-col px-4 py-8 sm:px-6">
+      <main className="mx-auto flex w-full flex-col px-6 py-8 sm:px-10">
         <div className="mb-5 flex items-center justify-between gap-3">
           <div>
             <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#ea1d2c]">Primeiro acesso</p>
@@ -743,11 +743,11 @@ export function PartnerFirstAccessPage() {
           </div>
         </div>
 
-        <div className="mt-5 flex gap-3">
+        <div className="mt-5 flex justify-end gap-3">
           <button
             type="button"
             onClick={() => (activeStep === 0 ? navigate('/lojas') : setActiveStep((current) => current - 1))}
-            className="h-[52px] flex-1 rounded-2xl border border-[#d9d9d9] text-[14px] font-semibold text-[#303030] transition hover:bg-[#f5f5f5]"
+            className="h-[40px] rounded-2xl border border-[#d9d9d9] px-5 text-[13px] font-semibold text-[#303030] transition hover:bg-[#f5f5f5]"
           >
             {activeStep === 0 ? 'Voltar para lojas' : 'Voltar'}
           </button>
@@ -757,7 +757,7 @@ export function PartnerFirstAccessPage() {
               type="button"
               onClick={goNext}
               disabled={!completedMap[currentStepId]}
-              className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[15px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-[40px] items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] px-5 text-[13px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               Proxima etapa
               <ArrowRight className="h-4 w-4" />
@@ -767,7 +767,7 @@ export function PartnerFirstAccessPage() {
               type="button"
               onClick={() => void handleFinishFirstAccess()}
               disabled={!allStepsCompleted || finishing}
-              className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[15px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-[40px] items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] px-5 text-[13px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {finishing ? <><Loader2 className="h-4 w-4 animate-spin" /> Finalizando...</> : 'Concluir primeiro acesso'}
             </button>
