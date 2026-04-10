@@ -258,6 +258,130 @@ export async function saveStoreHours(
   if (firstError) throw firstError
 }
 
+export async function saveDeliveryArea(
+  storeId: string,
+  area: {
+    id?: string
+    name: string
+    etaLabel: string
+    fee: number
+    active: boolean
+  }
+): Promise<DeliveryArea> {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
+
+  const payload = {
+    name: area.name,
+    eta_label: area.etaLabel,
+    fee: area.fee,
+    active: area.active,
+    updated_at: new Date().toISOString(),
+  }
+
+  const query = area.id
+    ? supabase
+        .from('delivery_areas')
+        .update(payload)
+        .eq('id', area.id)
+        .eq('store_id', storeId)
+    : supabase
+        .from('delivery_areas')
+        .insert({
+          store_id: storeId,
+          ...payload,
+          sort_order: 0,
+        })
+
+  const { data, error } = await query.select('*').single()
+
+  if (error) throw error
+
+  return {
+    id: String(data.id),
+    name: String(data.name),
+    etaLabel: String(data.eta_label ?? ''),
+    fee: Number(data.fee ?? 0),
+    active: Boolean(data.active ?? true),
+  }
+}
+
+export async function createProductCategory(
+  storeId: string,
+  input: {
+    name: string
+    icon?: string
+    template?: 'padrao' | 'pizza'
+  }
+): Promise<PartnerCategory> {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
+
+  const { data, error } = await supabase
+    .from('product_categories')
+    .insert({
+      store_id: storeId,
+      name: input.name,
+      icon: input.icon ?? 'MENU',
+      template: input.template ?? 'padrao',
+      active: true,
+      sort_order: 0,
+    })
+    .select('*')
+    .single()
+
+  if (error) throw error
+
+  return {
+    id: String(data.id),
+    name: String(data.name),
+    icon: String(data.icon ?? 'MENU'),
+    template: data.template === 'pizza' ? 'pizza' : 'padrao',
+    sortOrder: Number(data.sort_order ?? 0),
+    productCount: 0,
+  }
+}
+
+export async function createProduct(
+  storeId: string,
+  input: {
+    categoryId: string
+    name: string
+    description: string
+    price: number
+  }
+): Promise<PartnerProduct> {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
+
+  const { data, error } = await supabase
+    .from('products')
+    .insert({
+      store_id: storeId,
+      category_id: input.categoryId,
+      name: input.name,
+      description: input.description,
+      price: input.price,
+      stock_quantity: 100,
+      active: true,
+      featured: false,
+      sort_order: 0,
+    })
+    .select('*')
+    .single()
+
+  if (error) throw error
+
+  return {
+    id: String(data.id),
+    name: String(data.name),
+    description: String(data.description ?? ''),
+    categoryId: String(data.category_id ?? ''),
+    price: Number(data.price ?? 0),
+    imageUrl: data.image_url ? String(data.image_url) : undefined,
+    stockQuantity: Number(data.stock_quantity ?? 0),
+    active: Boolean(data.active ?? true),
+    featured: Boolean(data.featured ?? false),
+  }
+}
+
 export async function loadPartnerDashboard(storeId: string): Promise<{
   data: PartnerDashboardData
   source: 'supabase'
