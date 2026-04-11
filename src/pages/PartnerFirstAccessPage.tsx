@@ -528,105 +528,182 @@ export function PartnerFirstAccessPage() {
     )
   }
 
+  const sidebarFooter = (
+    <div className="border-t border-ink-100 px-4 py-4 space-y-2">
+      {activeStep < STEPS.length - 1 ? (
+        <button
+          type="button"
+          onClick={() => void handleSaveAndNext()}
+          disabled={savingStep !== null}
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[13px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {savingStep !== null ? (
+            <><Loader2 className="h-4 w-4 animate-spin" /> Salvando...</>
+          ) : (
+            <>Salvar e proximo <ArrowRight className="h-4 w-4" /></>
+          )}
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => void handleSaveAndNext()}
+          disabled={savingStep !== null || finishing}
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[13px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {savingStep !== null || finishing ? (
+            <><Loader2 className="h-4 w-4 animate-spin" /> Salvando...</>
+          ) : (
+            'Salvar e concluir'
+          )}
+        </button>
+      )}
+      <button
+        type="button"
+        onClick={() => (activeStep === 0 ? navigate('/lojas') : setActiveStep((current) => current - 1))}
+        className="flex h-10 w-full items-center justify-center gap-2 rounded-2xl border border-ink-100 text-[13px] font-semibold text-ink-600 transition hover:bg-ink-50"
+      >
+        {activeStep === 0 ? 'Voltar para lojas' : 'Voltar'}
+      </button>
+      <button
+        type="button"
+        onClick={() => void signOut()}
+        className="flex h-10 w-full items-center justify-center gap-2 rounded-2xl text-[13px] font-semibold text-ink-500 transition hover:bg-ink-50"
+      >
+        <LogOut className="h-4 w-4" />
+        Sair
+      </button>
+    </div>
+  )
+
   return (
-    <div className="min-h-dvh bg-[#f5f5f5] px-3 py-3 sm:px-4 lg:px-5">
-      {/* Sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:block lg:p-4 lg:w-[280px]">
-        <aside className="panel-card flex h-full w-full flex-col overflow-hidden bg-white">
-          {/* Header */}
-          <div className="border-b border-ink-100 px-5 pb-4 pt-5">
-            <p className="font-display text-lg font-bold text-coral-500">oh! Delivery</p>
-            <p className="text-sm text-ink-500">{currentStore.name}</p>
-          </div>
+    <div className="min-h-dvh bg-[#f5f5f5] px-4 py-6 sm:px-6">
+      <div className="mx-auto max-w-[1200px]">
+        <div className="flex items-start gap-5">
 
-          {/* Label */}
-          <div className="px-5 pt-5 pb-2">
-            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-400">Configuracao inicial</p>
-          </div>
+          {/* Sidebar — desktop */}
+          <aside className="hidden lg:flex w-[260px] shrink-0 sticky top-6 flex-col rounded-2xl bg-white shadow-sm overflow-hidden" style={{ maxHeight: 'calc(100vh - 3rem)' }}>
+            {/* Header */}
+            <div className="border-b border-ink-100 px-5 pb-4 pt-5 shrink-0">
+              <p className="font-display text-lg font-bold text-coral-500">oh! Delivery</p>
+              <p className="text-sm text-ink-500">{currentStore.name}</p>
+            </div>
 
-          {/* Steps nav */}
-          <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
-            {STEPS.map((step, index) => {
-              const Icon = step.icon
-              const isActive = index === activeStep
-              const isDone = completedMap[step.id]
-              const isReachable = index === 0 || completedMap[STEPS[index - 1]!.id]
+            {/* Label */}
+            <div className="px-5 pt-5 pb-2 shrink-0">
+              <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-400">Configuracao inicial</p>
+            </div>
 
-              return (
+            {/* Steps nav */}
+            <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
+              {STEPS.map((step, index) => {
+                const Icon = step.icon
+                const isActive = index === activeStep
+                const isDone = completedMap[step.id]
+                const isReachable = index === 0 || completedMap[STEPS[index - 1]!.id]
+
+                return (
+                  <button
+                    key={step.id}
+                    type="button"
+                    onClick={() => isReachable && setActiveStep(index)}
+                    disabled={!isReachable}
+                    className={[
+                      'sidebar-link w-full gap-3 text-left',
+                      isActive ? 'sidebar-link-active' : '',
+                      !isReachable ? 'cursor-not-allowed opacity-40' : '',
+                    ].join(' ')}
+                  >
+                    <Icon className="h-5 w-5 shrink-0" />
+                    <span className="flex-1 text-[14px]">{step.label}</span>
+                    {isDone ? (
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
+                    ) : (
+                      <Circle className="h-4 w-4 shrink-0 text-ink-300" />
+                    )}
+                  </button>
+                )
+              })}
+            </nav>
+
+            {sidebarFooter}
+          </aside>
+
+          {/* Main content */}
+          <div className="flex-1 min-w-0 flex flex-col gap-4">
+            {/* Mobile top bar */}
+            <div className="lg:hidden rounded-2xl bg-white shadow-sm p-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="font-display text-base font-bold text-coral-500">oh! Delivery</p>
                 <button
-                  key={step.id}
                   type="button"
-                  onClick={() => isReachable && setActiveStep(index)}
-                  disabled={!isReachable}
-                  className={[
-                    'sidebar-link w-full gap-3 text-left',
-                    isActive ? 'sidebar-link-active' : '',
-                    !isReachable ? 'cursor-not-allowed opacity-40' : '',
-                  ].join(' ')}
+                  onClick={() => void signOut()}
+                  className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-[12px] font-semibold text-ink-500 hover:bg-ink-50"
                 >
-                  <Icon className="h-5 w-5 shrink-0" />
-                  <span className="flex-1 text-[14px]">{step.label}</span>
-                  {isDone ? (
-                    <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
-                  ) : (
-                    <Circle className="h-4 w-4 shrink-0 text-ink-300" />
-                  )}
+                  <LogOut className="h-3.5 w-3.5" />
+                  Sair
                 </button>
-              )
-            })}
-          </nav>
+              </div>
+              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                {STEPS.map((step, index) => {
+                  const Icon = step.icon
+                  const isActive = index === activeStep
+                  const isDone = completedMap[step.id]
+                  const isReachable = index === 0 || completedMap[STEPS[index - 1]!.id]
+                  return (
+                    <button
+                      key={step.id}
+                      type="button"
+                      onClick={() => isReachable && setActiveStep(index)}
+                      disabled={!isReachable}
+                      className={[
+                        'flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-[12px] font-semibold transition',
+                        isActive ? 'bg-[#ea1d2c] text-white' : isDone ? 'bg-green-50 text-green-600' : 'bg-ink-50 text-ink-500',
+                        !isReachable ? 'opacity-40 cursor-not-allowed' : '',
+                      ].join(' ')}
+                    >
+                      <Icon className="h-3.5 w-3.5 shrink-0" />
+                      {step.label}
+                      {isDone && !isActive && <CheckCircle2 className="h-3 w-3" />}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
 
-          {/* Footer */}
-          <div className="border-t border-ink-100 px-4 py-4 space-y-2">
-            {activeStep < STEPS.length - 1 ? (
+            {renderCurrentStep()}
+
+            {/* Mobile action buttons */}
+            <div className="lg:hidden space-y-2">
+              {activeStep < STEPS.length - 1 ? (
+                <button
+                  type="button"
+                  onClick={() => void handleSaveAndNext()}
+                  disabled={savingStep !== null}
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[14px] font-bold text-white transition hover:brightness-95 disabled:opacity-60"
+                >
+                  {savingStep !== null ? <><Loader2 className="h-4 w-4 animate-spin" /> Salvando...</> : <>Salvar e proximo <ArrowRight className="h-4 w-4" /></>}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void handleSaveAndNext()}
+                  disabled={savingStep !== null || finishing}
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[14px] font-bold text-white transition hover:brightness-95 disabled:opacity-60"
+                >
+                  {savingStep !== null || finishing ? <><Loader2 className="h-4 w-4 animate-spin" /> Salvando...</> : 'Salvar e concluir'}
+                </button>
+              )}
               <button
                 type="button"
-                onClick={() => void handleSaveAndNext()}
-                disabled={savingStep !== null}
-                className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[13px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+                onClick={() => (activeStep === 0 ? navigate('/lojas') : setActiveStep((current) => current - 1))}
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-ink-100 text-[13px] font-semibold text-ink-600 transition hover:bg-ink-50"
               >
-                {savingStep !== null ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> Salvando...</>
-                ) : (
-                  <>Salvar e proximo <ArrowRight className="h-4 w-4" /></>
-                )}
+                {activeStep === 0 ? 'Voltar para lojas' : 'Voltar'}
               </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => void handleSaveAndNext()}
-                disabled={savingStep !== null || finishing}
-                className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[13px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {savingStep !== null || finishing ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" /> Salvando...</>
-                ) : (
-                  'Salvar e concluir'
-                )}
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => (activeStep === 0 ? navigate('/lojas') : setActiveStep((current) => current - 1))}
-              className="flex h-10 w-full items-center justify-center gap-2 rounded-2xl border border-ink-100 text-[13px] font-semibold text-ink-600 transition hover:bg-ink-50"
-            >
-              {activeStep === 0 ? 'Voltar para lojas' : 'Voltar'}
-            </button>
-            <button
-              type="button"
-              onClick={() => void signOut()}
-              className="flex h-10 w-full items-center justify-center gap-2 rounded-2xl text-[13px] font-semibold text-ink-500 transition hover:bg-ink-50"
-            >
-              <LogOut className="h-4 w-4" />
-              Sair
-            </button>
+            </div>
           </div>
-        </aside>
-      </div>
 
-      {/* Main content */}
-      <div className="lg:pl-[292px]">
-        {renderCurrentStep()}
+        </div>
       </div>
     </div>
   )
