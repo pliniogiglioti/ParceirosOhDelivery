@@ -525,7 +525,17 @@ export function PartnerFirstAccessPage() {
 
     return (
       <div className="flex-1 flex flex-col">
-        <PartnerCatalogPage externalData={dashboardData} embedded />
+        <PartnerCatalogPage
+          externalData={dashboardData}
+          embedded
+          onProductsChange={(products) => {
+            setProductsDraft(products)
+            setSavedSteps((current) => ({
+              ...current,
+              produto: products.some((product) => product.active),
+            }))
+          }}
+        />
       </div>
     )
   }

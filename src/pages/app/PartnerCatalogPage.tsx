@@ -194,7 +194,15 @@ function getCategoryTemplate(category: PartnerCategory): CategoryTemplate {
   return category.template === 'pizza' ? 'pizza' : 'padrao'
 }
 
-export function PartnerCatalogPage({ externalData, embedded }: { externalData?: PartnerDashboardData; embedded?: boolean } = {}) {
+export function PartnerCatalogPage({
+  externalData,
+  embedded,
+  onProductsChange,
+}: {
+  externalData?: PartnerDashboardData
+  embedded?: boolean
+  onProductsChange?: (products: PartnerDashboardData['products']) => void
+} = {}) {
   const pageContext = usePartnerPageDataSafe()
   const data = externalData ?? pageContext?.data
   if (!data) return null
@@ -268,6 +276,10 @@ const [showMaxFeaturedModal, setShowMaxFeaturedModal] = useState(false)
       return [...data.products, ...localOnlyProducts]
     })
   }, [data.products])
+
+  useEffect(() => {
+    onProductsChange?.(catalogProducts)
+  }, [catalogProducts, onProductsChange])
 
   useEffect(() => {
     const defaultOrderIds = [...catalogCategories]
