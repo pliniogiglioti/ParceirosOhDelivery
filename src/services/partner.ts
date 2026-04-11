@@ -345,7 +345,6 @@ export async function createProductCategory(
       store_id: storeId,
       name: input.name,
       icon: input.icon ?? 'MENU',
-      template: input.template ?? 'padrao',
       active: true,
       sort_order: 0,
     })
@@ -358,7 +357,7 @@ export async function createProductCategory(
     id: String(data.id),
     name: String(data.name),
     icon: String(data.icon ?? 'MENU'),
-    template: data.template === 'pizza' ? 'pizza' : 'padrao',
+    template: input.template === 'pizza' ? 'pizza' : 'padrao',
     sortOrder: Number(data.sort_order ?? 0),
     productCount: 0,
   }
