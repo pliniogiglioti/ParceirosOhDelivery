@@ -581,7 +581,7 @@ export function PartnerFirstAccessPage() {
       <div className="flex w-full max-w-[1600px] overflow-hidden rounded-2xl bg-white shadow-lg" style={{ height: 823 }}>
 
         {/* Sidebar */}
-        <aside className="flex w-[260px] shrink-0 flex-col border-r border-ink-100">
+        <aside className="flex h-full w-[260px] shrink-0 flex-col border-r border-ink-100">
           {/* Header */}
           <div className="border-b border-ink-100 px-5 pb-4 pt-5 shrink-0">
             <p className="font-display text-lg font-bold text-coral-500">oh! Delivery</p>
