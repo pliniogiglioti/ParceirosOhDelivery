@@ -71,6 +71,7 @@ export function RadiusDeliveryMap({
       touchZoom: false,
       boxZoom: false,
       keyboard: false,
+      dragging: false,
     }).setView([fallbackLat, fallbackLng], lat ? 13 : 12)
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map)
@@ -194,7 +195,7 @@ export function RadiusDeliveryMap({
         </button>
 
         <p className="absolute bottom-2 left-3 z-[9999] rounded-xl bg-white/80 px-2.5 py-1 text-[11px] text-ink-400 backdrop-blur-sm">
-          Mova o mapa para posicionar sua loja
+          Use "Minha localizacao" para centralizar o mapa
         </p>
       </div>
 
