@@ -369,7 +369,7 @@ export function PartnerFirstAccessPage() {
   function renderCurrentStep() {
     if (currentStepId === 'loja') {
       return (
-        <div className="rounded-2xl bg-white p-8 shadow-sm space-y-5">
+        <div className="flex-1 rounded-2xl bg-white p-8 shadow-sm space-y-5">
           <div>
             <h2 className="text-[18px] font-bold text-[#1d1d1d]">Dados da Loja</h2>
             <p className="text-[13px] text-[#8b8b8b] mt-1">Configure os dados basicos sem sair do primeiro acesso.</p>
@@ -423,7 +423,7 @@ export function PartnerFirstAccessPage() {
 
     if (currentStepId === 'horarios') {
       return (
-        <div className="rounded-2xl bg-white p-6 shadow-sm space-y-5">
+        <div className="flex-1 rounded-2xl bg-white p-6 shadow-sm space-y-5">
           <div>
             <h2 className="text-[18px] font-bold text-[#1d1d1d]">Horarios de funcionamento</h2>
             <p className="text-[13px] text-[#8b8b8b] mt-1">Defina quando sua loja atende durante a semana.</p>
@@ -499,7 +499,7 @@ export function PartnerFirstAccessPage() {
 
     if (currentStepId === 'entrega') {
       return (
-        <div className="rounded-2xl bg-white p-6 shadow-sm space-y-4">
+        <div className="flex-1 rounded-2xl bg-white p-6 shadow-sm space-y-4">
           <div>
             <h2 className="text-[18px] font-bold text-[#1d1d1d]">Raio de entrega</h2>
             <p className="text-[13px] text-[#8b8b8b] mt-1">
@@ -524,7 +524,9 @@ export function PartnerFirstAccessPage() {
     }
 
     return (
-      <PartnerCatalogPage externalData={dashboardData} embedded />
+      <div className="flex-1 flex flex-col">
+        <PartnerCatalogPage externalData={dashboardData} embedded />
+      </div>
     )
   }
 
@@ -629,7 +631,7 @@ export function PartnerFirstAccessPage() {
         </aside>
 
         {/* Main content — scrollable */}
-        <div className="flex-1 overflow-y-auto bg-[#f5f5f5] p-6">
+        <div className="flex-1 flex flex-col overflow-y-auto bg-[#f5f5f5] p-6">
           {renderCurrentStep()}
         </div>
 
