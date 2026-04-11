@@ -229,7 +229,9 @@ export function PartnerCatalogPage({ externalData, embedded }: { externalData?: 
   const [industrializedCatalogItems, setIndustrializedCatalogItems] = useState<IndustrializedCatalogItem[]>([])
 
   useEffect(() => {
-    void fetchIndustrializados().then(setIndustrializedCatalogItems)
+    fetchIndustrializados()
+      .then(setIndustrializedCatalogItems)
+      .catch((err) => console.error('[industrializados]', err))
   }, [])
   const [expandedByCategoryId, setExpandedByCategoryId] = useState<Record<string, boolean>>({})
   const [activeByCategoryId, setActiveByCategoryId] = useState<Record<string, boolean>>({})
