@@ -27,6 +27,7 @@ export type PartnerSection =
 export interface PartnerStore {
   id: string
   firstAccess: boolean
+  contract: boolean
   categoryId: string
   categoryName: string
   name: string
@@ -217,6 +218,7 @@ export type RegistrationStatus = 'pendente' | 'aprovado' | 'rejeitado'
 export interface PartnerStoreCard {
   id: string
   firstAccess: boolean
+  contract: boolean
   name: string
   categoryName: string
   logoImageUrl?: string

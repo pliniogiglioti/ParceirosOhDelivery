@@ -45,7 +45,13 @@ export function StoreSelectionPage() {
         if (result.length === 1 && result[0]?.registrationStatus === 'aprovado') {
           const singleStore = result[0]
           selectStore(singleStore.id)
-          navigate(singleStore.firstAccess ? '/app' : '/primeiro-acesso', { replace: true })
+          if (!singleStore.firstAccess) {
+            navigate('/primeiro-acesso', { replace: true })
+            return
+          }
+          if (singleStore.contract) {
+            navigate('/app', { replace: true })
+          }
         }
       })
       .finally(() => setLoading(false))
@@ -64,7 +70,15 @@ export function StoreSelectionPage() {
       return
     }
     selectStore(store.id)
-    navigate(store.firstAccess ? '/app' : '/primeiro-acesso')
+    if (!store.firstAccess) {
+      navigate('/primeiro-acesso')
+      return
+    }
+    if (!store.contract) {
+      toast.error('A assinatura do contrato ainda nao foi concluida para esta loja.')
+      return
+    }
+    navigate('/app')
   }
 
   return (

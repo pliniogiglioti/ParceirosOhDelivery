@@ -24,6 +24,7 @@ function emptyDashboard(): PartnerDashboardData {
     store: {
       id: '',
       firstAccess: false,
+      contract: false,
       categoryId: '',
       categoryName: '',
       name: 'Loja nao configurada',
@@ -123,7 +124,7 @@ export async function getStoresByEmail(email: string): Promise<PartnerStoreCard[
 
   const { data, error } = await supabase
     .from('stores')
-    .select('id, first_access, name, category_name, logo_image_url, is_open, active, registration_status, rejection_reason')
+    .select('id, first_access, contract, name, category_name, logo_image_url, is_open, active, registration_status, rejection_reason')
     .ilike('partner_email', normalizedEmail)
     .order('created_at', { ascending: false })
 
@@ -132,6 +133,7 @@ export async function getStoresByEmail(email: string): Promise<PartnerStoreCard[
   return (data ?? []).map((row) => ({
     id: String(row.id),
     firstAccess: Boolean(row.first_access ?? false),
+    contract: Boolean(row.contract ?? false),
     name: String(row.name),
     categoryName: String(row.category_name ?? ''),
     logoImageUrl: row.logo_image_url ? String(row.logo_image_url) : undefined,
@@ -157,6 +159,7 @@ export async function registerStore(
     .insert({
       name: input.name,
       first_access: false,
+      contract: false,
       cnpj: input.cnpj || null,
       razao_social: input.razaoSocial || null,
       nome_fantasia: input.nomeFantasia || null,
@@ -206,6 +209,7 @@ export async function saveStore(storeId: string, patch: Partial<import('@/types'
     .update({
       ...(patch.name !== undefined && { name: patch.name }),
       ...(patch.firstAccess !== undefined && { first_access: patch.firstAccess }),
+      ...(patch.contract !== undefined && { contract: patch.contract }),
       ...(patch.categoryId !== undefined && { category_id: patch.categoryId }),
       ...(patch.categoryName !== undefined && { category_name: patch.categoryName }),
       ...(patch.description !== undefined && { description_long: patch.description }),
@@ -814,6 +818,7 @@ export async function loadPartnerDashboard(storeId: string): Promise<{
     store: {
       id: String(storeRow.id),
       firstAccess: Boolean(storeRow.first_access ?? false),
+      contract: Boolean(storeRow.contract ?? false),
       categoryId: String(storeRow.category_id ?? ''),
       categoryName: String(storeRow.category_name ?? ''),
       name: String(storeRow.name),

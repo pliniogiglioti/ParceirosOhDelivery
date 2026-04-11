@@ -45,6 +45,8 @@ create table if not exists public.stores (
   partner_email text,
   partner_role text,
   logistics_courier_mode text,
+  first_access boolean not null default false,
+  contract boolean not null default false,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );

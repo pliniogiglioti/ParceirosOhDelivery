@@ -83,8 +83,9 @@ function StoreRegisterRoute() {
 
 function ProtectedLayoutRoute() {
   const auth = usePartnerAuth()
+  const { data, loading } = usePartnerDashboard(auth.selectedStoreId)
 
-  if (auth.loading) {
+  if (auth.loading || loading) {
     return <LoadingScreen />
   }
 
@@ -93,6 +94,18 @@ function ProtectedLayoutRoute() {
   }
 
   if (!auth.selectedStoreId) {
+    return <Navigate to="/lojas" replace />
+  }
+
+  if (!data) {
+    return <Navigate to="/lojas" replace />
+  }
+
+  if (!data.store.firstAccess) {
+    return <Navigate to="/primeiro-acesso" replace />
+  }
+
+  if (!data.store.contract) {
     return <Navigate to="/lojas" replace />
   }
 
