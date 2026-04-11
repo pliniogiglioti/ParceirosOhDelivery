@@ -25,7 +25,7 @@ import { cn, formatCurrency } from '@/lib/utils'
 import { AnimatedModal } from '@/components/partner/AnimatedModal'
 import { SectionFrame } from '@/components/partner/PartnerUi'
 import type { PartnerCategory } from '@/types'
-import { createProduct, createProductCategory } from '@/services/partner'
+import { createProduct, createProductCategory, fetchIndustrializados, type IndustrializedItem } from '@/services/partner'
 
 function ThemeSwitch({
   checked,
@@ -102,14 +102,7 @@ type CategoryTemplate = 'padrao' | 'pizza'
 type ProductCreationKind = 'industrializado' | 'preparado'
 type StandardItemStepTab = 'dados' | 'detalhes' | 'revisao'
 type IndustrializedStepTab = 'banco' | 'imagens' | 'preco' | 'revisao'
-type IndustrializedCatalogItem = {
-  id: string
-  name: string
-  brand: string
-  ean: string
-  description: string
-  image: string
-}
+type IndustrializedCatalogItem = IndustrializedItem
 type ImageBankItem = {
   id: string
   label: string
@@ -171,40 +164,6 @@ const industrializedStepTabs: Array<{ id: IndustrializedStepTab; label: string }
   { id: 'revisao', label: 'Revisao' },
 ]
 
-const industrializedCatalogItems: IndustrializedCatalogItem[] = [
-  {
-    id: 'ind-1',
-    name: 'Coca-Cola Lata 350ml',
-    brand: 'Coca-Cola',
-    ean: '7894900011517',
-    description: 'Refrigerante lata 350ml pronto para venda unitara.',
-    image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=900&q=80',
-  },
-  {
-    id: 'ind-2',
-    name: 'Guarana Antarctica Lata 350ml',
-    brand: 'Guarana Antarctica',
-    ean: '7891991011024',
-    description: 'Refrigerante lata 350ml com cadastro de mercado.',
-    image: 'https://images.unsplash.com/photo-1605548230624-8d2d0419c517?auto=format&fit=crop&w=900&q=80',
-  },
-  {
-    id: 'ind-3',
-    name: 'Agua Mineral sem Gas 500ml',
-    brand: 'Minalba',
-    ean: '7896062800220',
-    description: 'Agua mineral sem gas para venda unitara.',
-    image: 'https://images.unsplash.com/photo-1564419320461-6870880221ad?auto=format&fit=crop&w=900&q=80',
-  },
-  {
-    id: 'ind-4',
-    name: 'Brownie Embalado 80g',
-    brand: 'Doce Casa',
-    ean: '7898937612458',
-    description: 'Brownie individual embalado pronto para consumo.',
-    image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=900&q=80',
-  },
-]
 
 const imageBankItems: ImageBankItem[] = [
   {
@@ -267,6 +226,11 @@ export function PartnerCatalogPage({ externalData, embedded }: { externalData?: 
   const [industrializedActive, setIndustrializedActive] = useState(true)
   const [industrializedFeatured, setIndustrializedFeatured] = useState(false)
   const [savingIndustrialized, setSavingIndustrialized] = useState(false)
+  const [industrializedCatalogItems, setIndustrializedCatalogItems] = useState<IndustrializedCatalogItem[]>([])
+
+  useEffect(() => {
+    void fetchIndustrializados().then(setIndustrializedCatalogItems)
+  }, [])
   const [expandedByCategoryId, setExpandedByCategoryId] = useState<Record<string, boolean>>({})
   const [activeByCategoryId, setActiveByCategoryId] = useState<Record<string, boolean>>({})
   const [activeByProductId, setActiveByProductId] = useState<Record<string, boolean>>({})

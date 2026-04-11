@@ -407,6 +407,36 @@ export async function createProduct(
   }
 }
 
+export type IndustrializedItem = {
+  id: string
+  name: string
+  brand: string
+  ean: string
+  description: string
+  image: string
+}
+
+export async function fetchIndustrializados(): Promise<IndustrializedItem[]> {
+  if (!isSupabaseConfigured || !supabase) return []
+
+  const { data, error } = await supabase
+    .from('industrializados')
+    .select('id, name, brand, ean, description, image_url')
+    .eq('active', true)
+    .order('name')
+
+  if (error) throw error
+
+  return (data ?? []).map((row) => ({
+    id: String(row.id),
+    name: String(row.name),
+    brand: String(row.brand),
+    ean: String(row.ean),
+    description: String(row.description ?? ''),
+    image: String(row.image_url ?? ''),
+  }))
+}
+
 export async function loadPartnerDashboard(storeId: string): Promise<{
   data: PartnerDashboardData
   source: 'supabase'
