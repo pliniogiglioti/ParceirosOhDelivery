@@ -21,11 +21,17 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
     storeByStoreId,
     storeHoursByStoreId,
     ordersByStoreId,
+    paymentMethodsByStoreId,
+    couriersByStoreId,
+    logisticsByStoreId,
     setStoreOpen,
     hydrateStore,
     hydrateStoreOpen,
     hydrateStoreHours,
     hydrateOrders,
+    hydratePaymentMethods,
+    hydrateCouriers,
+    hydrateLogistics,
   } = usePartnerDraftStore()
 
   useEffect(() => {
@@ -34,6 +40,9 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
       hydrateStoreOpen(data.store.isOpen)
       hydrateStoreHours(data.store.id, data.hours)
       hydrateOrders(data.store.id, data.orders)
+      hydratePaymentMethods(data.store.id, data.paymentMethods)
+      hydrateCouriers(data.store.id, data.couriers)
+      hydrateLogistics(data.store.id, data.logistics)
     }
   }, [
     data?.store,
@@ -41,7 +50,13 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
     data?.store.isOpen,
     data?.hours,
     data?.orders,
+    data?.paymentMethods,
+    data?.couriers,
+    data?.logistics,
     hydrateOrders,
+    hydratePaymentMethods,
+    hydrateCouriers,
+    hydrateLogistics,
     hydrateStore,
     hydrateStoreHours,
     hydrateStoreOpen,
@@ -69,6 +84,9 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
   const draftStore = storeByStoreId[data.store.id] ?? data.store
   const draftHours = storeHoursByStoreId[data.store.id] ?? data.hours
   const draftOrders = ordersByStoreId[data.store.id] ?? data.orders
+  const draftPaymentMethods = paymentMethodsByStoreId[data.store.id] ?? data.paymentMethods
+  const draftCouriers = couriersByStoreId[data.store.id] ?? data.couriers
+  const draftLogistics = logisticsByStoreId[data.store.id] ?? data.logistics
   const today = new Date()
   const validOrders = draftOrders.filter((order) => order.status !== 'cancelado')
   const todayOrders = validOrders.filter((order) => isSameUtcDate(order.createdAt, today))
@@ -85,6 +103,9 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
     },
     hours: draftHours,
     orders: draftOrders,
+    paymentMethods: draftPaymentMethods,
+    couriers: draftCouriers,
+    logistics: draftLogistics,
     metrics: {
       ...data.metrics,
       grossRevenue,

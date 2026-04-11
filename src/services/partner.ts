@@ -1,8 +1,10 @@
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 import { addRoleToProfile } from '@/services/profile'
 import { isSameUtcDate } from '@/lib/utils'
+import { buildDefaultPaymentMethods } from '@/lib/paymentMethods'
 import type {
   DeliveryArea,
+  LogisticsSnapshot,
   OrderStatus,
   PartnerCategory,
   PartnerDashboardData,
@@ -11,15 +13,11 @@ import type {
   PartnerOrderItem,
   PartnerProduct,
   PartnerStoreCard,
+  PaymentMethodItem,
   ReviewItem,
+  StoreCourier,
   StoreRegistrationInput,
 } from '@/types'
-
-const defaultPaymentMethods = [
-  { id: 'pix', label: 'Pix', active: true, detail: 'Confirmacao instantanea' },
-  { id: 'card', label: 'Cartao', active: true, detail: 'Credito e debito' },
-  { id: 'cash', label: 'Dinheiro', active: true, detail: 'Troco configuravel ate R$ 100,00' },
-]
 
 function emptyDashboard(): PartnerDashboardData {
   return {
@@ -56,7 +54,8 @@ function emptyDashboard(): PartnerDashboardData {
     products: [],
     hours: [],
     deliveryAreas: [],
-    paymentMethods: defaultPaymentMethods.map((method) => ({ ...method, active: false })),
+    paymentMethods: buildDefaultPaymentMethods(),
+    couriers: [],
     reviews: [],
     logistics: {
       averagePrepTime: '0 min',
@@ -329,6 +328,143 @@ export async function saveDeliveryArea(
   }
 }
 
+export async function saveStorePaymentMethods(
+  storeId: string,
+  methods: PaymentMethodItem[]
+): Promise<PaymentMethodItem[]> {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
+
+  const methodPayload = methods.map((method, index) => ({
+    store_id: storeId,
+    code: method.id,
+    label: method.label,
+    description: method.detail,
+    active: method.active,
+    sort_order: index,
+    updated_at: new Date().toISOString(),
+  }))
+
+  const { data: methodRows, error: methodError } = await supabase
+    .from('store_payment_methods')
+    .upsert(methodPayload, { onConflict: 'store_id,code' })
+    .select('*')
+
+  if (methodError) throw methodError
+
+  const methodIdByCode = new Map<string, string>(
+    (methodRows ?? []).map((row) => [String(row.code), String(row.id)])
+  )
+
+  const brandPayload = methods.flatMap((method) =>
+    (method.brands ?? []).map((brand, index) => ({
+      store_payment_method_id: methodIdByCode.get(method.id),
+      code: brand.id,
+      label: brand.label,
+      logo: brand.logo,
+      color: brand.color,
+      active: brand.active,
+      sort_order: index,
+      updated_at: new Date().toISOString(),
+    }))
+  ).filter((brand): brand is {
+    store_payment_method_id: string
+    code: string
+    label: string
+    logo: string
+    color: string
+    active: boolean
+    sort_order: number
+    updated_at: string
+  } => Boolean(brand.store_payment_method_id))
+
+  if (brandPayload.length > 0) {
+    const { error: brandError } = await supabase
+      .from('store_payment_brands')
+      .upsert(brandPayload, { onConflict: 'store_payment_method_id,code' })
+
+    if (brandError) throw brandError
+  }
+
+  return methods
+}
+
+export async function saveStoreCourier(
+  storeId: string,
+  email: string
+): Promise<StoreCourier> {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
+
+  const normalizedEmail = email.trim().toLowerCase()
+
+  const { data, error } = await supabase
+    .from('store_couriers')
+    .upsert(
+      {
+        store_id: storeId,
+        email: normalizedEmail,
+        name: normalizedEmail.split('@')[0] ?? 'Entregador',
+        status: 'pendente',
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'store_id,email' }
+    )
+    .select('*')
+    .single()
+
+  if (error) throw error
+
+  await updateStoreCourierMode(storeId, 'Entregadores proprios')
+
+  return {
+    id: String(data.id),
+    email: String(data.email),
+    name: String(data.name ?? normalizedEmail.split('@')[0] ?? 'Entregador'),
+    status: (data.status ?? 'pendente') === 'ativo' ? 'ativo' : 'pendente',
+    createdAt: String(data.created_at ?? new Date().toISOString()),
+  }
+}
+
+export async function deleteStoreCourier(
+  storeId: string,
+  courierId: string
+): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
+
+  const { error } = await supabase
+    .from('store_couriers')
+    .delete()
+    .eq('id', courierId)
+    .eq('store_id', storeId)
+
+  if (error) throw error
+
+  const { count, error: countError } = await supabase
+    .from('store_couriers')
+    .select('id', { count: 'exact', head: true })
+    .eq('store_id', storeId)
+
+  if (countError) throw countError
+
+  await updateStoreCourierMode(storeId, (count ?? 0) > 0 ? 'Entregadores proprios' : 'Nao configurado')
+}
+
+export async function updateStoreCourierMode(
+  storeId: string,
+  courierMode: string
+): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
+
+  const { error } = await supabase
+    .from('stores')
+    .update({
+      logistics_courier_mode: courierMode,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', storeId)
+
+  if (error) throw error
+}
+
 export async function createProductCategory(
   storeId: string,
   input: {
@@ -479,6 +615,8 @@ export async function loadPartnerDashboard(storeId: string): Promise<{
     chatResult,
     deliveryAreaResult,
     reviewResult,
+    paymentMethodResult,
+    courierResult,
   ] = await Promise.all([
     supabase.from('store_hours').select('*').eq('store_id', storeRow.id).order('week_day', { ascending: true }),
     supabase
@@ -492,6 +630,8 @@ export async function loadPartnerDashboard(storeId: string): Promise<{
     supabase.from('chat_sessions').select('*').eq('store_id', storeRow.id).order('updated_at', { ascending: false }).limit(20),
     supabase.from('delivery_areas').select('*').eq('store_id', storeRow.id).order('sort_order', { ascending: true }),
     supabase.from('store_reviews').select('*').eq('store_id', storeRow.id).order('created_at', { ascending: false }).limit(50),
+    supabase.from('store_payment_methods').select('*').eq('store_id', storeRow.id).order('sort_order', { ascending: true }),
+    supabase.from('store_couriers').select('*').eq('store_id', storeRow.id).order('created_at', { ascending: false }),
   ])
 
   const firstError =
@@ -501,7 +641,9 @@ export async function loadPartnerDashboard(storeId: string): Promise<{
     orderResult.error ??
     chatResult.error ??
     deliveryAreaResult.error ??
-    reviewResult.error
+    reviewResult.error ??
+    paymentMethodResult.error ??
+    courierResult.error
 
   if (firstError) {
     throw firstError
@@ -514,16 +656,23 @@ export async function loadPartnerDashboard(storeId: string): Promise<{
   const chatRows = chatResult.data
   const deliveryAreaRows = deliveryAreaResult.data
   const reviewRows = reviewResult.data
+  const paymentMethodRows = paymentMethodResult.data
+  const courierRows = courierResult.data
 
   const orderIds = (orderRows ?? []).map((row) => String(row.id))
   const chatIds = (chatRows ?? []).map((row) => String(row.id))
 
-  const [{ data: orderItemRows }, { data: messageRows }] = await Promise.all([
+  const paymentMethodIds = (paymentMethodRows ?? []).map((row) => String(row.id))
+
+  const [{ data: orderItemRows }, { data: messageRows }, { data: paymentBrandRows }] = await Promise.all([
     orderIds.length
       ? supabase.from('order_items').select('*').in('order_id', orderIds)
       : Promise.resolve({ data: [], error: null }),
     chatIds.length
       ? supabase.from('chat_messages').select('*').in('chat_id', chatIds)
+      : Promise.resolve({ data: [], error: null }),
+    paymentMethodIds.length
+      ? supabase.from('store_payment_brands').select('*').in('store_payment_method_id', paymentMethodIds)
       : Promise.resolve({ data: [], error: null }),
   ])
 
@@ -612,11 +761,54 @@ export async function loadPartnerDashboard(storeId: string): Promise<{
       createdAt: String(row.created_at ?? ''),
     })) ?? []
 
-  const availablePaymentMethods = Array.from(new Set(orders.map((order) => order.paymentMethod)))
+  const brandRowsByMethodId = new Map<string, Array<Record<string, unknown>>>()
+
+  ;(paymentBrandRows ?? []).forEach((row) => {
+    const methodId = String(row.store_payment_method_id)
+    brandRowsByMethodId.set(methodId, [...(brandRowsByMethodId.get(methodId) ?? []), row])
+  })
+
+  const paymentMethods: PaymentMethodItem[] =
+    paymentMethodRows && paymentMethodRows.length > 0
+      ? paymentMethodRows.map((row) => ({
+          id: String(row.code ?? row.id),
+          label: String(row.label ?? ''),
+          detail: String(row.description ?? ''),
+          active: Boolean(row.active ?? false),
+          brands: (brandRowsByMethodId.get(String(row.id)) ?? [])
+            .sort((left, right) => Number(left.sort_order ?? 0) - Number(right.sort_order ?? 0))
+            .map((brandRow) => ({
+              id: String(brandRow.code ?? brandRow.id),
+              label: String(brandRow.label ?? ''),
+              logo: String(brandRow.logo ?? ''),
+              color: String(brandRow.color ?? '#1f2937'),
+              active: Boolean(brandRow.active ?? false),
+            })),
+        }))
+      : buildDefaultPaymentMethods()
+
+  const couriers: StoreCourier[] =
+    courierRows?.map((row) => ({
+      id: String(row.id),
+      email: String(row.email ?? ''),
+      name: String(row.name ?? row.email ?? 'Entregador'),
+      status: (row.status ?? 'pendente') === 'ativo' ? 'ativo' : 'pendente',
+      createdAt: String(row.created_at ?? new Date().toISOString()),
+    })) ?? []
+
   const deliveredOrders = orders.filter((order) => order.status === 'entregue')
   const onTimeRate = deliveredOrders.length
     ? Math.round((deliveredOrders.length / orders.filter((order) => order.status !== 'cancelado').length) * 100)
     : 0
+
+  const logistics: LogisticsSnapshot = {
+    averagePrepTime: `${Math.max(Number(storeRow.eta_min ?? 0) - 4, 0)} min`,
+    onTimeRate: `${onTimeRate}%`,
+    courierMode:
+      couriers.length > 0
+        ? 'Entregadores proprios'
+        : String(storeRow.logistics_courier_mode ?? 'Nao configurado'),
+  }
 
   const data: PartnerDashboardData = {
     store: {
@@ -654,16 +846,10 @@ export async function loadPartnerDashboard(storeId: string): Promise<{
     products,
     hours,
     deliveryAreas,
-    paymentMethods: defaultPaymentMethods.map((method) => ({
-      ...method,
-      active: availablePaymentMethods.includes(method.label),
-    })),
+    paymentMethods,
+    couriers,
     reviews,
-    logistics: {
-      averagePrepTime: `${Math.max(Number(storeRow.eta_min ?? 0) - 4, 0)} min`,
-      onTimeRate: `${onTimeRate}%`,
-      courierMode: String(storeRow.logistics_courier_mode ?? 'Nao configurado'),
-    },
+    logistics,
     support: {
       openChats: chatRows?.length ?? 0,
       unreadMessages: (messageRows ?? []).filter((message) => String(message.sender) === 'user').length,

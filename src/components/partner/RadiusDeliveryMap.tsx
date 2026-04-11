@@ -2,7 +2,6 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { Loader2, LocateFixed, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { formatCurrency } from '@/lib/utils'
 
 export type RadiusZone = {
   id: string
@@ -280,10 +279,6 @@ export function RadiusDeliveryMap({
                     />
                   </div>
                 </label>
-              </div>
-
-              <div className="pt-5 text-[13px] font-bold text-ink-900 hidden sm:block">
-                {formatCurrency(zone.fee || 0)}
               </div>
             </div>
 

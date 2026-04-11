@@ -165,6 +165,45 @@ create table if not exists public.delivery_areas (
   updated_at timestamptz not null default timezone('utc', now())
 );
 
+create table if not exists public.store_payment_methods (
+  id uuid primary key default gen_random_uuid(),
+  store_id uuid not null references public.stores(id) on delete cascade,
+  code text not null,
+  label text not null,
+  description text,
+  active boolean not null default false,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now()),
+  unique (store_id, code)
+);
+
+create table if not exists public.store_payment_brands (
+  id uuid primary key default gen_random_uuid(),
+  store_payment_method_id uuid not null references public.store_payment_methods(id) on delete cascade,
+  code text not null,
+  label text not null,
+  logo text not null,
+  color text not null,
+  active boolean not null default false,
+  sort_order integer not null default 0,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now()),
+  unique (store_payment_method_id, code)
+);
+
+create table if not exists public.store_couriers (
+  id uuid primary key default gen_random_uuid(),
+  store_id uuid not null references public.stores(id) on delete cascade,
+  email text not null,
+  name text,
+  status text not null default 'pendente'
+    check (status in ('ativo', 'pendente')),
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now()),
+  unique (store_id, email)
+);
+
 create table if not exists public.store_reviews (
   id uuid primary key default gen_random_uuid(),
   store_id uuid not null references public.stores(id) on delete cascade,
@@ -183,4 +222,7 @@ create index if not exists idx_order_items_order on public.order_items(order_id)
 create index if not exists idx_chat_sessions_store_updated on public.chat_sessions(store_id, updated_at desc);
 create index if not exists idx_chat_messages_chat_created on public.chat_messages(chat_id, created_at asc);
 create index if not exists idx_delivery_areas_store_sort on public.delivery_areas(store_id, sort_order);
+create index if not exists idx_store_payment_methods_store_sort on public.store_payment_methods(store_id, sort_order);
+create index if not exists idx_store_payment_brands_method_sort on public.store_payment_brands(store_payment_method_id, sort_order);
+create index if not exists idx_store_couriers_store_created on public.store_couriers(store_id, created_at desc);
 create index if not exists idx_store_reviews_store_created on public.store_reviews(store_id, created_at desc);

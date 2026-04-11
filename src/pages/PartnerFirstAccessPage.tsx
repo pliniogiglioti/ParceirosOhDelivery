@@ -1,13 +1,15 @@
 import React, { type ReactNode, useEffect, useState } from 'react'
-import { ArrowRight, CheckCircle2, ChevronDown, Circle, Clock3, Loader2, LogOut, MapPinned, ShoppingBag, Store } from 'lucide-react'
+import { ArrowRight, CheckCircle2, ChevronDown, Circle, Clock3, Loader2, LogOut, MapPinned, ShoppingBag, Store, WalletCards } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { LoadingScreen } from '@/components/partner/LoadingScreen'
+import { PaymentMethodsEditor } from '@/components/partner/PaymentMethodsEditor'
 import { RadiusDeliveryMap, type RadiusZone } from '@/components/partner/RadiusDeliveryMap'
 import { weekDays } from '@/components/partner/PartnerUi'
 import { PartnerCatalogPage } from '@/pages/app/PartnerCatalogPage'
 import { usePartnerAuth } from '@/hooks/usePartnerAuth'
 import { usePartnerDashboard } from '@/hooks/usePartnerDashboard'
+import { buildDefaultPaymentMethods, hasActivePaymentMethods } from '@/lib/paymentMethods'
 import { getStoreCategories } from '@/services/profile'
 import { formatTime } from '@/lib/utils'
 import {
@@ -15,12 +17,13 @@ import {
   createProductCategory,
   initializeStoreHours,
   saveDeliveryArea,
+  saveStorePaymentMethods,
   saveStore,
   saveStoreHours,
 } from '@/services/partner'
-import type { DeliveryArea, PartnerCategory, PartnerHour, PartnerProduct, PartnerStore, StoreCategory } from '@/types'
+import type { DeliveryArea, PartnerCategory, PartnerHour, PartnerProduct, PartnerStore, PaymentMethodItem, StoreCategory } from '@/types'
 
-type FirstAccessStepId = 'loja' | 'horarios' | 'entrega' | 'produto'
+type FirstAccessStepId = 'loja' | 'horarios' | 'entrega' | 'pagamentos' | 'produto'
 
 type ProductDraft = {
   categoryId: string
@@ -33,6 +36,7 @@ const STEPS: Array<{ id: FirstAccessStepId; label: string; icon: React.ElementTy
   { id: 'loja', label: 'Loja', icon: Store },
   { id: 'horarios', label: 'Horarios', icon: Clock3 },
   { id: 'entrega', label: 'Entrega', icon: MapPinned },
+  { id: 'pagamentos', label: 'Pagamentos', icon: WalletCards },
   { id: 'produto', label: 'Primeiro produto', icon: ShoppingBag },
 ]
 
@@ -70,6 +74,10 @@ function isDeliveryStepValid(zones: RadiusZone[]) {
   return zones.length > 0 && zones.every((z) => z.radiusKm > 0)
 }
 
+function isPaymentStepValid(methods: PaymentMethodItem[]) {
+  return hasActivePaymentMethods(methods)
+}
+
 function isProductStepValid(product: ProductDraft) {
   return Boolean(product.name.trim() && parseCurrencyNumber(product.price) > 0)
 }
@@ -83,6 +91,7 @@ export function PartnerFirstAccessPage() {
   const [storeDraft, setStoreDraft] = useState<PartnerStore | null>(null)
   const [hoursDraft, setHoursDraft] = useState<PartnerHour[]>([])
   const [deliveryAreasDraft, setDeliveryAreasDraft] = useState<DeliveryArea[]>([])
+  const [paymentMethodsDraft, setPaymentMethodsDraft] = useState<PaymentMethodItem[]>(buildDefaultPaymentMethods())
   const [productCategoriesDraft, setProductCategoriesDraft] = useState<PartnerCategory[]>([])
   const [productsDraft, setProductsDraft] = useState<PartnerProduct[]>([])
   const [radiusZones, setRadiusZones] = useState<RadiusZone[]>([
@@ -100,6 +109,7 @@ export function PartnerFirstAccessPage() {
     loja: false,
     horarios: false,
     entrega: false,
+    pagamentos: false,
     produto: false,
   })
   const [savingStep, setSavingStep] = useState<FirstAccessStepId | null>(null)
@@ -123,6 +133,7 @@ export function PartnerFirstAccessPage() {
     }
 
     setDeliveryAreasDraft(data.deliveryAreas)
+    setPaymentMethodsDraft(data.paymentMethods.length > 0 ? data.paymentMethods : buildDefaultPaymentMethods())
     setProductCategoriesDraft(data.categories)
     setProductsDraft(data.products)
 
@@ -151,6 +162,7 @@ export function PartnerFirstAccessPage() {
       loja: isStoreStepValid(data.store),
       horarios: isHoursStepValid(data.hours),
       entrega: data.deliveryAreas.some((area) => area.active),
+      pagamentos: isPaymentStepValid(data.paymentMethods),
       produto: data.products.some((product) => product.active),
     })
   }, [data])
@@ -186,12 +198,14 @@ export function PartnerFirstAccessPage() {
   const storeStepComplete = savedSteps.loja && isStoreStepValid(currentStore)
   const hoursStepComplete = savedSteps.horarios && isHoursStepValid(hoursDraft)
   const deliveryStepComplete = savedSteps.entrega && deliveryAreasDraft.length > 0
+  const paymentStepComplete = savedSteps.pagamentos && isPaymentStepValid(paymentMethodsDraft)
   const productStepComplete = savedSteps.produto && productsDraft.some((product) => product.active)
 
   const completedMap: Record<FirstAccessStepId, boolean> = {
     loja: storeStepComplete,
     horarios: hoursStepComplete,
     entrega: deliveryStepComplete,
+    pagamentos: paymentStepComplete,
     produto: productStepComplete,
   }
 
@@ -331,11 +345,33 @@ export function PartnerFirstAccessPage() {
     return false
   }
 
+  async function handleSavePaymentStep(): Promise<boolean> {
+    if (!isPaymentStepValid(paymentMethodsDraft)) {
+      toast.error('Ative pelo menos uma forma de pagamento.')
+      return false
+    }
+
+    setSavingStep('pagamentos')
+    try {
+      const savedMethods = await saveStorePaymentMethods(dashboardData.store.id, paymentMethodsDraft)
+      setPaymentMethodsDraft(savedMethods)
+      setSavedSteps((current) => ({ ...current, pagamentos: true }))
+      toast.success('Formas de pagamento salvas.')
+      return true
+    } catch {
+      toast.error('Nao foi possivel salvar as formas de pagamento.')
+      return false
+    } finally {
+      setSavingStep(null)
+    }
+  }
+
   async function handleSaveAndNext() {
     const saveMap: Record<FirstAccessStepId, () => Promise<boolean>> = {
       loja: handleSaveStoreStep,
       horarios: handleSaveHoursStep,
       entrega: handleSaveDeliveryStep,
+      pagamentos: handleSavePaymentStep,
       produto: handleSaveProductStep,
     }
     const ok = await saveMap[currentStepId]()
@@ -518,6 +554,28 @@ export function PartnerFirstAccessPage() {
               setMapLat(lat)
               setMapLng(lng)
             }}
+          />
+        </div>
+      )
+    }
+
+    if (currentStepId === 'pagamentos') {
+      return (
+        <div className="flex-1 rounded-2xl bg-white p-6 shadow-sm space-y-4">
+          <div>
+            <h2 className="text-[18px] font-bold text-[#1d1d1d]">Formas de pagamento</h2>
+            <p className="text-[13px] text-[#8b8b8b] mt-1">
+              Ative os meios de pagamento da loja e marque as bandeiras de cartao mais usadas que voce aceita.
+            </p>
+          </div>
+
+          <PaymentMethodsEditor
+            methods={paymentMethodsDraft}
+            onChange={(methods) => {
+              setPaymentMethodsDraft(methods)
+              setSavedSteps((current) => ({ ...current, pagamentos: false }))
+            }}
+            helperText="Voce pode comecar com as bandeiras mais usadas e ajustar o restante depois sem sair do painel."
           />
         </div>
       )

@@ -131,11 +131,20 @@ export interface DeliveryArea {
   active: boolean
 }
 
+export interface PaymentBrandItem {
+  id: string
+  label: string
+  logo: string
+  color: string
+  active: boolean
+}
+
 export interface PaymentMethodItem {
   id: string
   label: string
   active: boolean
   detail: string
+  brands?: PaymentBrandItem[]
 }
 
 export interface ReviewItem {
@@ -150,6 +159,14 @@ export interface LogisticsSnapshot {
   averagePrepTime: string
   onTimeRate: string
   courierMode: string
+}
+
+export interface StoreCourier {
+  id: string
+  email: string
+  name: string
+  status: 'ativo' | 'pendente'
+  createdAt: string
 }
 
 export interface SupportSnapshot {
@@ -242,6 +259,7 @@ export interface PartnerDashboardData {
   hours: PartnerHour[]
   deliveryAreas: DeliveryArea[]
   paymentMethods: PaymentMethodItem[]
+  couriers: StoreCourier[]
   reviews: ReviewItem[]
   logistics: LogisticsSnapshot
   support: SupportSnapshot
