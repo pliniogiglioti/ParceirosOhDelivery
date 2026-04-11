@@ -7,6 +7,7 @@ import {
   EllipsisVertical,
   GripVertical,
   LayoutGrid,
+  Loader2,
   Package,
   PencilLine,
   Pizza,
@@ -24,6 +25,7 @@ import { cn, formatCurrency } from '@/lib/utils'
 import { AnimatedModal } from '@/components/partner/AnimatedModal'
 import { SectionFrame } from '@/components/partner/PartnerUi'
 import type { PartnerCategory } from '@/types'
+import { createProduct } from '@/services/partner'
 
 function ThemeSwitch({
   checked,
@@ -265,6 +267,7 @@ export function PartnerCatalogPage({ externalData, embedded }: { externalData?: 
   const [industrializedPromotionPrice, setIndustrializedPromotionPrice] = useState('')
   const [industrializedActive, setIndustrializedActive] = useState(true)
   const [industrializedFeatured, setIndustrializedFeatured] = useState(false)
+  const [savingIndustrialized, setSavingIndustrialized] = useState(false)
   const [expandedByCategoryId, setExpandedByCategoryId] = useState<Record<string, boolean>>({})
   const [activeByCategoryId, setActiveByCategoryId] = useState<Record<string, boolean>>({})
   const [activeByProductId, setActiveByProductId] = useState<Record<string, boolean>>({})
@@ -585,19 +588,34 @@ const normalizedSearch = search.trim().toLowerCase()
     setIndustrializedPromotionPrice('')
   }
 
-  function handleSaveIndustrializedItem() {
-    if (!selectedIndustrializedItemId) {
+  async function handleSaveIndustrializedItem() {
+    if (!selectedIndustrializedItemId || !addItemCategoryId) {
       toast.error('Selecione um produto da lista para continuar.')
       return
     }
 
     if (!industrializedName.trim() || !industrializedPrice.trim()) {
-      toast.error('Preencha os campos principais do cadastro.')
+      toast.error('Preencha o nome e o preco do produto.')
       return
     }
 
-    setProductKindModalOpen(false)
-    toast.success(`Item industrializado ${industrializedName.trim()} pronto para cadastro.`)
+    setSavingIndustrialized(true)
+    try {
+      const saved = await createProduct(data!.store.id, {
+        categoryId: addItemCategoryId,
+        name: industrializedName.trim(),
+        description: industrializedDescription.trim(),
+        price: industrializedPriceValue,
+        imageUrl: industrializedImage || undefined,
+      })
+      setCatalogProducts((current) => [...current, saved])
+      setProductKindModalOpen(false)
+      toast.success(`${industrializedName.trim()} adicionado ao cardapio.`)
+    } catch {
+      toast.error('Nao foi possivel salvar o produto.')
+    } finally {
+      setSavingIndustrialized(false)
+    }
   }
 
   const industrializedPriceValue = parseCurrencyInput(industrializedPrice)
@@ -634,14 +652,14 @@ const normalizedSearch = search.trim().toLowerCase()
       return
     }
 
-    handleSaveIndustrializedItem()
+    void handleSaveIndustrializedItem()
   }
 
   const canContinueIndustrializedFlow =
     industrializedStepTab === 'banco'
       ? Boolean(selectedIndustrializedItemId)
       : industrializedStepTab === 'imagens'
-        ? Boolean(selectedImageBankItemId)
+        ? Boolean(industrializedImage || selectedImageBankItemId)
         : industrializedStepTab === 'preco'
           ? Boolean(industrializedPrice.trim()) &&
             (!industrializedPromotionPrice.trim() || industrializedPromotionPriceValue < industrializedPriceValue)
@@ -1753,16 +1771,19 @@ const normalizedSearch = search.trim().toLowerCase()
                   <button
                     type="button"
                     onClick={handleContinueIndustrializedFlow}
-                    disabled={!canContinueIndustrializedFlow}
-                    aria-disabled={!canContinueIndustrializedFlow}
+                    disabled={!canContinueIndustrializedFlow || savingIndustrialized}
+                    aria-disabled={!canContinueIndustrializedFlow || savingIndustrialized}
                     className={cn(
-                      'inline-flex h-11 items-center justify-center rounded-2xl px-5 text-sm font-semibold text-white transition',
-                      canContinueIndustrializedFlow
+                      'inline-flex h-11 items-center justify-center gap-2 rounded-2xl px-5 text-sm font-semibold text-white transition',
+                      canContinueIndustrializedFlow && !savingIndustrialized
                         ? 'bg-coral-500 hover:bg-coral-600'
                         : 'bg-ink-300 text-white/80'
                     )}
                   >
-                    {industrializedStepTab === 'revisao' ? 'Salvar cadastro' : 'Continuar'}
+                    {savingIndustrialized
+                      ? <><Loader2 className="h-4 w-4 animate-spin" /> Salvando...</>
+                      : industrializedStepTab === 'revisao' ? 'Salvar cadastro' : 'Continuar'
+                    }
                   </button>
                 </div>
               </>

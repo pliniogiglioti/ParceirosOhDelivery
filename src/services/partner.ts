@@ -371,6 +371,7 @@ export async function createProduct(
     name: string
     description: string
     price: number
+    imageUrl?: string
   }
 ): Promise<PartnerProduct> {
   if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
@@ -383,6 +384,7 @@ export async function createProduct(
       name: input.name,
       description: input.description,
       price: input.price,
+      image_url: input.imageUrl ?? null,
       stock_quantity: 100,
       active: true,
       featured: false,
