@@ -2,6 +2,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { Loader2, LocateFixed, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
+import { formatCurrency } from '@/lib/utils'
 
 export type RadiusZone = {
   id: string
@@ -14,8 +15,39 @@ const ZONE_COLORS = ['#ea1d2c', '#f97316', '#eab308']
 
 const RADIUS_OPTIONS = [1, 2, 3, 4, 5, 7, 10, 12, 15, 20, 25, 30]
 
-function formatCurrency(value: number) {
-  return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+function formatCurrencyInput(value: string) {
+  const digitsOnly = value.replace(/\D/g, '')
+
+  if (!digitsOnly) {
+    return ''
+  }
+
+  return (Number(digitsOnly) / 100).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+}
+
+function parseCurrencyInput(value: string) {
+  const normalizedValue = value.replace(/\./g, '').replace(',', '.').trim()
+
+  if (!normalizedValue) {
+    return 0
+  }
+
+  const parsedValue = Number(normalizedValue)
+  return Number.isFinite(parsedValue) ? parsedValue : 0
+}
+
+function formatCurrencyValue(value: number) {
+  if (value <= 0) {
+    return ''
+  }
+
+  return value.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
 }
 
 export function RadiusDeliveryMap({
@@ -158,11 +190,9 @@ export function RadiusDeliveryMap({
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Map */}
+    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
       <div className="relative overflow-hidden rounded-2xl border border-ink-100" style={{ height: 420 }}>
         <div ref={containerRef} className="h-full w-full" />
-        {/* Center pin */}
         <div
           className="pointer-events-none absolute"
           style={{ left: '50%', top: '50%', transform: 'translate(-50%, -100%)', zIndex: 9999, width: 26, height: 26 }}
@@ -183,7 +213,6 @@ export function RadiusDeliveryMap({
           className="pointer-events-none absolute rounded-full bg-white border-2 border-[#ea1d2c]"
           style={{ left: '50%', top: '50%', width: 8, height: 8, transform: 'translate(-50%, -50%)', zIndex: 9999 }}
         />
-        {/* Minha localizacao */}
         <button
           type="button"
           onClick={goToMyLocation}
@@ -199,23 +228,40 @@ export function RadiusDeliveryMap({
         </p>
       </div>
 
-      {/* Zones */}
-      <div className="space-y-3">
+      <div className="space-y-3 xl:max-h-[420px] xl:overflow-y-auto xl:pr-1">
         {zones.map((zone, index) => (
           <div
             key={zone.id}
-            className="flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center"
+            className="rounded-2xl border p-4"
             style={{ borderColor: zone.color + '55', backgroundColor: zone.color + '08' }}
           >
-            <div
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white text-[12px] font-bold"
-              style={{ backgroundColor: zone.color }}
-            >
-              {index + 1}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white text-[12px] font-bold"
+                  style={{ backgroundColor: zone.color }}
+                >
+                  {index + 1}
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-ink-900">Zona {index + 1}</p>
+                  <p className="text-xs text-ink-500">{formatCurrency(zone.fee || 0)}</p>
+                </div>
+              </div>
+
+              {zones.length > 1 ? (
+                <button
+                  type="button"
+                  onClick={() => removeZone(zone.id)}
+                  className="rounded-xl p-2 text-ink-400 transition hover:bg-coral-50 hover:text-coral-500"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              ) : null}
             </div>
 
-            <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="flex-1">
+            <div className="mt-4 grid gap-3">
+              <div>
                 <label className="block">
                   <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">
                     Raio de entrega
@@ -232,37 +278,28 @@ export function RadiusDeliveryMap({
                 </label>
               </div>
 
-              <div className="flex-1">
+              <div>
                 <label className="block">
                   <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">
                     Taxa de entrega
                   </span>
-                  <input
-                    type="number"
-                    min={0}
-                    step="0.50"
-                    value={zone.fee}
-                    onChange={(e) => updateZone(zone.id, { fee: Number(e.target.value) })}
-                    className="h-11 w-full rounded-xl border border-ink-200 bg-white px-3 text-[13px] font-semibold text-ink-900 outline-none focus:border-[#ea1d2c]"
-                    placeholder="0,00"
-                  />
+                  <div className="flex h-11 items-center rounded-xl border border-ink-200 bg-white px-3 focus-within:border-[#ea1d2c]">
+                    <span className="shrink-0 text-[13px] font-semibold text-ink-500">R$</span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={formatCurrencyValue(zone.fee)}
+                      onChange={(e) => {
+                        const formattedValue = formatCurrencyInput(e.target.value)
+                        updateZone(zone.id, { fee: parseCurrencyInput(formattedValue) })
+                      }}
+                      className="h-full w-full bg-transparent px-2 text-[13px] font-semibold text-ink-900 outline-none"
+                      placeholder="0,00"
+                    />
+                  </div>
                 </label>
               </div>
-
-              <div className="pt-5 text-[13px] font-bold text-ink-900 hidden sm:block">
-                {formatCurrency(zone.fee)}
-              </div>
             </div>
-
-            {zones.length > 1 && (
-              <button
-                type="button"
-                onClick={() => removeZone(zone.id)}
-                className="self-start rounded-xl p-2 text-ink-400 transition hover:bg-coral-50 hover:text-coral-500 sm:self-center"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            )}
           </div>
         ))}
 
