@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
   BadgeCheck,
+  Circle,
   Check,
   ChevronDown,
   CircleDollarSign,
   Loader2,
   MapPin,
   ShieldCheck,
+  X,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { usePartnerAuth } from '@/hooks/usePartnerAuth'
@@ -67,7 +69,7 @@ async function geocodeAddress(query: string): Promise<{ lat: number; lng: number
   }
 }
 
-const STEPS = ['CNPJ', 'Dados da Loja', 'Endereco', 'Localizacao', 'Configuracoes', 'Plano']
+const STEPS = ['CNPJ?', 'Negocio', 'Dados da Loja', 'Endereco', 'Localizacao', 'Configuracoes', 'Plano']
 
 const PLAN_FEATURES = [
   'Mais visibilidade para sua loja no app',
@@ -79,7 +81,10 @@ const PLAN_FEATURES = [
 function StepperBar({ current }: { current: number }) {
   return (
     <div className="border-b border-[#ececec] bg-white px-4">
-      <div className="mx-auto grid max-w-5xl grid-cols-[repeat(6,minmax(0,1fr))] items-center py-7">
+      <div
+        className="mx-auto grid max-w-6xl items-center py-7"
+        style={{ gridTemplateColumns: `repeat(${STEPS.length}, minmax(0, 1fr))` }}
+      >
         {STEPS.map((label, index) => (
           <div key={label} className="flex items-center">
             <p
@@ -126,6 +131,7 @@ export function StoreRegisterPage() {
   const [submitting, setSubmitting] = useState(false)
   const [cepLoading, setCepLoading] = useState(false)
   const [registrationCompleted, setRegistrationCompleted] = useState(false)
+  const [hasCnpj, setHasCnpj] = useState<boolean | null>(null)
 
   const [form, setForm] = useState<StoreRegistrationInput>({
     name: '',
@@ -197,14 +203,27 @@ export function StoreRegisterPage() {
 
   function validateStep(currentStep: number) {
     if (currentStep === 0) {
-      if (form.cnpj.replace(/\D/g, '').length !== 14) {
-        toast.error('Informe um CNPJ valido.')
+      if (hasCnpj === null) {
+        toast.error('Escolha se a loja tem CNPJ.')
         return false
       }
-      if (!form.razaoSocial.trim()) {
-        toast.error('Informe a razao social.')
+    }
+
+    if (currentStep === 1) {
+      if (hasCnpj) {
+        if (form.cnpj.replace(/\D/g, '').length !== 14) {
+          toast.error('Informe um CNPJ valido.')
+          return false
+        }
+        if (!form.razaoSocial.trim()) {
+          toast.error('Informe a razao social.')
+          return false
+        }
+      } else if (!form.nomeFantasia.trim()) {
+        toast.error('Informe o nome do negocio.')
         return false
       }
+
       if (!form.responsavelNome.trim()) {
         toast.error('Informe o nome do responsavel.')
         return false
@@ -215,7 +234,7 @@ export function StoreRegisterPage() {
       }
     }
 
-    if (currentStep === 1) {
+    if (currentStep === 2) {
       if (!form.name.trim()) {
         toast.error('Informe o nome da loja.')
         return false
@@ -226,7 +245,7 @@ export function StoreRegisterPage() {
       }
     }
 
-    if (currentStep === 2) {
+    if (currentStep === 3) {
       if (form.addressZip.replace(/\D/g, '').length !== 8) {
         toast.error('Informe um CEP valido.')
         return false
@@ -248,7 +267,7 @@ export function StoreRegisterPage() {
     if (!validateStep(step)) return
 
     try {
-      if (step === 2 && form.lat === null) {
+      if (step === 3 && form.lat === null) {
         setCepLoading(true)
         try {
           const coords = await geocodeAddress(
@@ -358,46 +377,117 @@ export function StoreRegisterPage() {
         <div className="w-full max-w-4xl">
           <form onSubmit={(event) => void handleSubmit(event)}>
             {step === 0 ? (
+              <div className="mx-auto max-w-3xl rounded-[32px] bg-white p-8 shadow-sm animate-rise">
+                <div>
+                  <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#8b8b8b]">
+                    Negocio e responsavel
+                  </p>
+                  <h2 className="mt-3 text-[38px] font-bold leading-tight text-[#1d1d1d]">
+                    Sua loja tem CNPJ?
+                  </h2>
+                </div>
+
+                <div className="mt-10 space-y-6">
+                  <button
+                    type="button"
+                    onClick={() => setHasCnpj(true)}
+                    className={[
+                      'flex w-full items-center gap-4 rounded-[22px] border px-4 py-4 text-left transition',
+                      hasCnpj === true ? 'border-[#ea1d2c] bg-[#fff8f8]' : 'border-[#dedede] bg-white hover:border-[#ea1d2c]/40',
+                    ].join(' ')}
+                  >
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#f3f3f3]">
+                      <Check className="h-6 w-6 text-[#111]" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[28px] font-bold text-[#1d1d1d]">Sim</p>
+                      <p className="mt-1 text-[14px] text-[#666]">Continuar com o cadastro empresarial completo</p>
+                    </div>
+                    {hasCnpj === true ? (
+                      <Check className="h-5 w-5 text-[#ea1d2c]" />
+                    ) : (
+                      <Circle className="h-5 w-5 text-[#bbb]" />
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHasCnpj(false)
+                      setForm((current) => ({ ...current, cnpj: '', razaoSocial: '' }))
+                    }}
+                    className={[
+                      'flex w-full items-center gap-4 rounded-[22px] border px-4 py-4 text-left transition',
+                      hasCnpj === false ? 'border-[#ea1d2c] bg-[#fff8f8]' : 'border-[#dedede] bg-white hover:border-[#ea1d2c]/40',
+                    ].join(' ')}
+                  >
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#f3f3f3]">
+                      <X className="h-6 w-6 text-[#111]" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[28px] font-bold text-[#1d1d1d]">Nao</p>
+                      <p className="mt-1 text-[14px] text-[#666]">Seguir com cadastro simplificado sem CNPJ e razao social</p>
+                    </div>
+                    {hasCnpj === false ? (
+                      <Check className="h-5 w-5 text-[#ea1d2c]" />
+                    ) : (
+                      <Circle className="h-5 w-5 text-[#bbb]" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {step === 1 ? (
               <div className="rounded-2xl bg-white p-8 shadow-sm space-y-5 animate-rise">
                 <div>
-                  <h2 className="text-[18px] font-bold text-[#1d1d1d]">Dados da Empresa</h2>
+                  <h2 className="text-[18px] font-bold text-[#1d1d1d]">
+                    {hasCnpj ? 'Dados da Empresa' : 'Negocio e responsavel'}
+                  </h2>
                   <p className="mt-1 text-[13px] text-[#8b8b8b]">
-                    Informacoes do CNPJ e do responsavel pela loja
+                    {hasCnpj
+                      ? 'Informacoes do CNPJ e do responsavel pela loja'
+                      : 'Informe o nome do negocio e os dados do responsavel pela loja'}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <Field label="CNPJ *">
-                    <input
-                      type="text"
-                      placeholder="00.000.000/0001-00"
-                      value={form.cnpj}
-                      onChange={(event) => setField('cnpj', formatCnpj(event.target.value))}
-                      className={inputClass}
-                      autoFocus
-                    />
-                  </Field>
+                  {hasCnpj ? (
+                    <Field label="CNPJ *">
+                      <input
+                        type="text"
+                        placeholder="00.000.000/0001-00"
+                        value={form.cnpj}
+                        onChange={(event) => setField('cnpj', formatCnpj(event.target.value))}
+                        className={inputClass}
+                        autoFocus
+                      />
+                    </Field>
+                  ) : null}
 
-                  <Field label="Nome Fantasia">
+                  <Field label={hasCnpj ? 'Nome Fantasia' : 'Nome *'}>
                     <input
                       type="text"
-                      placeholder="Como e conhecida no mercado"
+                      placeholder={hasCnpj ? 'Como e conhecida no mercado' : 'Nome do negocio'}
                       value={form.nomeFantasia}
                       onChange={(event) => setField('nomeFantasia', event.target.value)}
                       className={inputClass}
+                      autoFocus={!hasCnpj}
                     />
                   </Field>
                 </div>
 
-                <Field label="Razao Social *">
-                  <input
-                    type="text"
-                    placeholder="Razao social conforme CNPJ"
-                    value={form.razaoSocial}
-                    onChange={(event) => setField('razaoSocial', event.target.value)}
-                    className={inputClass}
-                  />
-                </Field>
+                {hasCnpj ? (
+                  <Field label="Razao Social *">
+                    <input
+                      type="text"
+                      placeholder="Razao social conforme CNPJ"
+                      value={form.razaoSocial}
+                      onChange={(event) => setField('razaoSocial', event.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+                ) : null}
 
                 <div className="border-t border-[#f0f0f0] pt-4">
                   <p className="mb-4 text-[13px] font-bold text-[#1d1d1d]">Responsavel pela loja</p>
@@ -427,7 +517,7 @@ export function StoreRegisterPage() {
               </div>
             ) : null}
 
-            {step === 1 ? (
+            {step === 2 ? (
               <div className="rounded-2xl bg-white p-8 shadow-sm space-y-5 animate-rise">
                 <div>
                   <h2 className="text-[18px] font-bold text-[#1d1d1d]">Dados da Loja</h2>
@@ -474,7 +564,7 @@ export function StoreRegisterPage() {
               </div>
             ) : null}
 
-            {step === 2 ? (
+            {step === 3 ? (
               <div className="rounded-2xl bg-white p-8 shadow-sm space-y-5 animate-rise">
                 <div>
                   <h2 className="text-[18px] font-bold text-[#1d1d1d]">Endereco</h2>
@@ -547,7 +637,7 @@ export function StoreRegisterPage() {
               </div>
             ) : null}
 
-            {step === 3 ? (
+            {step === 4 ? (
               <div className="rounded-2xl bg-white p-8 shadow-sm space-y-5 animate-rise">
                 <div>
                   <h2 className="text-[18px] font-bold text-[#1d1d1d]">Localizacao</h2>
@@ -579,7 +669,7 @@ export function StoreRegisterPage() {
               </div>
             ) : null}
 
-            {step === 4 ? (
+            {step === 5 ? (
               <div className="rounded-2xl bg-white p-8 shadow-sm space-y-5 animate-rise">
                 <div>
                   <h2 className="text-[18px] font-bold text-[#1d1d1d]">Configuracoes</h2>
@@ -669,7 +759,7 @@ export function StoreRegisterPage() {
               </div>
             ) : null}
 
-            {step === 5 ? (
+            {step === 6 ? (
               <div className="rounded-[32px] bg-white p-8 shadow-sm animate-rise">
                 <div className="grid gap-8 xl:grid-cols-[1.05fr_0.95fr] xl:items-start">
                   <div>
@@ -784,10 +874,10 @@ export function StoreRegisterPage() {
                 <button
                   type="button"
                   onClick={() => void handleNext()}
-                  disabled={step === 2 && cepLoading}
+                  disabled={step === 3 && cepLoading}
                   className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[15px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {step === 2 && cepLoading ? (
+                  {step === 3 && cepLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     <>
