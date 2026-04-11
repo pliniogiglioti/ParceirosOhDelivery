@@ -66,6 +66,11 @@ export function RadiusDeliveryMap({
     const map = L.map(containerRef.current, {
       zoomControl: false,
       attributionControl: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      touchZoom: false,
+      boxZoom: false,
+      keyboard: false,
     }).setView([fallbackLat, fallbackLng], lat ? 13 : 12)
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map)
@@ -177,34 +182,16 @@ export function RadiusDeliveryMap({
           className="pointer-events-none absolute rounded-full bg-white border-2 border-[#ea1d2c]"
           style={{ left: '50%', top: '50%', width: 8, height: 8, transform: 'translate(-50%, -50%)', zIndex: 9999 }}
         />
-        {/* Controls top-right */}
-        <div className="absolute right-3 top-3 z-[9999] flex flex-col gap-1.5">
-          <button
-            type="button"
-            onClick={goToMyLocation}
-            disabled={locating}
-            className="flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-[12px] font-semibold text-ink-700 shadow-md transition hover:bg-ink-50 disabled:opacity-70"
-          >
-            {locating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LocateFixed className="h-3.5 w-3.5 text-[#ea1d2c]" />}
-            Minha localizacao
-          </button>
-
-          {/* Zoom buttons */}
-          <div className="flex flex-col overflow-hidden rounded-xl shadow-md">
-            <button
-              type="button"
-              onClick={() => mapRef.current?.zoomIn()}
-              className="flex h-9 w-9 items-center justify-center bg-white text-lg font-bold text-ink-700 transition hover:bg-ink-50 border-b border-ink-100"
-              aria-label="Zoom in"
-            >+</button>
-            <button
-              type="button"
-              onClick={() => mapRef.current?.zoomOut()}
-              className="flex h-9 w-9 items-center justify-center bg-white text-lg font-bold text-ink-700 transition hover:bg-ink-50"
-              aria-label="Zoom out"
-            >−</button>
-          </div>
-        </div>
+        {/* Minha localizacao */}
+        <button
+          type="button"
+          onClick={goToMyLocation}
+          disabled={locating}
+          className="absolute right-3 top-3 z-[9999] flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-[12px] font-semibold text-ink-700 shadow-md transition hover:bg-ink-50 disabled:opacity-70"
+        >
+          {locating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LocateFixed className="h-3.5 w-3.5 text-[#ea1d2c]" />}
+          Minha localizacao
+        </button>
 
         <p className="absolute bottom-2 left-3 z-[9999] rounded-xl bg-white/80 px-2.5 py-1 text-[11px] text-ink-400 backdrop-blur-sm">
           Mova o mapa para posicionar sua loja
