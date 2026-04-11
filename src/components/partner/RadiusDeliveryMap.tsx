@@ -190,7 +190,7 @@ export function RadiusDeliveryMap({
   }
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-start">
+    <div className="flex flex-col gap-4">
       <div className="relative overflow-hidden rounded-2xl border border-ink-100" style={{ height: 420 }}>
         <div ref={containerRef} className="h-full w-full" />
         <div
@@ -228,40 +228,22 @@ export function RadiusDeliveryMap({
         </p>
       </div>
 
-      <div className="space-y-3 xl:max-h-[420px] xl:overflow-y-auto xl:pr-1">
+      <div className="space-y-3">
         {zones.map((zone, index) => (
           <div
             key={zone.id}
-            className="rounded-2xl border p-4"
+            className="flex flex-col gap-3 rounded-2xl border p-4 sm:flex-row sm:items-center"
             style={{ borderColor: zone.color + '55', backgroundColor: zone.color + '08' }}
           >
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white text-[12px] font-bold"
-                  style={{ backgroundColor: zone.color }}
-                >
-                  {index + 1}
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-ink-900">Zona {index + 1}</p>
-                  <p className="text-xs text-ink-500">{formatCurrency(zone.fee || 0)}</p>
-                </div>
-              </div>
-
-              {zones.length > 1 ? (
-                <button
-                  type="button"
-                  onClick={() => removeZone(zone.id)}
-                  className="rounded-xl p-2 text-ink-400 transition hover:bg-coral-50 hover:text-coral-500"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              ) : null}
+            <div
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white text-[12px] font-bold"
+              style={{ backgroundColor: zone.color }}
+            >
+              {index + 1}
             </div>
 
-            <div className="mt-4 grid gap-3">
-              <div>
+            <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="flex-1">
                 <label className="block">
                   <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">
                     Raio de entrega
@@ -278,7 +260,7 @@ export function RadiusDeliveryMap({
                 </label>
               </div>
 
-              <div>
+              <div className="flex-1">
                 <label className="block">
                   <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">
                     Taxa de entrega
@@ -299,7 +281,21 @@ export function RadiusDeliveryMap({
                   </div>
                 </label>
               </div>
+
+              <div className="pt-5 text-[13px] font-bold text-ink-900 hidden sm:block">
+                {formatCurrency(zone.fee || 0)}
+              </div>
             </div>
+
+            {zones.length > 1 && (
+              <button
+                type="button"
+                onClick={() => removeZone(zone.id)}
+                className="self-start rounded-xl p-2 text-ink-400 transition hover:bg-coral-50 hover:text-coral-500 sm:self-center"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            )}
           </div>
         ))}
 

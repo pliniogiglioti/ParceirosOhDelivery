@@ -5,7 +5,6 @@ import { RadiusDeliveryMap, type RadiusZone } from '@/components/partner/RadiusD
 import { SectionFrame } from '@/components/partner/PartnerUi'
 import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
 import { usePartnerPageData } from '@/hooks/usePartnerPageData'
-import { cn, formatCurrency } from '@/lib/utils'
 import { saveDeliveryArea, saveStore } from '@/services/partner'
 import type { DeliveryArea } from '@/types'
 
@@ -178,25 +177,6 @@ export function PartnerDeliveryAreasPage() {
             </div>
           </div>
 
-          <div className="mt-5 grid grid-cols-2 gap-px rounded-2xl border border-ink-100 bg-ink-100 sm:grid-cols-3">
-            {savedAreas.map((area) => (
-              <div key={area.id} className="flex flex-col gap-1 bg-white px-4 py-3">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-xs font-semibold text-ink-900">{area.name}</p>
-                  <span
-                    className={cn(
-                      'rounded-full px-2 py-0.5 text-[10px] font-semibold',
-                      area.active ? 'bg-mint-100 text-mint-700' : 'bg-coral-100 text-coral-700'
-                    )}
-                  >
-                    {area.active ? 'Ativa' : 'Pausada'}
-                  </span>
-                </div>
-                <p className="text-xs text-ink-400">{area.etaLabel}</p>
-                <p className="text-sm font-bold text-ink-900">{formatCurrency(area.fee)}</p>
-              </div>
-            ))}
-          </div>
         </div>
 
         <div className="flex flex-col gap-4">
