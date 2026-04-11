@@ -979,7 +979,7 @@ const normalizedSearch = search.trim().toLowerCase()
   return (
     <>
       {embedded ? (
-        <div className="rounded-2xl bg-white shadow-sm space-y-5 p-6">
+        <div className="flex-1 rounded-2xl bg-white shadow-sm space-y-5 p-6">
           <div>
             <h2 className="text-[18px] font-bold text-[#1d1d1d]">Seu primeiro produto</h2>
             <p className="text-[13px] text-[#8b8b8b] mt-1">Cadastre os produtos do seu cardapio.</p>
