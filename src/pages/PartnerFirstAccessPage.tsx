@@ -524,7 +524,7 @@ export function PartnerFirstAccessPage() {
     }
 
     return (
-      <PartnerCatalogPage externalData={dashboardData} />
+      <PartnerCatalogPage externalData={dashboardData} embedded />
     )
   }
 

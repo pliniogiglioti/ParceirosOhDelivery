@@ -232,7 +232,7 @@ function getCategoryTemplate(category: PartnerCategory): CategoryTemplate {
   return category.template === 'pizza' ? 'pizza' : 'padrao'
 }
 
-export function PartnerCatalogPage({ externalData }: { externalData?: PartnerDashboardData } = {}) {
+export function PartnerCatalogPage({ externalData, embedded }: { externalData?: PartnerDashboardData; embedded?: boolean } = {}) {
   const pageContext = usePartnerPageDataSafe()
   const data = externalData ?? pageContext?.data
   if (!data) return null
@@ -648,10 +648,8 @@ const normalizedSearch = search.trim().toLowerCase()
           : true
   const industrializedCurrentStepIndex = industrializedStepTabs.findIndex((tab) => tab.id === industrializedStepTab)
 
-  return (
-    <>
-      <SectionFrame eyebrow="Cardapio" title="Gestao por categorias">
-        <div className="panel-card overflow-hidden">
+  const catalogCard = (
+    <div className={embedded ? 'rounded-2xl bg-white shadow-sm overflow-hidden' : 'panel-card overflow-hidden'}>
           <div className="border-b border-ink-100 bg-white px-5 py-5 sm:px-6">
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <button
@@ -976,7 +974,23 @@ const normalizedSearch = search.trim().toLowerCase()
             </div>
           </div>
         </div>
-      </SectionFrame>
+  )
+
+  return (
+    <>
+      {embedded ? (
+        <div className="space-y-4">
+          <div className="pl-1">
+            <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#ea1d2c]">Cardapio</p>
+            <h2 className="mt-1 text-[18px] font-bold text-[#1d1d1d]">Gestao por categorias</h2>
+          </div>
+          {catalogCard}
+        </div>
+      ) : (
+        <SectionFrame eyebrow="Cardapio" title="Gestao por categorias">
+          {catalogCard}
+        </SectionFrame>
+      )}
 
       <AnimatedModal
         open={sortModalOpen}
