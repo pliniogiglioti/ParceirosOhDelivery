@@ -532,7 +532,7 @@ const normalizedSearch = search.trim().toLowerCase()
       const haystack = `${item.name} ${item.brand} ${item.ean}`.toLowerCase()
       return haystack.includes(normalizedIndustrializedSearch)
     })
-  }, [industrializedSearch])
+  }, [industrializedSearch, industrializedCatalogItems])
 
   const filteredImageBankItems = useMemo(() => {
     const normalizedImageBankSearch = imageBankSearch.trim().toLowerCase()
