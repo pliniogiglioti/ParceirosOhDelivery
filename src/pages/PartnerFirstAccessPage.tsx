@@ -3,6 +3,7 @@ import { ArrowRight, CheckCircle2, ChevronDown, Circle, Clock3, Loader2, LogOut,
 import toast from 'react-hot-toast'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { LoadingScreen } from '@/components/partner/LoadingScreen'
+import { RadiusDeliveryMap, type RadiusZone } from '@/components/partner/RadiusDeliveryMap'
 import { weekDays } from '@/components/partner/PartnerUi'
 import { usePartnerAuth } from '@/hooks/usePartnerAuth'
 import { usePartnerDashboard } from '@/hooks/usePartnerDashboard'
@@ -64,8 +65,8 @@ function isHoursStepValid(hours: PartnerHour[]) {
   return hours.some((hour) => !hour.isClosed && hour.opensAt && hour.closesAt)
 }
 
-function isDeliveryStepValid(area: DeliveryArea) {
-  return Boolean(area.name.trim() && area.etaLabel.trim() && area.active)
+function isDeliveryStepValid(zones: RadiusZone[]) {
+  return zones.length > 0 && zones.every((z) => z.radiusKm > 0)
 }
 
 function isProductStepValid(product: ProductDraft) {
@@ -83,13 +84,11 @@ export function PartnerFirstAccessPage() {
   const [deliveryAreasDraft, setDeliveryAreasDraft] = useState<DeliveryArea[]>([])
   const [productCategoriesDraft, setProductCategoriesDraft] = useState<PartnerCategory[]>([])
   const [productsDraft, setProductsDraft] = useState<PartnerProduct[]>([])
-  const [deliveryDraft, setDeliveryDraft] = useState<DeliveryArea>({
-    id: '',
-    name: '',
-    etaLabel: '',
-    fee: 0,
-    active: true,
-  })
+  const [radiusZones, setRadiusZones] = useState<RadiusZone[]>([
+    { id: crypto.randomUUID(), radiusKm: 3, fee: 0, color: '#ea1d2c' },
+  ])
+  const [mapLat, setMapLat] = useState<number | null>(null)
+  const [mapLng, setMapLng] = useState<number | null>(null)
   const [productDraft, setProductDraft] = useState<ProductDraft>({
     categoryId: '',
     name: '',
@@ -126,16 +125,19 @@ export function PartnerFirstAccessPage() {
     setProductCategoriesDraft(data.categories)
     setProductsDraft(data.products)
 
-    const firstArea = data.deliveryAreas[0]
-    setDeliveryDraft(
-      firstArea ?? {
-        id: '',
-        name: '',
-        etaLabel: '',
-        fee: 0,
-        active: true,
-      }
-    )
+    if (data.store.lat !== null) setMapLat(data.store.lat)
+    if (data.store.lng !== null) setMapLng(data.store.lng)
+
+    if (data.deliveryAreas.length > 0) {
+      setRadiusZones(
+        data.deliveryAreas.map((area, i) => ({
+          id: area.id || crypto.randomUUID(),
+          radiusKm: Number(area.etaLabel.replace(/[^0-9.]/g, '')) || (i + 1) * 3,
+          fee: area.fee,
+          color: ['#ea1d2c', '#f97316', '#eab308'][i] ?? '#ea1d2c',
+        }))
+      )
+    }
 
     setProductDraft({
       categoryId: data.categories[0]?.id ?? '',
@@ -182,8 +184,7 @@ export function PartnerFirstAccessPage() {
   const currentStepId = STEPS[activeStep]?.id ?? 'loja'
   const storeStepComplete = savedSteps.loja && isStoreStepValid(currentStore)
   const hoursStepComplete = savedSteps.horarios && isHoursStepValid(hoursDraft)
-  const deliveryStepComplete =
-    savedSteps.entrega && deliveryAreasDraft.some((area) => area.active && area.name.trim())
+  const deliveryStepComplete = savedSteps.entrega && deliveryAreasDraft.length > 0
   const productStepComplete = savedSteps.produto && productsDraft.some((product) => product.active)
 
   const completedMap: Record<FirstAccessStepId, boolean> = {
@@ -221,11 +222,6 @@ export function PartnerFirstAccessPage() {
       )
     )
     setSavedSteps((current) => ({ ...current, horarios: false }))
-  }
-
-  function updateDeliveryField<K extends keyof DeliveryArea>(key: K, value: DeliveryArea[K]) {
-    setDeliveryDraft((current) => ({ ...current, [key]: value }))
-    setSavedSteps((current) => ({ ...current, entrega: false }))
   }
 
   function updateProductField<K extends keyof ProductDraft>(key: K, value: ProductDraft[K]) {
@@ -287,32 +283,37 @@ export function PartnerFirstAccessPage() {
   }
 
   async function handleSaveDeliveryStep(): Promise<boolean> {
-    if (!isDeliveryStepValid(deliveryDraft)) {
-      toast.error('Preencha nome da area, prazo e mantenha a area ativa.')
+    if (!isDeliveryStepValid(radiusZones)) {
+      toast.error('Defina pelo menos um raio de entrega.')
       return false
     }
 
     setSavingStep('entrega')
     try {
-      const savedArea = await saveDeliveryArea(dashboardData.store.id, {
-        id: deliveryDraft.id || undefined,
-        name: deliveryDraft.name,
-        etaLabel: deliveryDraft.etaLabel,
-        fee: deliveryDraft.fee,
-        active: deliveryDraft.active,
-      })
+      // Save store location
+      if (mapLat !== null && mapLng !== null) {
+        await saveStore(dashboardData.store.id, { lat: mapLat, lng: mapLng })
+      }
 
-      setDeliveryDraft(savedArea)
-      setDeliveryAreasDraft((current) => {
-        const existingIndex = current.findIndex((area) => area.id === savedArea.id)
-        if (existingIndex === -1) return [savedArea, ...current]
-        return current.map((area) => (area.id === savedArea.id ? savedArea : area))
-      })
+      // Save each zone as a delivery area
+      const saved = await Promise.all(
+        radiusZones.map((zone, i) =>
+          saveDeliveryArea(dashboardData.store.id, {
+            id: deliveryAreasDraft[i]?.id || undefined,
+            name: `Zona ${i + 1}`,
+            etaLabel: `${zone.radiusKm} km`,
+            fee: zone.fee,
+            active: true,
+          })
+        )
+      )
+
+      setDeliveryAreasDraft(saved)
       setSavedSteps((current) => ({ ...current, entrega: true }))
-      toast.success('Area de entrega salva.')
+      toast.success('Raios de entrega salvos.')
       return true
     } catch {
-      toast.error('Nao foi possivel salvar a area de entrega.')
+      toast.error('Nao foi possivel salvar os raios de entrega.')
       return false
     } finally {
       setSavingStep(null)
@@ -534,59 +535,26 @@ export function PartnerFirstAccessPage() {
 
     if (currentStepId === 'entrega') {
       return (
-        <div className="rounded-2xl bg-white p-8 shadow-sm space-y-5">
+        <div className="rounded-2xl bg-white p-6 shadow-sm space-y-4">
           <div>
-            <h2 className="text-[18px] font-bold text-[#1d1d1d]">Range de entrega</h2>
-            <p className="text-[13px] text-[#8b8b8b] mt-1">Cadastre a primeira area de entrega da loja.</p>
+            <h2 className="text-[18px] font-bold text-[#1d1d1d]">Raio de entrega</h2>
+            <p className="text-[13px] text-[#8b8b8b] mt-1">
+              Posicione o mapa na sua loja, defina o raio de alcance e o valor do frete. Voce pode adicionar ate 3 zonas com valores diferentes.
+            </p>
           </div>
-
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Field label="Nome da area *">
-              <input
-                type="text"
-                value={deliveryDraft.name}
-                onChange={(event) => updateDeliveryField('name', event.target.value)}
-                className={inputClass}
-                placeholder="Ex: Centro"
-                autoFocus
-              />
-            </Field>
-
-            <Field label="Prazo estimado *">
-              <input
-                type="text"
-                value={deliveryDraft.etaLabel}
-                onChange={(event) => updateDeliveryField('etaLabel', event.target.value)}
-                className={inputClass}
-                placeholder="Ex: 30-45 min"
-              />
-            </Field>
-
-            <Field label="Taxa de entrega">
-              <input
-                type="number"
-                min={0}
-                step="0.01"
-                value={deliveryDraft.fee}
-                onChange={(event) => updateDeliveryField('fee', Number(event.target.value))}
-                className={inputClass}
-                placeholder="0,00"
-              />
-            </Field>
-
-            <label className="block">
-              <span className="mb-1.5 block text-[13px] font-semibold text-[#4f4f4f]">Status</span>
-              <div className="flex h-[48px] items-center gap-2 rounded-xl border border-[#d9d9d9] bg-[#fbfbfb] px-4 text-[14px] text-[#1d1d1d]">
-                <input
-                  type="checkbox"
-                  checked={deliveryDraft.active}
-                  onChange={(event) => updateDeliveryField('active', event.target.checked)}
-                />
-                Area ativa para entrega
-              </div>
-            </label>
-          </div>
-
+          <RadiusDeliveryMap
+            lat={mapLat}
+            lng={mapLng}
+            zones={radiusZones}
+            onZonesChange={(zones) => {
+              setRadiusZones(zones)
+              setSavedSteps((current) => ({ ...current, entrega: false }))
+            }}
+            onLocationChange={(lat, lng) => {
+              setMapLat(lat)
+              setMapLng(lng)
+            }}
+          />
         </div>
       )
     }
