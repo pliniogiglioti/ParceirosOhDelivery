@@ -370,7 +370,13 @@ export async function createProduct(
     name: string
     description: string
     price: number
+    compareAtPrice?: number | null
     imageUrl?: string
+    manageStock?: boolean
+    stockQuantity?: number | null
+    gelada?: boolean
+    active?: boolean
+    featured?: boolean
   }
 ): Promise<PartnerProduct> {
   if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
@@ -383,9 +389,13 @@ export async function createProduct(
       name: input.name,
       description: input.description,
       price: input.price,
+      compare_at_price: input.compareAtPrice ?? null,
       image_url: input.imageUrl ?? null,
-      active: true,
-      featured: false,
+      manage_stock: input.manageStock ?? false,
+      stock_quantity: input.stockQuantity ?? null,
+      gelada: input.gelada ?? false,
+      active: input.active ?? true,
+      featured: input.featured ?? false,
       sort_order: 0,
     })
     .select('*')
@@ -399,8 +409,11 @@ export async function createProduct(
     description: String(data.description ?? ''),
     categoryId: String(data.category_id ?? ''),
     price: Number(data.price ?? 0),
+    compareAtPrice: data.compare_at_price === null ? null : Number(data.compare_at_price ?? 0),
     imageUrl: data.image_url ? String(data.image_url) : undefined,
-    stockQuantity: Number(data.stock_quantity ?? 0),
+    stockQuantity: data.stock_quantity === null ? null : Number(data.stock_quantity ?? 0),
+    manageStock: Boolean(data.manage_stock ?? false),
+    gelada: Boolean(data.gelada ?? false),
     active: Boolean(data.active ?? true),
     featured: Boolean(data.featured ?? false),
   }
@@ -549,8 +562,11 @@ export async function loadPartnerDashboard(storeId: string): Promise<{
       description: String(row.description ?? ''),
       categoryId: String(row.category_id ?? ''),
       price: Number(row.price ?? 0),
+      compareAtPrice: row.compare_at_price === null ? null : Number(row.compare_at_price ?? 0),
       imageUrl: row.image_url ? String(row.image_url) : undefined,
-      stockQuantity: Number(row.stock_quantity ?? 0),
+      stockQuantity: row.stock_quantity === null ? null : Number(row.stock_quantity ?? 0),
+      manageStock: Boolean(row.manage_stock ?? false),
+      gelada: Boolean(row.gelada ?? false),
       active: Boolean(row.active ?? true),
       featured: Boolean(row.featured),
     })) ?? []

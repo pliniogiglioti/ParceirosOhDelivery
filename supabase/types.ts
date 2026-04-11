@@ -484,12 +484,15 @@ export type Database = {
           created_at: string
           description: string | null
           featured: boolean
+          gelada: boolean
           id: string
           image_url: string | null
+          manage_stock: boolean
           name: string
           prep_time_label: string | null
           price: number
           sort_order: number
+          stock_quantity: number | null
           store_id: string
           updated_at: string
         }
@@ -501,12 +504,15 @@ export type Database = {
           created_at?: string
           description?: string | null
           featured?: boolean
+          gelada?: boolean
           id?: string
           image_url?: string | null
+          manage_stock?: boolean
           name: string
           prep_time_label?: string | null
           price: number
           sort_order?: number
+          stock_quantity?: number | null
           store_id: string
           updated_at?: string
         }
@@ -518,12 +524,15 @@ export type Database = {
           created_at?: string
           description?: string | null
           featured?: boolean
+          gelada?: boolean
           id?: string
           image_url?: string | null
+          manage_stock?: boolean
           name?: string
           prep_time_label?: string | null
           price?: number
           sort_order?: number
+          stock_quantity?: number | null
           store_id?: string
           updated_at?: string
         }

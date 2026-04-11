@@ -13,6 +13,7 @@ import {
   Pizza,
   Plus,
   Search,
+  Snowflake,
   Sparkles,
   X,
 } from 'lucide-react'
@@ -101,7 +102,7 @@ function parseCurrencyInput(value: string) {
 type CategoryTemplate = 'padrao' | 'pizza'
 type ProductCreationKind = 'industrializado' | 'preparado'
 type StandardItemStepTab = 'dados' | 'detalhes' | 'revisao'
-type IndustrializedStepTab = 'banco' | 'imagens' | 'preco' | 'revisao'
+type IndustrializedStepTab = 'banco' | 'preco' | 'classificacao' | 'revisao'
 type IndustrializedCatalogItem = IndustrializedItem
 type ImageBankItem = {
   id: string
@@ -161,6 +162,7 @@ const standardItemStepTabs: Array<{ id: StandardItemStepTab; label: string }> = 
 const industrializedStepTabs: Array<{ id: IndustrializedStepTab; label: string }> = [
   { id: 'banco', label: 'Banco de produtos' },
   { id: 'preco', label: 'Preco' },
+  { id: 'classificacao', label: 'Classificacao' },
   { id: 'revisao', label: 'Revisao' },
 ]
 
@@ -225,6 +227,9 @@ export function PartnerCatalogPage({ externalData, embedded }: { externalData?: 
   const [industrializedPromotionPrice, setIndustrializedPromotionPrice] = useState('')
   const [industrializedActive, setIndustrializedActive] = useState(true)
   const [industrializedFeatured, setIndustrializedFeatured] = useState(false)
+  const [industrializedManageStock, setIndustrializedManageStock] = useState(false)
+  const [industrializedStockQty, setIndustrializedStockQty] = useState('')
+  const [industrializedGelada, setIndustrializedGelada] = useState(false)
   const [savingIndustrialized, setSavingIndustrialized] = useState(false)
   const [industrializedCatalogItems, setIndustrializedCatalogItems] = useState<IndustrializedCatalogItem[]>([])
 
@@ -493,6 +498,9 @@ const normalizedSearch = search.trim().toLowerCase()
       setIndustrializedPromotionPrice('')
       setIndustrializedActive(true)
       setIndustrializedFeatured(false)
+      setIndustrializedManageStock(false)
+      setIndustrializedStockQty('')
+      setIndustrializedGelada(false)
       setProductKindModalOpen(true)
       return
     }
@@ -553,6 +561,9 @@ const normalizedSearch = search.trim().toLowerCase()
     setSelectedImageBankItemId(null)
     setIndustrializedPrice('')
     setIndustrializedPromotionPrice('')
+    setIndustrializedManageStock(false)
+    setIndustrializedStockQty('')
+    setIndustrializedGelada(false)
   }
 
   async function handleSaveIndustrializedItem() {
@@ -566,6 +577,11 @@ const normalizedSearch = search.trim().toLowerCase()
       return
     }
 
+    if (industrializedManageStock && !industrializedHasValidStockQty) {
+      toast.error('Informe a quantidade em estoque para continuar.')
+      return
+    }
+
     setSavingIndustrialized(true)
     try {
       const saved = await createProduct(data!.store.id, {
@@ -573,7 +589,13 @@ const normalizedSearch = search.trim().toLowerCase()
         name: industrializedName.trim(),
         description: industrializedDescription.trim(),
         price: industrializedPriceValue,
+        compareAtPrice: industrializedPromotionPrice.trim() ? industrializedPromotionPriceValue : null,
         imageUrl: industrializedImage || undefined,
+        manageStock: industrializedManageStock,
+        stockQuantity: industrializedManageStock ? industrializedStockQtyValue : null,
+        gelada: industrializedGelada,
+        active: industrializedActive,
+        featured: industrializedFeatured,
       })
       setCatalogProducts((current) => [...current, saved])
       setProductKindModalOpen(false)
@@ -587,6 +609,11 @@ const normalizedSearch = search.trim().toLowerCase()
 
   const industrializedPriceValue = parseCurrencyInput(industrializedPrice)
   const industrializedPromotionPriceValue = parseCurrencyInput(industrializedPromotionPrice)
+  const industrializedStockQtyValue = Number(industrializedStockQty)
+  const industrializedHasValidStockQty =
+    industrializedStockQty.trim().length > 0 &&
+    Number.isFinite(industrializedStockQtyValue) &&
+    industrializedStockQtyValue >= 0
 
   function handleContinueIndustrializedFlow() {
     if (industrializedStepTab === 'banco') {
@@ -610,6 +637,16 @@ const normalizedSearch = search.trim().toLowerCase()
         return
       }
 
+      if (industrializedManageStock && !industrializedHasValidStockQty) {
+        toast.error('Informe a quantidade em estoque para continuar.')
+        return
+      }
+
+      setIndustrializedStepTab('classificacao')
+      return
+    }
+
+    if (industrializedStepTab === 'classificacao') {
       setIndustrializedStepTab('revisao')
       return
     }
@@ -620,9 +657,12 @@ const normalizedSearch = search.trim().toLowerCase()
   const canContinueIndustrializedFlow =
     industrializedStepTab === 'banco'
       ? Boolean(selectedIndustrializedItemId)
-      : industrializedStepTab === 'preco'
+      : industrializedStepTab === 'classificacao'
+        ? true
+        : industrializedStepTab === 'preco'
           ? Boolean(industrializedPrice.trim()) &&
-            (!industrializedPromotionPrice.trim() || industrializedPromotionPriceValue < industrializedPriceValue)
+            (!industrializedPromotionPrice.trim() || industrializedPromotionPriceValue < industrializedPriceValue) &&
+            (!industrializedManageStock || industrializedHasValidStockQty)
           : true
   const industrializedCurrentStepIndex = industrializedStepTabs.findIndex((tab) => tab.id === industrializedStepTab)
 
@@ -801,7 +841,7 @@ const normalizedSearch = search.trim().toLowerCase()
                                 <span>Foto</span>
                                 <span>Nome</span>
                                 <span>Preco</span>
-                                <span>Quantidade de estoque</span>
+                                <span>Estoque</span>
                                 <span>Destaque</span>
                                 <span>Ativo</span>
                                 <span />
@@ -843,6 +883,12 @@ const normalizedSearch = search.trim().toLowerCase()
                                               Destaque
                                             </span>
                                           ) : null}
+                                          {product.gelada ? (
+                                            <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-sky-700">
+                                              <Snowflake className="h-3 w-3" />
+                                              Gelada
+                                            </span>
+                                          ) : null}
                                           {!productIsActive ? (
                                             <span className="rounded-full bg-ink-200 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-600">
                                               Inativo
@@ -861,9 +907,11 @@ const normalizedSearch = search.trim().toLowerCase()
 
                                       <div>
                                         <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-400 lg:hidden">
-                                          Quantidade de estoque
+                                          Estoque
                                         </p>
-                                        <p className="text-sm font-semibold text-ink-900">{product.stockQuantity}</p>
+                                        <p className="text-sm font-semibold text-ink-900">
+                                          {product.manageStock ? product.stockQuantity ?? 0 : 'Sem controle'}
+                                        </p>
                                       </div>
 
                                       <div className="flex items-center justify-between gap-3 lg:justify-start">
@@ -1460,75 +1508,6 @@ const normalizedSearch = search.trim().toLowerCase()
                   </div>
                 ) : null}
 
-                {industrializedStepTab === 'imagens' ? (
-                  <div className="space-y-4">
-                    {/* Imagem do produto selecionado */}
-                    {industrializedImage ? (
-                      <div className="rounded-xl border border-mint-300 bg-mint-50 p-4">
-                        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">
-                          Imagem do produto
-                        </p>
-                        <div className="flex items-center gap-4">
-                          <img
-                            src={industrializedImage}
-                            alt={industrializedName}
-                            className="h-20 w-20 rounded-xl object-cover border border-ink-100"
-                          />
-                          <div>
-                            <p className="text-sm font-bold text-ink-900">{industrializedName}</p>
-                            <p className="mt-1 text-xs text-ink-500">Imagem carregada automaticamente do banco de produtos. Voce pode substituir abaixo.</p>
-                          </div>
-                        </div>
-                      </div>
-                    ) : null}
-
-                    {/* Banco de imagens para substituir */}
-                    <div className="rounded-xl border border-ink-100 bg-white p-4">
-                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500 mb-3">
-                        {industrializedImage ? 'Substituir por outra imagem (opcional)' : 'Suas imagens'}
-                      </p>
-                      <div className="relative mb-3">
-                        <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
-                        <input
-                          type="text"
-                          value={imageBankSearch}
-                          onChange={(event) => setImageBankSearch(event.target.value)}
-                          placeholder="Buscar em suas imagens"
-                          className="h-12 w-full rounded-2xl border border-ink-100 bg-white pl-11 pr-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-6">
-                        {filteredImageBankItems.map((imageItem) => {
-                          const isSelected = selectedImageBankItemId === imageItem.id
-                          return (
-                            <button
-                              key={imageItem.id}
-                              type="button"
-                              onClick={() => {
-                                setSelectedImageBankItemId(imageItem.id)
-                                setIndustrializedImage(imageItem.image)
-                              }}
-                              className={cn(
-                                'overflow-hidden rounded-xl border text-left transition',
-                                isSelected ? 'border-coral-300 bg-coral-50' : 'border-ink-100 bg-white hover:bg-ink-50'
-                              )}
-                            >
-                              <img src={imageItem.image} alt={imageItem.label} className="h-28 w-full object-cover" />
-                            </button>
-                          )
-                        })}
-
-                        {filteredImageBankItems.length === 0 ? (
-                          <div className="col-span-2 rounded-xl border border-dashed border-ink-200 bg-ink-50 px-4 py-8 text-center">
-                            <p className="text-sm font-semibold text-ink-700">Nenhuma imagem encontrada</p>
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-                ) : null}
-
                 {industrializedStepTab === 'preco' ? (
                   <div className="rounded-xl border border-ink-100 bg-white p-4">
                     <p className="text-sm font-semibold text-ink-900">Preco do item</p>
@@ -1604,8 +1583,84 @@ const normalizedSearch = search.trim().toLowerCase()
                           ariaLabel="Alternar item industrializado destaque"
                         />
                       </div>
+
+                      <div className="flex items-center justify-between rounded-2xl border border-ink-100 bg-ink-50 px-4 py-3">
+                        <div>
+                          <p className="text-sm font-semibold text-ink-900">Controlar estoque?</p>
+                          <p className="mt-1 text-sm text-ink-500">
+                            {industrializedManageStock
+                              ? 'Sim. Vamos salvar a quantidade disponivel para venda.'
+                              : 'Nao. O produto sera cadastrado sem controle de estoque.'}
+                          </p>
+                        </div>
+                        <ThemeSwitch
+                          checked={industrializedManageStock}
+                          onChange={setIndustrializedManageStock}
+                          ariaLabel="Alternar controle de estoque"
+                        />
+                      </div>
                     </div>
 
+                    {industrializedManageStock && (
+                      <div className="mt-3">
+                        <label className="block">
+                          <span className="mb-2 block text-sm font-semibold text-ink-700">Quantidade em estoque</span>
+                          <input
+                            type="number"
+                            min={0}
+                            value={industrializedStockQty}
+                            onChange={(e) => setIndustrializedStockQty(e.target.value)}
+                            className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
+                            placeholder="Ex: 12"
+                          />
+                        </label>
+                      </div>
+                    )}
+
+                  </div>
+                ) : null}
+
+                {industrializedStepTab === 'classificacao' ? (
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm font-semibold text-ink-900">Classificacao do produto</p>
+                      <p className="mt-1 text-sm text-ink-500">Informe as caracteristicas adicionais deste produto.</p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIndustrializedGelada((v) => !v)}
+                      className={`flex w-full items-center gap-4 rounded-2xl border-2 px-5 py-4 text-left transition ${
+                        industrializedGelada
+                          ? 'border-coral-400 bg-coral-50'
+                          : 'border-ink-100 bg-ink-50 hover:border-ink-200'
+                      }`}
+                    >
+                      <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-coral-500">
+                        <Snowflake className="h-5 w-5" />
+                      </span>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-ink-900">Bebida Gelada</p>
+                        <p className="mt-0.5 text-sm text-ink-500">Produto servido gelado (refrigerante, cerveja, suco gelado etc.)</p>
+                      </div>
+                      <span
+                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${
+                          industrializedGelada ? 'border-coral-500 bg-coral-500' : 'border-ink-300 bg-white'
+                        }`}
+                      >
+                        {industrializedGelada && (
+                          <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none">
+                            <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        )}
+                      </span>
+                    </button>
+
+                    {!industrializedGelada && (
+                      <p className="rounded-2xl border border-ink-100 bg-white px-5 py-4 text-sm text-ink-400">
+                        Nenhuma classificacao especial selecionada. Produto sera cadastrado como item comum.
+                      </p>
+                    )}
                   </div>
                 ) : null}
 
@@ -1638,6 +1693,20 @@ const normalizedSearch = search.trim().toLowerCase()
                             {industrializedPromotionPrice
                               ? formatCurrency(industrializedPromotionPriceValue)
                               : 'Sem promocao'}
+                          </p>
+                        </div>
+                        <div className="rounded-xl border border-ink-100 bg-ink-50 px-4 py-3">
+                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Estoque</p>
+                          <p className="mt-2 text-sm font-bold text-ink-900">
+                            {industrializedManageStock
+                              ? `${industrializedHasValidStockQty ? industrializedStockQtyValue : 0} unidades`
+                              : 'Sem controle de estoque'}
+                          </p>
+                        </div>
+                        <div className="rounded-xl border border-ink-100 bg-ink-50 px-4 py-3">
+                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Classificacao</p>
+                          <p className="mt-2 text-sm font-bold text-ink-900">
+                            {industrializedGelada ? 'Bebida gelada' : 'Item comum'}
                           </p>
                         </div>
                       </div>

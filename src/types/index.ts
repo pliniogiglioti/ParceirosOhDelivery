@@ -92,8 +92,11 @@ export interface PartnerProduct {
   description: string
   categoryId: string
   price: number
+  compareAtPrice: number | null
   imageUrl?: string
-  stockQuantity: number
+  stockQuantity: number | null
+  manageStock: boolean
+  gelada: boolean
   active: boolean
   featured: boolean
 }
