@@ -18,7 +18,8 @@ import {
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import toast from 'react-hot-toast'
-import { usePartnerPageData } from '@/hooks/usePartnerPageData'
+import { usePartnerPageDataSafe } from '@/hooks/usePartnerPageData'
+import type { PartnerDashboardData } from '@/types'
 import { cn, formatCurrency } from '@/lib/utils'
 import { AnimatedModal } from '@/components/partner/AnimatedModal'
 import { SectionFrame } from '@/components/partner/PartnerUi'
@@ -231,8 +232,10 @@ function getCategoryTemplate(category: PartnerCategory): CategoryTemplate {
   return category.template === 'pizza' ? 'pizza' : 'padrao'
 }
 
-export function PartnerCatalogPage() {
-  const { data } = usePartnerPageData()
+export function PartnerCatalogPage({ externalData }: { externalData?: PartnerDashboardData } = {}) {
+  const pageContext = usePartnerPageDataSafe()
+  const data = externalData ?? pageContext?.data
+  if (!data) return null
   const [catalogCategories, setCatalogCategories] = useState<PartnerCategory[]>(data.categories)
   const [selectedCategoryId, setSelectedCategoryId] = useState('all')
   const [search, setSearch] = useState('')

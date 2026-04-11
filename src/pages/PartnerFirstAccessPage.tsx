@@ -5,6 +5,7 @@ import { Navigate, useNavigate } from 'react-router-dom'
 import { LoadingScreen } from '@/components/partner/LoadingScreen'
 import { RadiusDeliveryMap, type RadiusZone } from '@/components/partner/RadiusDeliveryMap'
 import { weekDays } from '@/components/partner/PartnerUi'
+import { PartnerCatalogPage } from '@/pages/app/PartnerCatalogPage'
 import { usePartnerAuth } from '@/hooks/usePartnerAuth'
 import { usePartnerDashboard } from '@/hooks/usePartnerDashboard'
 import { getStoreCategories } from '@/services/profile'
@@ -321,50 +322,13 @@ export function PartnerFirstAccessPage() {
   }
 
   async function handleSaveProductStep(): Promise<boolean> {
-    if (!isProductStepValid(productDraft)) {
-      toast.error('Preencha nome e preco do primeiro produto.')
-      return false
-    }
-
-    setSavingStep('produto')
-    try {
-      let categoryId = productDraft.categoryId
-      let nextCategories = productCategoriesDraft
-
-      if (!categoryId) {
-        const createdCategory = await createProductCategory(dashboardData.store.id, {
-          name: 'Primeiros itens',
-          icon: 'MENU',
-          template: 'padrao',
-        })
-        nextCategories = [...productCategoriesDraft, createdCategory]
-        setProductCategoriesDraft(nextCategories)
-        categoryId = createdCategory.id
-      }
-
-      const savedProduct = await createProduct(dashboardData.store.id, {
-        categoryId,
-        name: productDraft.name,
-        description: productDraft.description,
-        price: parseCurrencyNumber(productDraft.price),
-      })
-
-      setProductsDraft((current) => [...current, savedProduct])
-      setProductDraft({
-        categoryId: nextCategories[0]?.id ?? categoryId,
-        name: '',
-        description: '',
-        price: '',
-      })
+    // O catalogo gerencia seus proprios produtos. So verificamos se ja existe ao menos 1 produto ativo.
+    if (dashboardData.products.some((p) => p.active) || productsDraft.some((p) => p.active)) {
       setSavedSteps((current) => ({ ...current, produto: true }))
-      toast.success('Primeiro produto cadastrado.')
       return true
-    } catch {
-      toast.error('Nao foi possivel cadastrar o primeiro produto.')
-      return false
-    } finally {
-      setSavingStep(null)
     }
+    toast.error('Cadastre ao menos um produto ativo no catalogo antes de concluir.')
+    return false
   }
 
   async function handleSaveAndNext() {
@@ -560,73 +524,7 @@ export function PartnerFirstAccessPage() {
     }
 
     return (
-      <div className="rounded-2xl bg-white p-8 shadow-sm space-y-5">
-        <div>
-          <h2 className="text-[18px] font-bold text-[#1d1d1d]">Primeiro produto</h2>
-          <p className="text-[13px] text-[#8b8b8b] mt-1">Cadastre o primeiro item do cardapio sem sair do primeiro acesso.</p>
-        </div>
-
-        {productsDraft.some((product) => product.active) ? (
-          <div className="rounded-xl border border-[#dcfce7] bg-[#f0fdf4] px-4 py-3">
-            <p className="text-[14px] font-semibold text-[#166534]">Voce ja tem pelo menos um produto ativo cadastrado.</p>
-            <p className="mt-1 text-[13px] text-[#15803d]">Se quiser, pode concluir o primeiro acesso quando as demais etapas tambem estiverem prontas.</p>
-          </div>
-        ) : null}
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="Categoria">
-            <div className="relative">
-              <select
-                value={productDraft.categoryId}
-                onChange={(event) => updateProductField('categoryId', event.target.value)}
-                className={`${inputClass} appearance-none pr-10 cursor-pointer`}
-              >
-                <option value="">Criar categoria automatica</option>
-                {productCategoriesDraft.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8b8b8b]" />
-            </div>
-          </Field>
-
-          <Field label="Nome do produto *">
-            <input
-              type="text"
-              value={productDraft.name}
-              onChange={(event) => updateProductField('name', event.target.value)}
-              className={inputClass}
-              placeholder="Ex: X-Burger"
-              autoFocus
-            />
-          </Field>
-
-          <Field label="Descricao">
-            <textarea
-              rows={4}
-              value={productDraft.description}
-              onChange={(event) => updateProductField('description', event.target.value)}
-              className="w-full rounded-xl border border-[#d9d9d9] bg-[#fbfbfb] px-4 py-3 text-[14px] text-[#1d1d1d] outline-none transition placeholder:text-[#9a9a9a] focus:border-[#ea1d2c] focus:bg-white focus:shadow-[0_0_0_4px_rgba(234,29,44,0.09)]"
-              placeholder="Descreva o primeiro item."
-            />
-          </Field>
-
-          <Field label="Preco *">
-            <input
-              type="number"
-              min={0}
-              step="0.01"
-              value={productDraft.price}
-              onChange={(event) => updateProductField('price', event.target.value)}
-              className={inputClass}
-              placeholder="0,00"
-            />
-          </Field>
-        </div>
-
-      </div>
+      <PartnerCatalogPage externalData={dashboardData} />
     )
   }
 

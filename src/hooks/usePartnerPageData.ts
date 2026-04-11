@@ -9,3 +9,7 @@ export interface PartnerPageContext {
 export function usePartnerPageData() {
   return useOutletContext<PartnerPageContext>()
 }
+
+export function usePartnerPageDataSafe() {
+  return useOutletContext<PartnerPageContext | null>()
+}
