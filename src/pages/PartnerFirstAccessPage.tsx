@@ -423,10 +423,10 @@ export function PartnerFirstAccessPage() {
 
     if (currentStepId === 'horarios') {
       return (
-        <div className="panel-card space-y-6 p-6 rounded-2xl bg-white shadow-sm">
-          <div className="rounded-3xl bg-ink-50 px-5 py-4">
-            <p className="text-sm font-semibold text-ink-900">Horarios de funcionamento</p>
-            <p className="mt-1 text-sm text-ink-500">Defina quando sua loja atende durante a semana.</p>
+        <div className="rounded-2xl bg-white p-6 shadow-sm space-y-5">
+          <div>
+            <h2 className="text-[18px] font-bold text-[#1d1d1d]">Horarios de funcionamento</h2>
+            <p className="text-[13px] text-[#8b8b8b] mt-1">Defina quando sua loja atende durante a semana.</p>
           </div>
 
           <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 md:grid-cols-7">
