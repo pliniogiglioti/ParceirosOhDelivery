@@ -1,5 +1,6 @@
 alter table public.products
   add column if not exists manage_stock boolean not null default false,
+  add column if not exists stock_quantity integer,
   add column if not exists gelada boolean not null default false;
 
 alter table public.products
