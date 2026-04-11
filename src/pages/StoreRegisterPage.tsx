@@ -79,51 +79,29 @@ const PLAN_FEATURES = [
 ]
 
 function StepperBar({ current }: { current: number }) {
-  const columns = STEPS.flatMap((_, index) =>
-    index < STEPS.length - 1 ? ['minmax(0,1fr)', '84px'] : ['minmax(0,1fr)']
-  ).join(' ')
-
   return (
     <div className="border-b border-[#ececec] bg-white px-4">
-      <div className="mx-auto max-w-6xl py-7">
-        <div className="grid items-center gap-y-3" style={{ gridTemplateColumns: columns }}>
-          {STEPS.map((label, index) => (
-            <div key={`${label}-label`} className="contents">
-              <p
+      <div className="mx-auto flex max-w-6xl items-center justify-center py-7">
+        {STEPS.map((label, index) => (
+          <div key={label} className="flex items-center">
+            <p
+              className={[
+                'shrink-0 text-center text-[11px] font-semibold uppercase tracking-[0.12em]',
+                index === current ? 'text-[#ea1d2c]' : index < current ? 'text-[#666]' : 'text-[#bbb]',
+              ].join(' ')}
+            >
+              {label}
+            </p>
+            {index < STEPS.length - 1 ? (
+              <div
                 className={[
-                  'text-center text-[11px] font-semibold uppercase tracking-[0.12em]',
-                  index === current ? 'text-[#ea1d2c]' : index < current ? 'text-[#666]' : 'text-[#bbb]',
+                  'mx-4 h-[2px] w-20 rounded-full transition-all',
+                  index < current ? 'bg-[#ea1d2c]' : 'bg-[#d9d9d9]',
                 ].join(' ')}
-              >
-                {label}
-              </p>
-              {index < STEPS.length - 1 ? <div /> : null}
-            </div>
-          ))}
-
-          {STEPS.map((label, index) => (
-            <div key={`${label}-line`} className="contents">
-              <div className="flex justify-center">
-                <div
-                  className={[
-                    'h-[6px] w-[6px] rounded-full transition-all',
-                    index <= current ? 'bg-[#ea1d2c]' : 'bg-[#d9d9d9]',
-                  ].join(' ')}
-                />
-              </div>
-              {index < STEPS.length - 1 ? (
-                <div className="flex items-center justify-center px-3">
-                  <div
-                    className={[
-                      'h-[2px] w-full rounded-full transition-all',
-                      index < current ? 'bg-[#ea1d2c]' : 'bg-[#d9d9d9]',
-                    ].join(' ')}
-                  />
-                </div>
-              ) : null}
-            </div>
-          ))}
-        </div>
+              />
+            ) : null}
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -396,50 +374,36 @@ export function StoreRegisterPage() {
         <div className="w-full max-w-4xl">
           <form onSubmit={(event) => void handleSubmit(event)}>
             {step === 0 ? (
-              <div className="mx-auto max-w-3xl rounded-[32px] bg-white p-8 shadow-sm animate-rise">
+              <div className="rounded-2xl bg-white p-8 shadow-sm space-y-5 animate-rise">
                 <div>
                   <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#8b8b8b]">
                     Negocio e responsavel
                   </p>
-                  <h2 className="mt-3 text-[38px] font-bold leading-tight text-[#1d1d1d]">
-                    Sua loja tem CNPJ?
-                  </h2>
-                  <p className="mt-3 max-w-2xl text-[15px] leading-7 text-[#666]">
-                    Essa escolha define se seguimos com o cadastro empresarial completo ou com uma versao simplificada
-                    para quem ainda nao tem CNPJ.
+                  <h2 className="mt-1 text-[18px] font-bold text-[#1d1d1d]">Sua loja tem CNPJ?</h2>
+                  <p className="mt-1 text-[13px] text-[#8b8b8b]">
+                    Escolha se vamos seguir com o cadastro empresarial completo ou com a versao simplificada.
                   </p>
                 </div>
 
-                <div className="mt-10 space-y-6">
+                <div className="space-y-4">
                   <button
                     type="button"
                     onClick={() => setHasCnpj(true)}
                     className={[
-                      'flex w-full items-center gap-4 rounded-[24px] border px-5 py-5 text-left transition shadow-sm',
-                      hasCnpj === true
-                        ? 'border-[#ea1d2c] bg-[#fff8f8] shadow-[0_12px_28px_rgba(234,29,44,0.08)]'
-                        : 'border-[#e5e5e5] bg-white hover:border-[#ea1d2c]/35 hover:bg-[#fffdfd]',
+                      'flex w-full items-center gap-4 rounded-xl border px-4 py-4 text-left transition',
+                      hasCnpj === true ? 'border-[#ea1d2c] bg-[#fff8f8]' : 'border-[#d9d9d9] bg-[#fbfbfb]',
                     ].join(' ')}
                   >
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#fff1f2] text-[#ea1d2c]">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#f3f3f3] text-[#1d1d1d]">
                       <Check className="h-6 w-6" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-3">
-                        <p className="text-[24px] font-bold text-[#1d1d1d]">Sim</p>
-                        <span className="rounded-full bg-[#f4f4f4] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#666]">
-                          Empresarial
-                        </span>
-                      </div>
-                      <p className="mt-2 text-[14px] leading-6 text-[#666]">
-                        Continuar com CNPJ, razao social e os dados completos do negocio.
-                      </p>
+                      <p className="text-[16px] font-bold text-[#1d1d1d]">Sim</p>
+                      <p className="mt-1 text-[13px] text-[#666]">Continuar com CNPJ e razao social.</p>
                     </div>
                     <div className="flex h-6 w-6 shrink-0 items-center justify-center">
                       {hasCnpj === true ? (
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full border border-[#ea1d2c] bg-[#ea1d2c] text-white">
-                          <Check className="h-3.5 w-3.5" />
-                        </div>
+                        <Check className="h-5 w-5 text-[#ea1d2c]" />
                       ) : (
                         <Circle className="h-5 w-5 text-[#bbb]" />
                       )}
@@ -453,31 +417,20 @@ export function StoreRegisterPage() {
                       setForm((current) => ({ ...current, cnpj: '', razaoSocial: '' }))
                     }}
                     className={[
-                      'flex w-full items-center gap-4 rounded-[24px] border px-5 py-5 text-left transition shadow-sm',
-                      hasCnpj === false
-                        ? 'border-[#ea1d2c] bg-[#fff8f8] shadow-[0_12px_28px_rgba(234,29,44,0.08)]'
-                        : 'border-[#e5e5e5] bg-white hover:border-[#ea1d2c]/35 hover:bg-[#fffdfd]',
+                      'flex w-full items-center gap-4 rounded-xl border px-4 py-4 text-left transition',
+                      hasCnpj === false ? 'border-[#ea1d2c] bg-[#fff8f8]' : 'border-[#d9d9d9] bg-[#fbfbfb]',
                     ].join(' ')}
                   >
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#f7f7f7] text-[#444]">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#f3f3f3] text-[#1d1d1d]">
                       <X className="h-6 w-6" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-3">
-                        <p className="text-[24px] font-bold text-[#1d1d1d]">Nao</p>
-                        <span className="rounded-full bg-[#f4f4f4] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#666]">
-                          Simplificado
-                        </span>
-                      </div>
-                      <p className="mt-2 text-[14px] leading-6 text-[#666]">
-                        Seguir sem CNPJ e sem razao social, usando apenas o nome do negocio.
-                      </p>
+                      <p className="text-[16px] font-bold text-[#1d1d1d]">Nao</p>
+                      <p className="mt-1 text-[13px] text-[#666]">Seguir sem CNPJ e sem razao social.</p>
                     </div>
                     <div className="flex h-6 w-6 shrink-0 items-center justify-center">
                       {hasCnpj === false ? (
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full border border-[#ea1d2c] bg-[#ea1d2c] text-white">
-                          <Check className="h-3.5 w-3.5" />
-                        </div>
+                        <Check className="h-5 w-5 text-[#ea1d2c]" />
                       ) : (
                         <Circle className="h-5 w-5 text-[#bbb]" />
                       )}
