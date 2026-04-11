@@ -25,7 +25,7 @@ import { cn, formatCurrency } from '@/lib/utils'
 import { AnimatedModal } from '@/components/partner/AnimatedModal'
 import { SectionFrame } from '@/components/partner/PartnerUi'
 import type { PartnerCategory } from '@/types'
-import { createProduct } from '@/services/partner'
+import { createProduct, createProductCategory } from '@/services/partner'
 
 function ThemeSwitch({
   checked,
@@ -470,7 +470,7 @@ const normalizedSearch = search.trim().toLowerCase()
     setCreateCategoryModalOpen(true)
   }
 
-  function handleCreateCategory() {
+  async function handleCreateCategory() {
     const trimmedName = newCategoryName.trim()
     if (!trimmedName) {
       toast.error('Digite o nome da categoria.')
@@ -478,21 +478,23 @@ const normalizedSearch = search.trim().toLowerCase()
     }
 
     const selectedTemplate = categoryTemplates.find((template) => template.id === newCategoryTemplate) ?? categoryTemplates[0]
-    const nextCategory: PartnerCategory = {
-      id: `category-${Date.now()}`,
-      name: trimmedName,
-      icon: selectedTemplate.defaultIcon,
-      template: selectedTemplate.id,
-      sortOrder: categoryOrderIds.length,
-      productCount: 0,
-    }
 
-    setCatalogCategories((current) => [...current, nextCategory])
-    setCategoryOrderIds((current) => [...current, nextCategory.id])
-    setExpandedByCategoryId((current) => ({ ...current, [nextCategory.id]: false }))
-    setActiveByCategoryId((current) => ({ ...current, [nextCategory.id]: true }))
-    setCreateCategoryModalOpen(false)
-    toast.success(`Categoria ${trimmedName} criada com sucesso.`)
+    try {
+      const saved = await createProductCategory(data!.store.id, {
+        name: trimmedName,
+        icon: selectedTemplate.defaultIcon,
+        template: selectedTemplate.id,
+      })
+
+      setCatalogCategories((current) => [...current, saved])
+      setCategoryOrderIds((current) => [...current, saved.id])
+      setExpandedByCategoryId((current) => ({ ...current, [saved.id]: false }))
+      setActiveByCategoryId((current) => ({ ...current, [saved.id]: true }))
+      setCreateCategoryModalOpen(false)
+      toast.success(`Categoria ${trimmedName} criada com sucesso.`)
+    } catch {
+      toast.error('Nao foi possivel criar a categoria.')
+    }
   }
 
   function openAddItemModal(category: PartnerCategory) {
@@ -1193,7 +1195,7 @@ const normalizedSearch = search.trim().toLowerCase()
               </button>
               <button
                 type="button"
-                onClick={handleCreateCategory}
+                onClick={() => void handleCreateCategory()}
                 className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
               >
                 Criar categoria
