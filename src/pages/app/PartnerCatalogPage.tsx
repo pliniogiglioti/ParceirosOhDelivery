@@ -167,7 +167,6 @@ const standardItemStepTabs: Array<{ id: StandardItemStepTab; label: string }> = 
 
 const industrializedStepTabs: Array<{ id: IndustrializedStepTab; label: string }> = [
   { id: 'banco', label: 'Banco de produtos' },
-  { id: 'imagens', label: 'Suas imagens' },
   { id: 'preco', label: 'Preco' },
   { id: 'revisao', label: 'Revisao' },
 ]
@@ -630,11 +629,6 @@ const normalizedSearch = search.trim().toLowerCase()
         return
       }
 
-      setIndustrializedStepTab('imagens')
-      return
-    }
-
-    if (industrializedStepTab === 'imagens') {
       setIndustrializedStepTab('preco')
       return
     }
@@ -660,9 +654,7 @@ const normalizedSearch = search.trim().toLowerCase()
   const canContinueIndustrializedFlow =
     industrializedStepTab === 'banco'
       ? Boolean(selectedIndustrializedItemId)
-      : industrializedStepTab === 'imagens'
-        ? Boolean(industrializedImage || selectedImageBankItemId)
-        : industrializedStepTab === 'preco'
+      : industrializedStepTab === 'preco'
           ? Boolean(industrializedPrice.trim()) &&
             (!industrializedPromotionPrice.trim() || industrializedPromotionPriceValue < industrializedPriceValue)
           : true
