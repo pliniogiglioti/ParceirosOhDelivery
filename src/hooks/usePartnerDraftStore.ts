@@ -165,11 +165,10 @@ export const usePartnerDraftStore = create<PartnerDraftStoreState>()(
         }))
       },
       hydratePaymentMethods: (storeId, paymentMethods) => {
-        const currentPaymentMethods = get().paymentMethodsByStoreId[storeId]
         set((state) => ({
           paymentMethodsByStoreId: {
             ...state.paymentMethodsByStoreId,
-            [storeId]: currentPaymentMethods ?? paymentMethods,
+            [storeId]: paymentMethods,
           },
         }))
       },
@@ -182,11 +181,10 @@ export const usePartnerDraftStore = create<PartnerDraftStoreState>()(
         }))
       },
       hydrateCouriers: (storeId, couriers) => {
-        const currentCouriers = get().couriersByStoreId[storeId]
         set((state) => ({
           couriersByStoreId: {
             ...state.couriersByStoreId,
-            [storeId]: currentCouriers ?? couriers,
+            [storeId]: couriers,
           },
         }))
       },
@@ -199,11 +197,10 @@ export const usePartnerDraftStore = create<PartnerDraftStoreState>()(
         }))
       },
       hydrateLogistics: (storeId, logistics) => {
-        const currentLogistics = get().logisticsByStoreId[storeId]
         set((state) => ({
           logisticsByStoreId: {
             ...state.logisticsByStoreId,
-            [storeId]: currentLogistics ?? logistics,
+            [storeId]: logistics,
           },
         }))
       },
