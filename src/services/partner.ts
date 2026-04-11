@@ -384,7 +384,6 @@ export async function createProduct(
       description: input.description,
       price: input.price,
       image_url: input.imageUrl ?? null,
-      stock_quantity: 100,
       active: true,
       featured: false,
       sort_order: 0,
