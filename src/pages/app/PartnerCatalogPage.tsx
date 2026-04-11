@@ -1503,52 +1503,70 @@ const normalizedSearch = search.trim().toLowerCase()
                 ) : null}
 
                 {industrializedStepTab === 'imagens' ? (
-                  <div className="rounded-xl border border-ink-100 bg-white p-4">
-                    <div className="mt-4 relative">
-                      <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
-                      <input
-                        type="text"
-                        value={imageBankSearch}
-                        onChange={(event) => setImageBankSearch(event.target.value)}
-                        placeholder="Buscar em suas imagens"
-                        className="h-12 w-full rounded-2xl border border-ink-100 bg-white pl-11 pr-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
-                      />
-                    </div>
+                  <div className="space-y-4">
+                    {/* Imagem do produto selecionado */}
+                    {industrializedImage ? (
+                      <div className="rounded-xl border border-mint-300 bg-mint-50 p-4">
+                        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">
+                          Imagem do produto
+                        </p>
+                        <div className="flex items-center gap-4">
+                          <img
+                            src={industrializedImage}
+                            alt={industrializedName}
+                            className="h-20 w-20 rounded-xl object-cover border border-ink-100"
+                          />
+                          <div>
+                            <p className="text-sm font-bold text-ink-900">{industrializedName}</p>
+                            <p className="mt-1 text-xs text-ink-500">Imagem carregada automaticamente do banco de produtos. Voce pode substituir abaixo.</p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
 
-                    <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-6">
-                      {filteredImageBankItems.map((imageItem) => {
-                        const isSelected = selectedImageBankItemId === imageItem.id
+                    {/* Banco de imagens para substituir */}
+                    <div className="rounded-xl border border-ink-100 bg-white p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500 mb-3">
+                        {industrializedImage ? 'Substituir por outra imagem (opcional)' : 'Suas imagens'}
+                      </p>
+                      <div className="relative mb-3">
+                        <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
+                        <input
+                          type="text"
+                          value={imageBankSearch}
+                          onChange={(event) => setImageBankSearch(event.target.value)}
+                          placeholder="Buscar em suas imagens"
+                          className="h-12 w-full rounded-2xl border border-ink-100 bg-white pl-11 pr-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
+                        />
+                      </div>
 
-                        return (
-                          <button
-                            key={imageItem.id}
-                            type="button"
-                            onClick={() => {
-                              setSelectedImageBankItemId(imageItem.id)
-                              setIndustrializedImage(imageItem.image)
-                            }}
-                            className={cn(
-                              'overflow-hidden rounded-xl border text-left transition',
-                              isSelected
-                                ? 'border-coral-300 bg-coral-50'
-                                : 'border-ink-100 bg-white hover:bg-ink-50'
-                            )}
-                          >
-                              <img
-                                src={imageItem.image}
-                                alt={imageItem.label}
-                                className="h-28 w-full object-cover"
-                              />
+                      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-6">
+                        {filteredImageBankItems.map((imageItem) => {
+                          const isSelected = selectedImageBankItemId === imageItem.id
+                          return (
+                            <button
+                              key={imageItem.id}
+                              type="button"
+                              onClick={() => {
+                                setSelectedImageBankItemId(imageItem.id)
+                                setIndustrializedImage(imageItem.image)
+                              }}
+                              className={cn(
+                                'overflow-hidden rounded-xl border text-left transition',
+                                isSelected ? 'border-coral-300 bg-coral-50' : 'border-ink-100 bg-white hover:bg-ink-50'
+                              )}
+                            >
+                              <img src={imageItem.image} alt={imageItem.label} className="h-28 w-full object-cover" />
                             </button>
                           )
                         })}
 
-                      {filteredImageBankItems.length === 0 ? (
-                        <div className="col-span-2 rounded-xl border border-dashed border-ink-200 bg-ink-50 px-4 py-8 text-center">
-                          <p className="text-sm font-semibold text-ink-700">Nenhuma imagem encontrada</p>
-                          <p className="mt-2 text-sm text-ink-500">Ajuste a busca para localizar uma imagem do seu banco.</p>
-                        </div>
-                      ) : null}
+                        {filteredImageBankItems.length === 0 ? (
+                          <div className="col-span-2 rounded-xl border border-dashed border-ink-200 bg-ink-50 px-4 py-8 text-center">
+                            <p className="text-sm font-semibold text-ink-700">Nenhuma imagem encontrada</p>
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
                 ) : null}
