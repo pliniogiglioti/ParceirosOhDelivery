@@ -1,5 +1,5 @@
-import { type ReactNode, useEffect, useState } from 'react'
-import { ArrowRight, ChevronDown, Loader2, LogOut } from 'lucide-react'
+import React, { type ReactNode, useEffect, useState } from 'react'
+import { ArrowRight, CheckCircle2, ChevronDown, Circle, Clock3, Loader2, LogOut, MapPinned, ShoppingBag, Store } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { LoadingScreen } from '@/components/partner/LoadingScreen'
@@ -27,38 +27,15 @@ type ProductDraft = {
   price: string
 }
 
-const STEPS: Array<{ id: FirstAccessStepId; label: string }> = [
-  { id: 'loja', label: 'Loja' },
-  { id: 'horarios', label: 'Horarios' },
-  { id: 'entrega', label: 'Entrega' },
-  { id: 'produto', label: 'Primeiro produto' },
+const STEPS: Array<{ id: FirstAccessStepId; label: string; icon: React.ElementType }> = [
+  { id: 'loja', label: 'Loja', icon: Store },
+  { id: 'horarios', label: 'Horarios', icon: Clock3 },
+  { id: 'entrega', label: 'Entrega', icon: MapPinned },
+  { id: 'produto', label: 'Primeiro produto', icon: ShoppingBag },
 ]
 
 const inputClass =
   'h-[48px] w-full rounded-xl border border-[#d9d9d9] bg-[#fbfbfb] px-4 text-[14px] text-[#1d1d1d] outline-none transition placeholder:text-[#9a9a9a] focus:border-[#ea1d2c] focus:bg-white focus:shadow-[0_0_0_4px_rgba(234,29,44,0.09)]'
-
-function StepperBar({ current }: { current: number }) {
-  return (
-    <div className="border-b border-[#ececec] bg-white px-4">
-      <div className="mx-auto flex max-w-3xl overflow-x-auto">
-        {STEPS.map((step, index) => (
-          <div
-            key={step.id}
-            className={`min-w-[140px] flex-1 border-b-2 py-3 text-center text-[13px] font-semibold transition-all ${
-              index === current
-                ? 'border-[#ea1d2c] text-[#ea1d2c]'
-                : index < current
-                ? 'border-transparent text-[#686868]'
-                : 'border-transparent text-[#bbb]'
-            }`}
-          >
-            {step.label}
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -703,77 +680,98 @@ export function PartnerFirstAccessPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-[#f5f5f5]">
-      <StepperBar current={activeStep} />
-
-      <main className="mx-auto flex w-full flex-col px-6 py-8 sm:px-10">
-        <div className="mb-5 flex items-center justify-between gap-3">
-          <div>
-            <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#ea1d2c]">Primeiro acesso</p>
-            <p className="mt-1 text-[14px] text-[#686868]">
-              Loja: <span className="font-semibold text-[#1d1d1d]">{currentStore.name}</span>
-            </p>
+    <div className="min-h-dvh bg-[#f5f5f5] px-3 py-3 sm:px-4 lg:px-5">
+      {/* Sidebar */}
+      <div className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:block lg:p-4 lg:w-[280px]">
+        <aside className="panel-card flex h-full w-full flex-col overflow-hidden bg-white">
+          {/* Header */}
+          <div className="border-b border-ink-100 px-5 pb-4 pt-5">
+            <p className="font-display text-lg font-bold text-coral-500">oh! Delivery</p>
+            <p className="text-sm text-ink-500">{currentStore.name}</p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => void signOut()}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#d9d9d9] bg-white px-4 py-2.5 text-[13px] font-semibold text-[#686868] transition hover:border-[#ea1d2c] hover:text-[#ea1d2c]"
-          >
-            <LogOut className="h-4 w-4" />
-            Sair
-          </button>
-        </div>
+          {/* Label */}
+          <div className="px-5 pt-5 pb-2">
+            <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-ink-400">Configuracao inicial</p>
+          </div>
 
-        {renderCurrentStep()}
+          {/* Steps nav */}
+          <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
+            {STEPS.map((step, index) => {
+              const Icon = step.icon
+              const isActive = index === activeStep
+              const isDone = completedMap[step.id]
+              const isReachable = index === 0 || completedMap[STEPS[index - 1]!.id]
 
-        <div className="mt-4 rounded-2xl border border-[#ececec] bg-white px-4 py-4 shadow-sm">
-          <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#8b8b8b]">Progresso geral</p>
-          <div className="mt-3 grid gap-2 sm:grid-cols-4">
-            {STEPS.map((step) => (
-              <div
-                key={step.id}
-                className={`rounded-xl px-3 py-2 text-center text-[12px] font-semibold ${
-                  completedMap[step.id] ? 'bg-[#f0fdf4] text-[#166534]' : 'bg-[#fafafa] text-[#8b8b8b]'
-                }`}
+              return (
+                <button
+                  key={step.id}
+                  type="button"
+                  onClick={() => isReachable && setActiveStep(index)}
+                  disabled={!isReachable}
+                  className={[
+                    'sidebar-link w-full gap-3 text-left',
+                    isActive ? 'sidebar-link-active' : '',
+                    !isReachable ? 'cursor-not-allowed opacity-40' : '',
+                  ].join(' ')}
+                >
+                  <Icon className="h-5 w-5 shrink-0" />
+                  <span className="flex-1 text-[14px]">{step.label}</span>
+                  {isDone ? (
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
+                  ) : (
+                    <Circle className="h-4 w-4 shrink-0 text-ink-300" />
+                  )}
+                </button>
+              )
+            })}
+          </nav>
+
+          {/* Footer */}
+          <div className="border-t border-ink-100 px-4 py-4 space-y-2">
+            {activeStep < STEPS.length - 1 ? (
+              <button
+                type="button"
+                onClick={goNext}
+                disabled={!completedMap[currentStepId]}
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[13px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {step.label}
-              </div>
-            ))}
+                Proxima etapa
+                <ArrowRight className="h-4 w-4" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => void handleFinishFirstAccess()}
+                disabled={!allStepsCompleted || finishing}
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[13px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {finishing ? <><Loader2 className="h-4 w-4 animate-spin" /> Finalizando...</> : 'Concluir primeiro acesso'}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => (activeStep === 0 ? navigate('/lojas') : setActiveStep((current) => current - 1))}
+              className="flex h-10 w-full items-center justify-center gap-2 rounded-2xl border border-ink-100 text-[13px] font-semibold text-ink-600 transition hover:bg-ink-50"
+            >
+              {activeStep === 0 ? 'Voltar para lojas' : 'Voltar'}
+            </button>
+            <button
+              type="button"
+              onClick={() => void signOut()}
+              className="flex h-10 w-full items-center justify-center gap-2 rounded-2xl text-[13px] font-semibold text-ink-500 transition hover:bg-ink-50"
+            >
+              <LogOut className="h-4 w-4" />
+              Sair
+            </button>
           </div>
-        </div>
+        </aside>
+      </div>
 
-        <div className="mt-5 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => (activeStep === 0 ? navigate('/lojas') : setActiveStep((current) => current - 1))}
-            className="h-[40px] rounded-2xl border border-[#d9d9d9] px-5 text-[13px] font-semibold text-[#303030] transition hover:bg-[#f5f5f5]"
-          >
-            {activeStep === 0 ? 'Voltar para lojas' : 'Voltar'}
-          </button>
-
-          {activeStep < STEPS.length - 1 ? (
-            <button
-              type="button"
-              onClick={goNext}
-              disabled={!completedMap[currentStepId]}
-              className="flex h-[40px] items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] px-5 text-[13px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              Proxima etapa
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => void handleFinishFirstAccess()}
-              disabled={!allStepsCompleted || finishing}
-              className="flex h-[40px] items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] px-5 text-[13px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {finishing ? <><Loader2 className="h-4 w-4 animate-spin" /> Finalizando...</> : 'Concluir primeiro acesso'}
-            </button>
-          )}
-        </div>
-      </main>
+      {/* Main content */}
+      <div className="lg:pl-[292px]">
+        {renderCurrentStep()}
+      </div>
     </div>
   )
 }
