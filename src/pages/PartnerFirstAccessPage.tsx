@@ -233,10 +233,10 @@ export function PartnerFirstAccessPage() {
     setSavedSteps((current) => ({ ...current, produto: false }))
   }
 
-  async function handleSaveStoreStep() {
+  async function handleSaveStoreStep(): Promise<boolean> {
     if (!isStoreStepValid(currentStore)) {
       toast.error('Preencha nome, categoria e descricao da loja.')
-      return
+      return false
     }
 
     setSavingStep('loja')
@@ -249,17 +249,19 @@ export function PartnerFirstAccessPage() {
       })
       setSavedSteps((current) => ({ ...current, loja: true }))
       toast.success('Dados da loja salvos.')
+      return true
     } catch {
       toast.error('Nao foi possivel salvar os dados da loja.')
+      return false
     } finally {
       setSavingStep(null)
     }
   }
 
-  async function handleSaveHoursStep() {
+  async function handleSaveHoursStep(): Promise<boolean> {
     if (!isHoursStepValid(hoursDraft)) {
       toast.error('Defina pelo menos um horario de funcionamento.')
-      return
+      return false
     }
 
     setSavingStep('horarios')
@@ -275,17 +277,19 @@ export function PartnerFirstAccessPage() {
       )
       setSavedSteps((current) => ({ ...current, horarios: true }))
       toast.success('Horarios salvos.')
+      return true
     } catch {
       toast.error('Nao foi possivel salvar os horarios.')
+      return false
     } finally {
       setSavingStep(null)
     }
   }
 
-  async function handleSaveDeliveryStep() {
+  async function handleSaveDeliveryStep(): Promise<boolean> {
     if (!isDeliveryStepValid(deliveryDraft)) {
       toast.error('Preencha nome da area, prazo e mantenha a area ativa.')
-      return
+      return false
     }
 
     setSavingStep('entrega')
@@ -306,17 +310,19 @@ export function PartnerFirstAccessPage() {
       })
       setSavedSteps((current) => ({ ...current, entrega: true }))
       toast.success('Area de entrega salva.')
+      return true
     } catch {
       toast.error('Nao foi possivel salvar a area de entrega.')
+      return false
     } finally {
       setSavingStep(null)
     }
   }
 
-  async function handleSaveProductStep() {
+  async function handleSaveProductStep(): Promise<boolean> {
     if (!isProductStepValid(productDraft)) {
       toast.error('Preencha nome e preco do primeiro produto.')
-      return
+      return false
     }
 
     setSavingStep('produto')
@@ -351,10 +357,28 @@ export function PartnerFirstAccessPage() {
       })
       setSavedSteps((current) => ({ ...current, produto: true }))
       toast.success('Primeiro produto cadastrado.')
+      return true
     } catch {
       toast.error('Nao foi possivel cadastrar o primeiro produto.')
+      return false
     } finally {
       setSavingStep(null)
+    }
+  }
+
+  async function handleSaveAndNext() {
+    const saveMap: Record<FirstAccessStepId, () => Promise<boolean>> = {
+      loja: handleSaveStoreStep,
+      horarios: handleSaveHoursStep,
+      entrega: handleSaveDeliveryStep,
+      produto: handleSaveProductStep,
+    }
+    const ok = await saveMap[currentStepId]()
+    if (!ok) return
+    if (activeStep < STEPS.length - 1) {
+      goNext()
+    } else {
+      void handleFinishFirstAccess()
     }
   }
 
@@ -428,14 +452,6 @@ export function PartnerFirstAccessPage() {
             />
           </Field>
 
-          <button
-            type="button"
-            onClick={() => void handleSaveStoreStep()}
-            disabled={savingStep === 'loja'}
-            className="h-[52px] w-full rounded-2xl bg-[#ea1d2c] text-[15px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {savingStep === 'loja' ? 'Salvando...' : 'Salvar etapa'}
-          </button>
         </div>
       )
     }
@@ -443,26 +459,9 @@ export function PartnerFirstAccessPage() {
     if (currentStepId === 'horarios') {
       return (
         <div className="panel-card space-y-6 p-6 rounded-2xl bg-white shadow-sm">
-          <div className="flex flex-col gap-3 rounded-3xl bg-ink-50 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm font-semibold text-ink-900">Horarios de funcionamento</p>
-              <p className="mt-1 text-sm text-ink-500">
-                Defina quando sua loja atende durante a semana.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => void handleSaveHoursStep()}
-              disabled={savingStep === 'horarios'}
-              className={[
-                'inline-flex h-11 items-center justify-center rounded-2xl px-5 text-sm font-semibold transition',
-                savingStep !== 'horarios'
-                  ? 'bg-coral-500 text-white hover:bg-coral-600'
-                  : 'cursor-not-allowed bg-ink-200 text-ink-500',
-              ].join(' ')}
-            >
-              {savingStep === 'horarios' ? 'Salvando...' : 'Salvar etapa'}
-            </button>
+          <div className="rounded-3xl bg-ink-50 px-5 py-4">
+            <p className="text-sm font-semibold text-ink-900">Horarios de funcionamento</p>
+            <p className="mt-1 text-sm text-ink-500">Defina quando sua loja atende durante a semana.</p>
           </div>
 
           <div className="grid gap-3 grid-cols-2 sm:grid-cols-4 md:grid-cols-7">
@@ -588,14 +587,6 @@ export function PartnerFirstAccessPage() {
             </label>
           </div>
 
-          <button
-            type="button"
-            onClick={() => void handleSaveDeliveryStep()}
-            disabled={savingStep === 'entrega'}
-            className="h-[52px] w-full rounded-2xl bg-[#ea1d2c] text-[15px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {savingStep === 'entrega' ? 'Salvando...' : 'Salvar etapa'}
-          </button>
         </div>
       )
     }
@@ -667,14 +658,6 @@ export function PartnerFirstAccessPage() {
           </Field>
         </div>
 
-        <button
-          type="button"
-          onClick={() => void handleSaveProductStep()}
-          disabled={savingStep === 'produto'}
-          className="h-[52px] w-full rounded-2xl bg-[#ea1d2c] text-[15px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {savingStep === 'produto' ? 'Salvando...' : 'Salvar etapa'}
-        </button>
       </div>
     )
   }
@@ -732,21 +715,28 @@ export function PartnerFirstAccessPage() {
             {activeStep < STEPS.length - 1 ? (
               <button
                 type="button"
-                onClick={goNext}
-                disabled={!completedMap[currentStepId]}
+                onClick={() => void handleSaveAndNext()}
+                disabled={savingStep !== null}
                 className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[13px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Proxima etapa
-                <ArrowRight className="h-4 w-4" />
+                {savingStep !== null ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" /> Salvando...</>
+                ) : (
+                  <>Salvar e proximo <ArrowRight className="h-4 w-4" /></>
+                )}
               </button>
             ) : (
               <button
                 type="button"
-                onClick={() => void handleFinishFirstAccess()}
-                disabled={!allStepsCompleted || finishing}
+                onClick={() => void handleSaveAndNext()}
+                disabled={savingStep !== null || finishing}
                 className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[13px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {finishing ? <><Loader2 className="h-4 w-4 animate-spin" /> Finalizando...</> : 'Concluir primeiro acesso'}
+                {savingStep !== null || finishing ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" /> Salvando...</>
+                ) : (
+                  'Salvar e concluir'
+                )}
               </button>
             )}
             <button
