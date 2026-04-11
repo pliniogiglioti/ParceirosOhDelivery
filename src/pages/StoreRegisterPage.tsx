@@ -79,12 +79,12 @@ const PLAN_FEATURES = [
 function StepperBar({ current }: { current: number }) {
   return (
     <div className="border-b border-[#ececec] bg-white px-4">
-      <div className="mx-auto flex max-w-5xl items-center py-4">
+      <div className="mx-auto grid max-w-5xl grid-cols-[repeat(6,minmax(0,1fr))] items-center py-7">
         {STEPS.map((label, index) => (
-          <div key={label} className="flex flex-1 items-center">
+          <div key={label} className="flex items-center">
             <p
               className={[
-                'shrink-0 text-center text-[11px] font-semibold uppercase tracking-[0.12em]',
+                'w-full shrink-0 text-center text-[11px] font-semibold uppercase tracking-[0.12em]',
                 index === current ? 'text-[#ea1d2c]' : index < current ? 'text-[#666]' : 'text-[#bbb]',
               ].join(' ')}
             >
@@ -93,7 +93,7 @@ function StepperBar({ current }: { current: number }) {
             {index < STEPS.length - 1 ? (
               <div
                 className={[
-                  'mx-3 h-[2px] flex-1 rounded-full transition-all',
+                  'mx-4 h-[2px] w-full rounded-full transition-all',
                   index < current ? 'bg-[#ea1d2c]' : 'bg-[#d9d9d9]',
                 ].join(' ')}
               />
