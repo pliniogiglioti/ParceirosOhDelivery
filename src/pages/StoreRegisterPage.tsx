@@ -1,6 +1,15 @@
 import { type FormEvent, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, ChevronDown, Loader2, MapPin } from 'lucide-react'
+import {
+  ArrowRight,
+  BadgeCheck,
+  Check,
+  ChevronDown,
+  CircleDollarSign,
+  Loader2,
+  MapPin,
+  ShieldCheck,
+} from 'lucide-react'
 import toast from 'react-hot-toast'
 import { usePartnerAuth } from '@/hooks/usePartnerAuth'
 import { getStoreCategories } from '@/services/profile'
@@ -8,11 +17,9 @@ import { registerStore } from '@/services/partner'
 import { MapPicker } from '@/components/MapPicker'
 import type { StoreCategory, StoreRegistrationInput } from '@/types'
 
-// ─── Masks ────────────────────────────────────────────────────────────────────
-
 function formatCnpj(value: string) {
-  const d = value.replace(/\D/g, '').slice(0, 14)
-  return d
+  const digits = value.replace(/\D/g, '').slice(0, 14)
+  return digits
     .replace(/^(\d{2})(\d)/, '$1.$2')
     .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
     .replace(/\.(\d{3})(\d)/, '.$1/$2')
@@ -20,26 +27,25 @@ function formatCnpj(value: string) {
 }
 
 function formatCpf(value: string) {
-  const d = value.replace(/\D/g, '').slice(0, 11)
-  return d
+  const digits = value.replace(/\D/g, '').slice(0, 11)
+  return digits
     .replace(/(\d{3})(\d)/, '$1.$2')
     .replace(/(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
     .replace(/(\d{3})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3-$4')
 }
 
 function formatCep(value: string) {
-  const d = value.replace(/\D/g, '').slice(0, 8)
-  return d.replace(/(\d{5})(\d)/, '$1-$2')
+  const digits = value.replace(/\D/g, '').slice(0, 8)
+  return digits.replace(/(\d{5})(\d)/, '$1-$2')
 }
-
-// ─── APIs ────────────────────────────────────────────────────────────────────
 
 async function fetchViaCEP(cep: string) {
   const digits = cep.replace(/\D/g, '')
   if (digits.length !== 8) return null
+
   try {
-    const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`)
-    const data = (await res.json()) as Record<string, string>
+    const response = await fetch(`https://viacep.com.br/ws/${digits}/json/`)
+    const data = (await response.json()) as Record<string, string>
     if (data.erro) return null
     return data
   } catch {
@@ -50,45 +56,52 @@ async function fetchViaCEP(cep: string) {
 async function geocodeAddress(query: string): Promise<{ lat: number; lng: number } | null> {
   try {
     const params = new URLSearchParams({ q: query, format: 'json', limit: '1', countrycodes: 'br' })
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?${params.toString()}`, {
       headers: { 'Accept-Language': 'pt-BR', 'User-Agent': 'OhDelivery/1.0' },
     })
-    const data = (await res.json()) as Array<{ lat: string; lon: string }>
+    const data = (await response.json()) as Array<{ lat: string; lon: string }>
     if (!data.length) return null
-    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
+    return { lat: Number.parseFloat(data[0].lat), lng: Number.parseFloat(data[0].lon) }
   } catch {
     return null
   }
 }
 
-// ─── Stepper ──────────────────────────────────────────────────────────────────
+const STEPS = ['CNPJ', 'Dados da Loja', 'Endereco', 'Localizacao', 'Configuracoes', 'Plano']
 
-const STEPS = ['CNPJ', 'Dados da Loja', 'Endereço', 'Localização', 'Configurações']
+const PLAN_FEATURES = [
+  'Mais visibilidade para sua loja no app',
+  'Gestao de pedidos e cardapio em um unico painel',
+  'Ferramentas de campanhas e promocoes',
+  'Acompanhamento simples da operacao da loja',
+]
 
 function StepperBar({ current }: { current: number }) {
   return (
-    <div className="bg-white border-b border-[#ececec] px-4">
-      <div className="mx-auto flex max-w-2xl">
-        {STEPS.map((label, i) => (
-          <div
-            key={i}
-            className={`flex-1 py-3 text-center text-[13px] font-semibold border-b-2 transition-all ${
-              i === current
-                ? 'border-[#ea1d2c] text-[#ea1d2c]'
-                : i < current
-                ? 'border-transparent text-[#686868]'
-                : 'border-transparent text-[#bbb]'
-            }`}
-          >
-            {label}
+    <div className="border-b border-[#ececec] bg-white px-4">
+      <div className="mx-auto flex max-w-5xl gap-2">
+        {STEPS.map((label, index) => (
+          <div key={label} className="flex-1 py-4">
+            <div
+              className={[
+                'h-[6px] rounded-full transition-all',
+                index <= current ? 'bg-[#ea1d2c]' : 'bg-[#d9d9d9]',
+              ].join(' ')}
+            />
+            <p
+              className={[
+                'mt-2 text-center text-[11px] font-semibold uppercase tracking-[0.12em]',
+                index === current ? 'text-[#ea1d2c]' : index < current ? 'text-[#666]' : 'text-[#bbb]',
+              ].join(' ')}
+            >
+              {label}
+            </p>
           </div>
         ))}
       </div>
     </div>
   )
 }
-
-// ─── Input helpers ────────────────────────────────────────────────────────────
 
 const inputClass =
   'h-[48px] w-full rounded-xl border border-[#d9d9d9] bg-[#fbfbfb] px-4 text-[14px] text-[#1d1d1d] outline-none transition placeholder:text-[#9a9a9a] focus:border-[#ea1d2c] focus:bg-white focus:shadow-[0_0_0_4px_rgba(234,29,44,0.09)]'
@@ -102,8 +115,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
-
 export function StoreRegisterPage() {
   const navigate = useNavigate()
   const { user, profile, selectStore } = usePartnerAuth()
@@ -112,6 +123,7 @@ export function StoreRegisterPage() {
   const [categories, setCategories] = useState<StoreCategory[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [cepLoading, setCepLoading] = useState(false)
+  const [registrationCompleted, setRegistrationCompleted] = useState(false)
 
   const [form, setForm] = useState<StoreRegistrationInput>({
     name: '',
@@ -138,81 +150,140 @@ export function StoreRegisterPage() {
     minOrderAmount: 0,
   })
 
-  useEffect(() => { void getStoreCategories().then(setCategories) }, [])
+  useEffect(() => {
+    void getStoreCategories().then(setCategories)
+  }, [])
 
-  function set<K extends keyof StoreRegistrationInput>(key: K, value: StoreRegistrationInput[K]) {
-    setForm((prev) => ({ ...prev, [key]: value }))
+  function setField<K extends keyof StoreRegistrationInput>(key: K, value: StoreRegistrationInput[K]) {
+    setForm((current) => ({ ...current, [key]: value }))
   }
 
   async function handleCepBlur() {
     const digits = form.addressZip.replace(/\D/g, '')
     if (digits.length !== 8) return
+
     setCepLoading(true)
+
     try {
       const data = await fetchViaCEP(digits)
-      if (!data) { toast.error('CEP não encontrado.'); return }
+      if (!data) {
+        toast.error('CEP nao encontrado.')
+        return
+      }
+
       const street = data.logradouro ?? ''
       const neighborhood = data.bairro ?? ''
       const city = data.localidade ?? ''
       const state = data.uf ?? ''
-      setForm((prev) => ({ ...prev, addressStreet: street, addressNeighborhood: neighborhood, addressCity: city, addressState: state }))
+
+      setForm((current) => ({
+        ...current,
+        addressStreet: street,
+        addressNeighborhood: neighborhood,
+        addressCity: city,
+        addressState: state,
+      }))
+
       const coords = await geocodeAddress(`${street}, ${neighborhood}, ${city}, ${state}, Brasil`)
-      if (coords) setForm((prev) => ({ ...prev, lat: coords.lat, lng: coords.lng }))
+      if (coords) {
+        setForm((current) => ({ ...current, lat: coords.lat, lng: coords.lng }))
+      }
     } finally {
       setCepLoading(false)
     }
   }
 
-  function validateStep(s: number): boolean {
-    if (s === 0) {
-      if (form.cnpj.replace(/\D/g, '').length !== 14) { toast.error('Informe um CNPJ válido.'); return false }
-      if (!form.razaoSocial.trim()) { toast.error('Informe a Razão Social.'); return false }
-      if (!form.responsavelNome.trim()) { toast.error('Informe o nome do responsável.'); return false }
-      if (form.responsavelCpf.replace(/\D/g, '').length !== 11) { toast.error('Informe um CPF válido.'); return false }
+  function validateStep(currentStep: number) {
+    if (currentStep === 0) {
+      if (form.cnpj.replace(/\D/g, '').length !== 14) {
+        toast.error('Informe um CNPJ valido.')
+        return false
+      }
+      if (!form.razaoSocial.trim()) {
+        toast.error('Informe a razao social.')
+        return false
+      }
+      if (!form.responsavelNome.trim()) {
+        toast.error('Informe o nome do responsavel.')
+        return false
+      }
+      if (form.responsavelCpf.replace(/\D/g, '').length !== 11) {
+        toast.error('Informe um CPF valido.')
+        return false
+      }
     }
-    if (s === 1) {
-      if (!form.name.trim()) { toast.error('Informe o nome da loja.'); return false }
-      if (!form.categoryId) { toast.error('Selecione a categoria.'); return false }
+
+    if (currentStep === 1) {
+      if (!form.name.trim()) {
+        toast.error('Informe o nome da loja.')
+        return false
+      }
+      if (!form.categoryId) {
+        toast.error('Selecione a categoria.')
+        return false
+      }
     }
-    if (s === 2) {
-      if (form.addressZip.replace(/\D/g, '').length !== 8) { toast.error('Informe um CEP válido.'); return false }
-      if (!form.addressCity.trim()) { toast.error('CEP não encontrado. Verifique e tente novamente.'); return false }
-      if (!form.addressNumber.trim()) { toast.error('Informe o número do endereço.'); return false }
+
+    if (currentStep === 2) {
+      if (form.addressZip.replace(/\D/g, '').length !== 8) {
+        toast.error('Informe um CEP valido.')
+        return false
+      }
+      if (!form.addressCity.trim()) {
+        toast.error('CEP nao encontrado. Verifique e tente novamente.')
+        return false
+      }
+      if (!form.addressNumber.trim()) {
+        toast.error('Informe o numero do endereco.')
+        return false
+      }
     }
+
     return true
   }
 
   async function handleNext() {
     if (!validateStep(step)) return
+
     try {
       if (step === 2 && form.lat === null) {
         setCepLoading(true)
         try {
-          const coords = await geocodeAddress(`${form.addressStreet}, ${form.addressNeighborhood}, ${form.addressCity}, ${form.addressState}, Brasil`)
-          if (coords) setForm((prev) => ({ ...prev, lat: coords.lat, lng: coords.lng }))
+          const coords = await geocodeAddress(
+            `${form.addressStreet}, ${form.addressNeighborhood}, ${form.addressCity}, ${form.addressState}, Brasil`
+          )
+          if (coords) {
+            setForm((current) => ({ ...current, lat: coords.lat, lng: coords.lng }))
+          }
         } finally {
           setCepLoading(false)
         }
       }
-      setStep((s) => s + 1)
-    } catch (err) {
+
+      setStep((current) => current + 1)
+    } catch (error) {
       setCepLoading(false)
-      toast.error(err instanceof Error ? err.message : 'Erro ao avançar.')
+      toast.error(error instanceof Error ? error.message : 'Erro ao avancar.')
     }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (step !== STEPS.length - 1) return
-    if (!user || !profile) { toast.error('Sessão inválida.'); return }
+    if (!user || !profile) {
+      toast.error('Sessao invalida.')
+      return
+    }
+
     setSubmitting(true)
+
     try {
       const storeId = await registerStore(form, user.id, user.email, profile.name ?? user.name)
       selectStore(storeId)
-      toast.success('Loja cadastrada! Aguarde a aprovação.')
-      navigate('/lojas')
+      toast.success('Loja cadastrada com sucesso.')
+      setRegistrationCompleted(true)
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Não foi possível cadastrar a loja.')
+      toast.error(error instanceof Error ? error.message : 'Nao foi possivel cadastrar a loja.')
     } finally {
       setSubmitting(false)
     }
@@ -220,29 +291,86 @@ export function StoreRegisterPage() {
 
   const isLastStep = step === STEPS.length - 1
 
+  if (registrationCompleted) {
+    return (
+      <div className="flex min-h-dvh flex-col bg-[#f5f5f5]">
+        <main className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6">
+          <div className="w-full max-w-2xl rounded-[32px] border border-[#e8e8e8] bg-white p-8 shadow-sm">
+            <div className="flex flex-col items-center text-center">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#dff4e8] text-[#2fa866]">
+                <BadgeCheck className="h-10 w-10" />
+              </div>
+
+              <p className="mt-6 text-[30px] font-bold leading-tight text-[#1d1d1d]">
+                Estamos confirmando os dados do seu CNPJ
+              </p>
+              <p className="mt-3 max-w-xl text-[15px] leading-7 text-[#666]">
+                Seu cadastro foi enviado com sucesso. Agora nosso time vai validar as informacoes da empresa e essa
+                etapa pode levar ate 48 horas.
+              </p>
+            </div>
+
+            <div className="mt-8 rounded-[28px] border border-[#ededed] bg-[#fafafa] p-6">
+              <p className="text-[15px] font-bold text-[#1d1d1d]">O que acontece agora?</p>
+              <div className="mt-5 space-y-4">
+                <div className="flex gap-3">
+                  <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#eaf7ef] text-[#2fa866]">
+                    <Check className="h-4 w-4" />
+                  </div>
+                  <p className="text-[14px] leading-6 text-[#555]">
+                    Estamos consultando os dados do seu CNPJ online e validando as informacoes principais do cadastro.
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <div className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#eaf7ef] text-[#2fa866]">
+                    <Check className="h-4 w-4" />
+                  </div>
+                  <p className="text-[14px] leading-6 text-[#555]">
+                    Assim que essa etapa terminar, voce recebe no e-mail os proximos passos para seguir com a ativacao.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-8 flex justify-end">
+              <button
+                type="button"
+                onClick={() => navigate('/lojas')}
+                className="inline-flex h-[52px] items-center justify-center rounded-2xl bg-[#ea1d2c] px-8 text-[15px] font-bold text-white transition hover:brightness-95"
+              >
+                Sair
+              </button>
+            </div>
+          </div>
+        </main>
+      </div>
+    )
+  }
+
   return (
-    <div className="min-h-dvh bg-[#f5f5f5] flex flex-col">
+    <div className="flex min-h-dvh flex-col bg-[#f5f5f5]">
       <StepperBar current={step} />
 
-      <main className="flex-1 flex items-center justify-center px-4 py-10 sm:px-6">
-        <div className="w-full max-w-2xl">
-          <form onSubmit={(e) => void handleSubmit(e)}>
-
-            {/* Step 0 — CNPJ */}
-            {step === 0 && (
+      <main className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6">
+        <div className="w-full max-w-4xl">
+          <form onSubmit={(event) => void handleSubmit(event)}>
+            {step === 0 ? (
               <div className="rounded-2xl bg-white p-8 shadow-sm space-y-5 animate-rise">
                 <div>
                   <h2 className="text-[18px] font-bold text-[#1d1d1d]">Dados da Empresa</h2>
-                  <p className="text-[13px] text-[#8b8b8b] mt-1">Informações do CNPJ e do responsável pela loja</p>
+                  <p className="mt-1 text-[13px] text-[#8b8b8b]">
+                    Informacoes do CNPJ e do responsavel pela loja
+                  </p>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Field label="CNPJ *">
                     <input
                       type="text"
                       placeholder="00.000.000/0001-00"
                       value={form.cnpj}
-                      onChange={(e) => set('cnpj', formatCnpj(e.target.value))}
+                      onChange={(event) => setField('cnpj', formatCnpj(event.target.value))}
                       className={inputClass}
                       autoFocus
                     />
@@ -251,34 +379,34 @@ export function StoreRegisterPage() {
                   <Field label="Nome Fantasia">
                     <input
                       type="text"
-                      placeholder="Como é conhecida no mercado"
+                      placeholder="Como e conhecida no mercado"
                       value={form.nomeFantasia}
-                      onChange={(e) => set('nomeFantasia', e.target.value)}
+                      onChange={(event) => setField('nomeFantasia', event.target.value)}
                       className={inputClass}
                     />
                   </Field>
                 </div>
 
-                <Field label="Razão Social *">
+                <Field label="Razao Social *">
                   <input
                     type="text"
-                    placeholder="Razão Social conforme CNPJ"
+                    placeholder="Razao social conforme CNPJ"
                     value={form.razaoSocial}
-                    onChange={(e) => set('razaoSocial', e.target.value)}
+                    onChange={(event) => setField('razaoSocial', event.target.value)}
                     className={inputClass}
                   />
                 </Field>
 
                 <div className="border-t border-[#f0f0f0] pt-4">
-                  <p className="text-[13px] font-bold text-[#1d1d1d] mb-4">Responsável pela loja</p>
+                  <p className="mb-4 text-[13px] font-bold text-[#1d1d1d]">Responsavel pela loja</p>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Field label="Nome completo *">
                       <input
                         type="text"
-                        placeholder="Nome do responsável"
+                        placeholder="Nome do responsavel"
                         value={form.responsavelNome}
-                        onChange={(e) => set('responsavelNome', e.target.value)}
+                        onChange={(event) => setField('responsavelNome', event.target.value)}
                         className={inputClass}
                       />
                     </Field>
@@ -288,29 +416,30 @@ export function StoreRegisterPage() {
                         type="text"
                         placeholder="000.000.000-00"
                         value={form.responsavelCpf}
-                        onChange={(e) => set('responsavelCpf', formatCpf(e.target.value))}
+                        onChange={(event) => setField('responsavelCpf', formatCpf(event.target.value))}
                         className={inputClass}
                       />
                     </Field>
                   </div>
                 </div>
               </div>
-            )}
+            ) : null}
 
-            {/* Step 1 — Dados da Loja */}
-            {step === 1 && (
+            {step === 1 ? (
               <div className="rounded-2xl bg-white p-8 shadow-sm space-y-5 animate-rise">
                 <div>
                   <h2 className="text-[18px] font-bold text-[#1d1d1d]">Dados da Loja</h2>
-                  <p className="text-[13px] text-[#8b8b8b] mt-1">Como sua loja vai aparecer para os clientes</p>
+                  <p className="mt-1 text-[13px] text-[#8b8b8b]">
+                    Como sua loja vai aparecer para os clientes
+                  </p>
                 </div>
 
                 <Field label="Nome da loja *">
                   <input
                     type="text"
-                    placeholder="Ex: Burger do Zé"
+                    placeholder="Ex: Burger do Ze"
                     value={form.name}
-                    onChange={(e) => set('name', e.target.value)}
+                    onChange={(event) => setField('name', event.target.value)}
                     className={inputClass}
                     autoFocus
                   />
@@ -320,29 +449,34 @@ export function StoreRegisterPage() {
                   <div className="relative">
                     <select
                       value={form.categoryId}
-                      onChange={(e) => {
-                        const cat = categories.find((c) => c.id === e.target.value)
-                        setForm((prev) => ({ ...prev, categoryId: e.target.value, categoryName: cat?.name ?? '' }))
+                      onChange={(event) => {
+                        const category = categories.find((item) => item.id === event.target.value)
+                        setForm((current) => ({
+                          ...current,
+                          categoryId: event.target.value,
+                          categoryName: category?.name ?? '',
+                        }))
                       }}
                       className={`${inputClass} appearance-none pr-10 cursor-pointer`}
                     >
                       <option value="">Selecione uma categoria</option>
-                      {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
                       ))}
                     </select>
-                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#8b8b8b]" />
+                    <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8b8b8b]" />
                   </div>
                 </Field>
               </div>
-            )}
+            ) : null}
 
-            {/* Step 2 — Endereço */}
-            {step === 2 && (
+            {step === 2 ? (
               <div className="rounded-2xl bg-white p-8 shadow-sm space-y-5 animate-rise">
                 <div>
-                  <h2 className="text-[18px] font-bold text-[#1d1d1d]">Endereço</h2>
-                  <p className="text-[13px] text-[#8b8b8b] mt-1">Onde sua loja está localizada</p>
+                  <h2 className="text-[18px] font-bold text-[#1d1d1d]">Endereco</h2>
+                  <p className="mt-1 text-[13px] text-[#8b8b8b]">Onde sua loja esta localizada</p>
                 </div>
 
                 <Field label="CEP *">
@@ -351,126 +485,294 @@ export function StoreRegisterPage() {
                       type="text"
                       placeholder="00000-000"
                       value={form.addressZip}
-                      onChange={(e) => {
-                        set('addressZip', formatCep(e.target.value))
-                        setForm((prev) => ({ ...prev, addressStreet: '', addressNeighborhood: '', addressCity: '', addressState: '' }))
+                      onChange={(event) => {
+                        setField('addressZip', formatCep(event.target.value))
+                        setForm((current) => ({
+                          ...current,
+                          addressStreet: '',
+                          addressNeighborhood: '',
+                          addressCity: '',
+                          addressState: '',
+                        }))
                       }}
                       onBlur={() => void handleCepBlur()}
                       className={inputClass}
                       autoFocus
                     />
-                    {cepLoading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-[#ea1d2c]" />}
+                    {cepLoading ? (
+                      <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-[#ea1d2c]" />
+                    ) : null}
                   </div>
                 </Field>
 
                 {form.addressCity ? (
                   <div className="rounded-xl border border-[#e8e8e8] bg-[#f9f9f9] px-4 py-3">
-                    <p className="text-[11px] font-semibold text-[#8b8b8b] uppercase tracking-wide mb-1.5">Endereço encontrado</p>
+                    <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-[#8b8b8b]">
+                      Endereco encontrado
+                    </p>
                     <p className="text-[14px] font-medium text-[#1d1d1d]">{form.addressStreet}</p>
-                    <p className="text-[13px] text-[#686868]">{form.addressNeighborhood} · {form.addressCity}/{form.addressState}</p>
+                    <p className="text-[13px] text-[#686868]">
+                      {form.addressNeighborhood} · {form.addressCity}/{form.addressState}
+                    </p>
                   </div>
                 ) : (
-                  <p className="text-[12px] text-[#8b8b8b] text-center py-1">Digite o CEP para preencher o endereço automaticamente.</p>
+                  <p className="py-1 text-center text-[12px] text-[#8b8b8b]">
+                    Digite o CEP para preencher o endereco automaticamente.
+                  </p>
                 )}
 
                 <div className="grid grid-cols-2 gap-4">
-                  <Field label="Número *">
+                  <Field label="Numero *">
                     <input
                       type="text"
                       placeholder="123"
                       value={form.addressNumber}
-                      onChange={(e) => set('addressNumber', e.target.value)}
+                      onChange={(event) => setField('addressNumber', event.target.value)}
                       className={inputClass}
                     />
                   </Field>
+
                   <Field label="Complemento">
                     <input
                       type="text"
-                      placeholder="Apto, sala…"
+                      placeholder="Apto, sala..."
                       value={form.addressComplement}
-                      onChange={(e) => set('addressComplement', e.target.value)}
+                      onChange={(event) => setField('addressComplement', event.target.value)}
                       className={inputClass}
                     />
                   </Field>
                 </div>
               </div>
-            )}
+            ) : null}
 
-            {/* Step 3 — Localização */}
-            {step === 3 && (
+            {step === 3 ? (
               <div className="rounded-2xl bg-white p-8 shadow-sm space-y-5 animate-rise">
                 <div>
-                  <h2 className="text-[18px] font-bold text-[#1d1d1d]">Localização</h2>
-                  <p className="text-[13px] text-[#8b8b8b] mt-1">Mova o mapa até o pino estar sobre o local exato da loja</p>
+                  <h2 className="text-[18px] font-bold text-[#1d1d1d]">Localizacao</h2>
+                  <p className="mt-1 text-[13px] text-[#8b8b8b]">
+                    Mova o mapa ate o pino estar sobre o local exato da loja
+                  </p>
                 </div>
 
                 <MapPicker
                   lat={form.lat}
                   lng={form.lng}
-                  onChange={(lat, lng) => setForm((prev) => ({ ...prev, lat, lng }))}
+                  onChange={(lat, lng) => setForm((current) => ({ ...current, lat, lng }))}
                 />
 
                 <div className="rounded-xl border border-[#e8e8e8] bg-[#f9f9f9] px-4 py-3">
-                  <p className="text-[11px] font-semibold text-[#8b8b8b] uppercase tracking-wide mb-1 flex items-center gap-1">
-                    <MapPin className="h-3 w-3 text-[#ea1d2c]" /> Endereço
+                  <p className="mb-1 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-[#8b8b8b]">
+                    <MapPin className="h-3 w-3 text-[#ea1d2c]" />
+                    Endereco
                   </p>
                   <p className="text-[13px] text-[#1d1d1d]">
-                    {form.addressStreet}{form.addressNumber ? `, ${form.addressNumber}` : ''}{form.addressComplement ? ` — ${form.addressComplement}` : ''}
+                    {form.addressStreet}
+                    {form.addressNumber ? `, ${form.addressNumber}` : ''}
+                    {form.addressComplement ? ` - ${form.addressComplement}` : ''}
                   </p>
                   <p className="text-[12px] text-[#686868]">
                     {form.addressNeighborhood} · {form.addressCity}/{form.addressState} · CEP {form.addressZip}
                   </p>
                 </div>
               </div>
-            )}
+            ) : null}
 
-            {/* Step 4 — Configurações */}
-            {step === 4 && (
+            {step === 4 ? (
               <div className="rounded-2xl bg-white p-8 shadow-sm space-y-5 animate-rise">
                 <div>
-                  <h2 className="text-[18px] font-bold text-[#1d1d1d]">Configurações</h2>
-                  <p className="text-[13px] text-[#8b8b8b] mt-1">Ajuste os valores padrão da sua loja</p>
+                  <h2 className="text-[18px] font-bold text-[#1d1d1d]">Configuracoes</h2>
+                  <p className="mt-1 text-[13px] text-[#8b8b8b]">Ajuste os valores padrao da sua loja</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <Field label="Taxa de entrega (R$)">
-                    <input type="number" min={0} step={0.5} placeholder="0,00" value={form.deliveryFee} onChange={(e) => set('deliveryFee', Number(e.target.value))} className={inputClass} autoFocus />
+                    <input
+                      type="number"
+                      min={0}
+                      step={0.5}
+                      placeholder="0,00"
+                      value={form.deliveryFee}
+                      onChange={(event) => setField('deliveryFee', Number(event.target.value))}
+                      className={inputClass}
+                      autoFocus
+                    />
                   </Field>
-                  <Field label="Pedido mínimo (R$)">
-                    <input type="number" min={0} step={1} placeholder="0,00" value={form.minOrderAmount} onChange={(e) => set('minOrderAmount', Number(e.target.value))} className={inputClass} />
+
+                  <Field label="Pedido minimo (R$)">
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      placeholder="0,00"
+                      value={form.minOrderAmount}
+                      onChange={(event) => setField('minOrderAmount', Number(event.target.value))}
+                      className={inputClass}
+                    />
                   </Field>
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">
-                  <Field label="Entrega mín.">
+                  <Field label="Entrega min.">
                     <div className="relative">
-                      <input type="number" min={1} placeholder="30" value={form.etaMin} onChange={(e) => set('etaMin', Number(e.target.value))} className={`${inputClass} pr-10`} />
-                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[#aaa]">min</span>
+                      <input
+                        type="number"
+                        min={1}
+                        placeholder="30"
+                        value={form.etaMin}
+                        onChange={(event) => setField('etaMin', Number(event.target.value))}
+                        className={`${inputClass} pr-10`}
+                      />
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[#aaa]">
+                        min
+                      </span>
                     </div>
                   </Field>
-                  <Field label="Entrega máx.">
+
+                  <Field label="Entrega max.">
                     <div className="relative">
-                      <input type="number" min={1} placeholder="50" value={form.etaMax} onChange={(e) => set('etaMax', Number(e.target.value))} className={`${inputClass} pr-10`} />
-                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[#aaa]">min</span>
+                      <input
+                        type="number"
+                        min={1}
+                        placeholder="50"
+                        value={form.etaMax}
+                        onChange={(event) => setField('etaMax', Number(event.target.value))}
+                        className={`${inputClass} pr-10`}
+                      />
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[#aaa]">
+                        min
+                      </span>
                     </div>
                   </Field>
+
                   <Field label="Retirada">
                     <div className="relative">
-                      <input type="number" min={1} placeholder="15" value={form.pickupEta} onChange={(e) => set('pickupEta', Number(e.target.value))} className={`${inputClass} pr-10`} />
-                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[#aaa]">min</span>
+                      <input
+                        type="number"
+                        min={1}
+                        placeholder="15"
+                        value={form.pickupEta}
+                        onChange={(event) => setField('pickupEta', Number(event.target.value))}
+                        className={`${inputClass} pr-10`}
+                      />
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[#aaa]">
+                        min
+                      </span>
                     </div>
                   </Field>
                 </div>
 
-                <p className="text-[12px] text-[#8b8b8b]">Esses valores podem ser alterados a qualquer momento após a aprovação.</p>
+                <p className="text-[12px] text-[#8b8b8b]">
+                  Esses valores podem ser alterados a qualquer momento apos a aprovacao.
+                </p>
               </div>
-            )}
+            ) : null}
 
-            {/* Navegação */}
+            {step === 5 ? (
+              <div className="rounded-[32px] bg-white p-8 shadow-sm animate-rise">
+                <div className="grid gap-8 xl:grid-cols-[1.05fr_0.95fr] xl:items-start">
+                  <div>
+                    <p className="text-[12px] font-semibold uppercase tracking-[0.18em] text-[#8b8b8b]">
+                      Contratacao de plano
+                    </p>
+                    <h2 className="mt-3 text-[36px] font-bold leading-tight text-[#1d1d1d]">
+                      Veja o plano disponivel
+                    </h2>
+                    <p className="mt-3 max-w-xl text-[15px] leading-7 text-[#666]">
+                      Montei uma primeira versao no estilo da plataforma, mas adaptada para o seu projeto. Depois voce
+                      ajusta textos, beneficios e detalhes finos do jeito que quiser.
+                    </p>
+
+                    <div className="mt-8 rounded-[28px] border-2 border-[#ea1d2c] bg-white p-6 shadow-[0_16px_40px_rgba(234,29,44,0.08)]">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#fff1f2] text-[#ea1d2c]">
+                            <ShieldCheck className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <p className="text-[26px] font-bold text-[#1d1d1d]">Basico</p>
+                            <p className="mt-1 text-[14px] text-[#686868]">Entrega feita pela loja</p>
+                          </div>
+                        </div>
+
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#ea1d2c] text-white">
+                          <Check className="h-4 w-4" />
+                        </div>
+                      </div>
+
+                      <div className="mt-8 space-y-6">
+                        <div>
+                          <p className="text-[34px] font-bold text-[#1d1d1d]">
+                            R$ 50
+                            <span className="text-[18px] font-semibold text-[#666]">/mes</span>
+                          </p>
+                          <p className="mt-1 text-[13px] font-semibold text-[#0f8a43]">
+                            Mensalidade enxuta para comecar a operar
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-[34px] font-bold text-[#1d1d1d]">
+                            5
+                            <span className="text-[18px] font-semibold text-[#666]">% por pedido</span>
+                          </p>
+                          <p className="mt-1 text-[13px] font-semibold text-[#0f8a43]">
+                            Comissao aplicada sobre os pedidos da plataforma
+                          </p>
+                        </div>
+
+                        <div className="rounded-2xl bg-[#f7fbf8] px-4 py-3 text-[13px] leading-6 text-[#276749]">
+                          Esse bloco e a base visual inicial do plano. Depois voce pode trocar regras, observacoes e
+                          condicoes comerciais sem problema.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="overflow-hidden rounded-[28px] border border-[#ececec]">
+                      {PLAN_FEATURES.map((feature, index) => (
+                        <div
+                          key={feature}
+                          className={`grid grid-cols-[1fr_74px] ${
+                            index !== PLAN_FEATURES.length - 1 ? 'border-b border-[#ececec]' : ''
+                          }`}
+                        >
+                          <div className="bg-[#fafafa] px-5 py-5 text-[14px] leading-6 text-[#4a4a4a]">
+                            {feature}
+                          </div>
+                          <div className="flex items-center justify-center bg-white text-[#0f8a43]">
+                            <Check className="h-6 w-6" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="rounded-[22px] border border-[#dff2e6] bg-[#effaf3] px-5 py-4 text-[13px] leading-6 text-[#276749]">
+                      A mensalidade fica em R$ 50 por mes e a comissao em 5% por pedido, exatamente como voce pediu
+                      para essa primeira versao.
+                    </div>
+
+                    <div className="rounded-[26px] border border-[#ededed] bg-white p-5">
+                      <p className="text-[14px] font-bold text-[#1d1d1d]">Plano escolhido</p>
+                      <div className="mt-3 flex items-center gap-3">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#fff1f2] text-[#ea1d2c]">
+                          <CircleDollarSign className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="text-[15px] font-semibold text-[#1d1d1d]">Basico</p>
+                          <p className="text-[13px] text-[#686868]">R$ 50 por mes e 5% por pedido</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
             <div className="mt-5 flex gap-3">
               <button
                 type="button"
-                onClick={() => step === 0 ? navigate('/') : setStep((s) => s - 1)}
+                onClick={() => (step === 0 ? navigate('/') : setStep((current) => current - 1))}
                 className="h-[52px] flex-1 rounded-2xl border border-[#d9d9d9] text-[14px] font-semibold text-[#303030] transition hover:bg-[#f5f5f5]"
               >
                 {step === 0 ? 'Voltar ao site' : 'Voltar'}
@@ -481,17 +783,31 @@ export function StoreRegisterPage() {
                   type="button"
                   onClick={() => void handleNext()}
                   disabled={step === 2 && cepLoading}
-                  className="h-[52px] flex-1 rounded-2xl bg-[#ea1d2c] text-[15px] font-bold text-white transition hover:brightness-95 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[15px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {step === 2 && cepLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>Próximo <ArrowRight className="h-4 w-4" /></>}
+                  {step === 2 && cepLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      Proximo
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
                 </button>
               ) : (
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="h-[52px] flex-1 rounded-2xl bg-[#ea1d2c] text-[15px] font-bold text-white transition hover:brightness-95 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[15px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {submitting ? <><Loader2 className="h-4 w-4 animate-spin" /> Cadastrando…</> : 'Cadastrar loja'}
+                  {submitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Finalizando...
+                    </>
+                  ) : (
+                    'Continuar'
+                  )}
                 </button>
               )}
             </div>
