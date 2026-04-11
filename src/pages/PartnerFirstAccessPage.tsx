@@ -578,12 +578,12 @@ export function PartnerFirstAccessPage() {
   )
 
   return (
-    <div className="flex min-h-dvh w-full items-center justify-center bg-[#f5f5f5] p-4">
-      {/* Fixed 1600×823 box centered on screen */}
-      <div className="flex w-full max-w-[1600px] overflow-hidden rounded-2xl bg-white shadow-lg" style={{ height: 823 }}>
+    <div className="flex min-h-dvh w-full items-center justify-center bg-[#f5f5f5]">
+      {/* 1600×823 box, centered */}
+      <div className="flex gap-4 p-4" style={{ width: 1600, height: 823 }}>
 
-        {/* Sidebar */}
-        <aside className="flex h-full w-[260px] shrink-0 flex-col border-r border-ink-100">
+        {/* Sidebar — igual panel-card do app */}
+        <aside className="panel-card flex h-full w-[260px] shrink-0 flex-col overflow-hidden">
           {/* Header */}
           <div className="border-b border-ink-100 px-5 pb-4 pt-5 shrink-0">
             <p className="font-display text-lg font-bold text-coral-500">oh! Delivery</p>
@@ -631,7 +631,7 @@ export function PartnerFirstAccessPage() {
         </aside>
 
         {/* Main content — scrollable */}
-        <div className="flex-1 flex flex-col overflow-y-auto bg-[#f5f5f5] p-6">
+        <div className="flex flex-1 flex-col overflow-y-auto">
           {renderCurrentStep()}
         </div>
 
