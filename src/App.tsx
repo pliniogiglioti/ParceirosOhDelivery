@@ -4,6 +4,7 @@ import { LoadingScreen } from '@/components/partner/LoadingScreen'
 import { usePartnerAuth } from '@/hooks/usePartnerAuth'
 import { usePartnerDashboard } from '@/hooks/usePartnerDashboard'
 import { PartnerFirstAccessPage } from '@/pages/PartnerFirstAccessPage'
+import { PartnerContractPage } from '@/pages/PartnerContractPage'
 import { PartnerCatalogPage } from '@/pages/app/PartnerCatalogPage'
 import { PartnerDeliveryAreasPage } from '@/pages/app/PartnerDeliveryAreasPage'
 import { PartnerFinancePage } from '@/pages/app/PartnerFinancePage'
@@ -101,12 +102,12 @@ function ProtectedLayoutRoute() {
     return <Navigate to="/lojas" replace />
   }
 
-  if (!data.store.firstAccess) {
-    return <Navigate to="/primeiro-acesso" replace />
+  if (!data.store.contract) {
+    return <Navigate to="/contrato" replace />
   }
 
-  if (!data.store.contract) {
-    return <Navigate to="/lojas" replace />
+  if (!data.store.firstAccess) {
+    return <Navigate to="/primeiro-acesso" replace />
   }
 
   return <PartnerLayout onSignOut={() => void auth.signOut()} />
@@ -124,13 +125,45 @@ function AppIndexRoute() {
     return <Navigate to="/lojas" replace />
   }
 
+  if (!data.store.contract) {
+    return <Navigate to="/contrato" replace />
+  }
+
   return data.store.firstAccess ? <PartnerOverviewPage /> : <Navigate to="/primeiro-acesso" replace />
+}
+
+function ContractRoute() {
+  const auth = usePartnerAuth()
+  const { data, loading } = usePartnerDashboard(auth.selectedStoreId)
+
+  if (auth.loading || loading) {
+    return <LoadingScreen />
+  }
+
+  if (!auth.user) {
+    return <Navigate to="/" state={{ from: '/contrato' }} replace />
+  }
+
+  if (!auth.selectedStoreId) {
+    return <Navigate to="/lojas" replace />
+  }
+
+  if (!data) {
+    return <Navigate to="/lojas" replace />
+  }
+
+  if (data.store.contract) {
+    return <Navigate to={data.store.firstAccess ? '/app' : '/primeiro-acesso'} replace />
+  }
+
+  return <PartnerContractPage data={data} />
 }
 
 function FirstAccessRoute() {
   const auth = usePartnerAuth()
+  const { data, loading } = usePartnerDashboard(auth.selectedStoreId)
 
-  if (auth.loading) {
+  if (auth.loading || loading) {
     return <LoadingScreen />
   }
 
@@ -140,6 +173,14 @@ function FirstAccessRoute() {
 
   if (!auth.selectedStoreId) {
     return <Navigate to="/lojas" replace />
+  }
+
+  if (!data) {
+    return <Navigate to="/lojas" replace />
+  }
+
+  if (!data.store.contract) {
+    return <Navigate to="/contrato" replace />
   }
 
   return <PartnerFirstAccessPage />
@@ -152,6 +193,7 @@ export function App() {
         <Route path="/" element={<LoginRoute />} />
         <Route path="/lojas" element={<StoreSelectionRoute />} />
         <Route path="/cadastro" element={<StoreRegisterRoute />} />
+        <Route path="/contrato" element={<ContractRoute />} />
         <Route path="/primeiro-acesso" element={<FirstAccessRoute />} />
         <Route path="/app" element={<ProtectedLayoutRoute />}>
           <Route index element={<AppIndexRoute />} />

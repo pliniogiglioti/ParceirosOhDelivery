@@ -28,7 +28,7 @@ export function PartnerTopbar({ data }: { data: PartnerDashboardData }) {
   function handleSelectStore(store: PartnerStoreCard) {
     if (store.registrationStatus !== 'aprovado') return
     selectStore(store.id)
-    navigate(!store.firstAccess ? '/primeiro-acesso' : store.contract ? '/app' : '/lojas')
+    navigate(!store.contract ? '/contrato' : !store.firstAccess ? '/primeiro-acesso' : '/app')
     setOpen(false)
   }
 

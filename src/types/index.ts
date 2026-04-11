@@ -28,6 +28,8 @@ export interface PartnerStore {
   id: string
   firstAccess: boolean
   contract: boolean
+  responsavelNome: string
+  responsavelCpf: string
   categoryId: string
   categoryName: string
   name: string
