@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { type UIEvent, useState } from 'react'
 import { FileSignature, Loader2, LogOut, ScrollText, ShieldCheck } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
@@ -224,6 +224,8 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
   const [signatureCpf, setSignatureCpf] = useState('')
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [hasReachedContractEnd, setHasReachedContractEnd] = useState(false)
+
   const storeAddress = [
     data.store.addressStreet,
     data.store.addressNumber,
@@ -234,8 +236,18 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
   ]
     .filter(Boolean)
     .join(', ')
+
   const storeDocument = 'informado no cadastro'
   const representativeDocument = 'informado no cadastro'
+
+  function handleContractScroll(event: UIEvent<HTMLDivElement>) {
+    const target = event.currentTarget
+    const reachedBottom = target.scrollTop + target.clientHeight >= target.scrollHeight - 8
+
+    if (reachedBottom) {
+      setHasReachedContractEnd(true)
+    }
+  }
 
   async function handleSignContract() {
     if (!acceptTerms) {
@@ -279,8 +291,8 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
         </div>
       </header>
 
-      <main className="mx-auto flex min-h-[calc(100dvh-81px)] max-w-6xl items-center px-4 py-10 sm:px-6">
-        <div className="grid w-full gap-6 lg:grid-cols-[1.55fr_0.78fr]">
+      <main className="mx-auto flex min-h-[calc(100dvh-81px)] max-w-6xl items-start px-4 py-10 sm:px-6">
+        <div className="w-full space-y-6">
           <section className="rounded-[28px] border border-[#ececec] bg-white p-7 shadow-sm sm:p-8">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff1f2] text-[#ea1d2c]">
@@ -309,36 +321,35 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
 
               <div className="rounded-3xl border border-[#ececec] p-6 sm:p-8">
                 <p className="font-bold text-[#1d1d1d]">Contrato completo</p>
-                <div className="mt-4 max-h-[68dvh] space-y-6 overflow-y-auto pr-2 text-[13px] leading-6 text-[#555]">
+                <div
+                  onScroll={handleContractScroll}
+                  className="mt-4 max-h-[68dvh] space-y-6 overflow-y-auto pr-2 text-[13px] leading-6 text-[#555]"
+                >
                   <div className="space-y-4">
                     <p className="text-[15px] font-bold uppercase tracking-[0.04em] text-[#1d1d1d]">
                       CONTRATO DE PRESTACAO DE SERVICOS, LICENCIAMENTO DE USO DE PLATAFORMA E INTERMEDIACAO DIGITAL
                     </p>
                     <p>Pelo presente instrumento particular, de um lado:</p>
                     <p>
-                      <span className="font-semibold text-[#1d1d1d]">OH DELIVERY</span>, nome empresarial
-                      {' '}
+                      <span className="font-semibold text-[#1d1d1d]">OH DELIVERY</span>, nome empresarial{' '}
                       <span className="font-semibold text-[#1d1d1d]">62.622.102 PLINIO HENRIQUE NOVAES GIGLIOTI</span>,
-                      inscrita no CNPJ n°
-                      {' '}
-                      <span className="font-semibold text-[#1d1d1d]">62.622.102/0001-04</span>, com sede na Rua Engenheiro Hans Klots, 417, 11A, Centro, Osvaldo Cruz/SP, CEP 17700-970, telefone (18) 9751-1381, e-mail plinio.giglioti@gmail.com, doravante denominada simplesmente CONTRATADA;
+                      inscrita no CNPJ n. <span className="font-semibold text-[#1d1d1d]">62.622.102/0001-04</span>,
+                      com sede na Rua Engenheiro Hans Klots, 417, 11A, Centro, Osvaldo Cruz/SP, CEP 17700-970,
+                      telefone (18) 9751-1381, e-mail plinio.giglioti@gmail.com, doravante denominada simplesmente
+                      CONTRATADA;
                     </p>
                     <p>e, de outro lado:</p>
                     <p>
                       <span className="font-semibold text-[#1d1d1d]">{data.store.name || '[NOME DO ESTABELECIMENTO PARCEIRO]'}</span>,
-                      inscrito(a) no CNPJ/CPF n°
-                      {' '}
-                      <span className="font-semibold text-[#1d1d1d]">{storeDocument}</span>, com sede/endereco em
-                      {' '}
-                      <span className="font-semibold text-[#1d1d1d]">{storeAddress || 'endereco informado no cadastro'}</span>, telefone
-                      {' '}
-                      <span className="font-semibold text-[#1d1d1d]">[●]</span>, e-mail
-                      {' '}
-                      <span className="font-semibold text-[#1d1d1d]">{data.profile.email || '[●]'}</span>, neste ato representado(a) por
-                      {' '}
-                      <span className="font-semibold text-[#1d1d1d]">{data.store.responsavelNome || '[NOME DO REPRESENTANTE]'}</span>, CPF n°
-                      {' '}
-                      <span className="font-semibold text-[#1d1d1d]">{representativeDocument}</span>, doravante denominado(a) simplesmente CONTRATANTE;
+                      inscrito(a) no CNPJ/CPF n. <span className="font-semibold text-[#1d1d1d]">{storeDocument}</span>,
+                      com sede/endereco em{' '}
+                      <span className="font-semibold text-[#1d1d1d]">{storeAddress || 'endereco informado no cadastro'}</span>,
+                      telefone <span className="font-semibold text-[#1d1d1d]">[informado no cadastro]</span>, e-mail{' '}
+                      <span className="font-semibold text-[#1d1d1d]">{data.profile.email || '[informado no cadastro]'}</span>,
+                      neste ato representado(a) por{' '}
+                      <span className="font-semibold text-[#1d1d1d]">{data.store.responsavelNome || '[NOME DO REPRESENTANTE]'}</span>,
+                      CPF n. <span className="font-semibold text-[#1d1d1d]">{representativeDocument}</span>, doravante
+                      denominado(a) simplesmente CONTRATANTE;
                     </p>
                     <p>tem entre si justo e contratado o seguinte:</p>
                   </div>
@@ -366,7 +377,7 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
             </div>
           </section>
 
-          <aside className="rounded-[28px] border border-[#ececec] bg-white p-7 shadow-sm sm:p-8">
+          <aside className="ml-auto w-full max-w-[420px] rounded-[28px] border border-[#ececec] bg-white p-7 shadow-sm sm:p-8">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#f0fdf4] text-[#16a34a]">
               <ShieldCheck className="h-6 w-6" />
             </div>
@@ -375,7 +386,7 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
               Confirmar assinatura
             </h2>
             <p className="mt-2 text-[14px] leading-6 text-[#686868]">
-              Digite o CPF do responsavel para registrar a assinatura. A validacao final sera conferida no painel administrativo.
+              Role o contrato ate o final para liberar a assinatura. Depois disso, digite o CPF do responsavel para registrar o aceite.
             </p>
 
             <label className="mt-6 block">
@@ -411,7 +422,7 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
             <button
               type="button"
               onClick={() => void handleSignContract()}
-              disabled={submitting}
+              disabled={submitting || !hasReachedContractEnd}
               className="mt-6 flex h-[50px] w-full items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[14px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting ? (
@@ -419,6 +430,8 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Assinando...
                 </>
+              ) : !hasReachedContractEnd ? (
+                'Role o contrato ate o final'
               ) : (
                 'Assinar contrato'
               )}
