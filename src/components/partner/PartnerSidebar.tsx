@@ -197,7 +197,8 @@ export function PartnerSidebar({
               <img
                 src="/logo.png"
                 alt="Oh Delivery"
-                className={cn('w-auto object-contain', collapsed ? 'h-9' : 'h-10 pl-3')}
+                style={collapsed ? undefined : { width: '155px', height: 'auto' }}
+                className={cn('object-contain', collapsed ? 'h-9 w-auto' : 'pl-3')}
               />
               {!collapsed ? <p className="pl-3 text-sm text-ink-500">{data.store.name}</p> : null}
             </div>
