@@ -24,6 +24,8 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
     paymentMethodsByStoreId,
     couriersByStoreId,
     logisticsByStoreId,
+    categoriesByStoreId,
+    productsByStoreId,
     setStoreOpen,
     hydrateStore,
     hydrateStoreOpen,
@@ -32,6 +34,8 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
     hydratePaymentMethods,
     hydrateCouriers,
     hydrateLogistics,
+    hydrateCategories,
+    hydrateProducts,
   } = usePartnerDraftStore()
 
   useEffect(() => {
@@ -43,6 +47,8 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
       hydratePaymentMethods(data.store.id, data.paymentMethods)
       hydrateCouriers(data.store.id, data.couriers)
       hydrateLogistics(data.store.id, data.logistics)
+      hydrateCategories(data.store.id, data.categories)
+      hydrateProducts(data.store.id, data.products)
     }
   }, [
     data?.store,
@@ -53,6 +59,8 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
     data?.paymentMethods,
     data?.couriers,
     data?.logistics,
+    data?.categories,
+    data?.products,
     hydrateOrders,
     hydratePaymentMethods,
     hydrateCouriers,
@@ -60,6 +68,8 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
     hydrateStore,
     hydrateStoreHours,
     hydrateStoreOpen,
+    hydrateCategories,
+    hydrateProducts,
   ])
 
   useOrderNotifications(data?.store.id ?? '')
@@ -87,6 +97,8 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
   const draftPaymentMethods = paymentMethodsByStoreId[data.store.id] ?? data.paymentMethods
   const draftCouriers = couriersByStoreId[data.store.id] ?? data.couriers
   const draftLogistics = logisticsByStoreId[data.store.id] ?? data.logistics
+  const draftCategories = categoriesByStoreId[data.store.id] ?? data.categories
+  const draftProducts = productsByStoreId[data.store.id] ?? data.products
   const today = new Date()
   const validOrders = draftOrders.filter((order) => order.status !== 'cancelado')
   const todayOrders = validOrders.filter((order) => isSameUtcDate(order.createdAt, today))
@@ -106,6 +118,8 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
     paymentMethods: draftPaymentMethods,
     couriers: draftCouriers,
     logistics: draftLogistics,
+    categories: draftCategories,
+    products: draftProducts,
     metrics: {
       ...data.metrics,
       grossRevenue,

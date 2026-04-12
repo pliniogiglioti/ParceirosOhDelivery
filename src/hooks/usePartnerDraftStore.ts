@@ -2,9 +2,11 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type {
   LogisticsSnapshot,
+  PartnerCategory,
   PartnerHour,
   PartnerOrder,
   PartnerOrderSettings,
+  PartnerProduct,
   PartnerStore,
   PaymentMethodItem,
   StoreCourier,
@@ -19,6 +21,9 @@ interface PartnerDraftStoreState {
   paymentMethodsByStoreId: Record<string, PaymentMethodItem[]>
   couriersByStoreId: Record<string, StoreCourier[]>
   logisticsByStoreId: Record<string, LogisticsSnapshot>
+  // In-session only — not persisted to localStorage
+  categoriesByStoreId: Record<string, PartnerCategory[]>
+  productsByStoreId: Record<string, PartnerProduct[]>
   setStoreOpen: (value: boolean) => void
   hydrateStoreOpen: (value: boolean) => void
   hydrateStore: (store: PartnerStore) => void
@@ -36,6 +41,10 @@ interface PartnerDraftStoreState {
   updateCouriers: (storeId: string, couriers: StoreCourier[]) => void
   hydrateLogistics: (storeId: string, logistics: LogisticsSnapshot) => void
   updateLogistics: (storeId: string, patch: Partial<LogisticsSnapshot>) => void
+  hydrateCategories: (storeId: string, categories: PartnerCategory[]) => void
+  addCategory: (storeId: string, category: PartnerCategory) => void
+  hydrateProducts: (storeId: string, products: PartnerProduct[]) => void
+  addProduct: (storeId: string, product: PartnerProduct) => void
 }
 
 export const usePartnerDraftStore = create<PartnerDraftStoreState>()(
@@ -49,6 +58,8 @@ export const usePartnerDraftStore = create<PartnerDraftStoreState>()(
       paymentMethodsByStoreId: {},
       couriersByStoreId: {},
       logisticsByStoreId: {},
+      categoriesByStoreId: {},
+      productsByStoreId: {},
       setStoreOpen: (storeOpen) => set({ storeOpen }),
       hydrateStoreOpen: (value) => {
         if (get().storeOpen == null) {
@@ -214,6 +225,30 @@ export const usePartnerDraftStore = create<PartnerDraftStoreState>()(
               ...patch,
             } as LogisticsSnapshot,
           },
+        }))
+      },
+      hydrateCategories: (storeId, categories) => {
+        if (get().categoriesByStoreId[storeId]) return
+        set((state) => ({
+          categoriesByStoreId: { ...state.categoriesByStoreId, [storeId]: categories },
+        }))
+      },
+      addCategory: (storeId, category) => {
+        const current = get().categoriesByStoreId[storeId] ?? []
+        set((state) => ({
+          categoriesByStoreId: { ...state.categoriesByStoreId, [storeId]: [...current, category] },
+        }))
+      },
+      hydrateProducts: (storeId, products) => {
+        if (get().productsByStoreId[storeId]) return
+        set((state) => ({
+          productsByStoreId: { ...state.productsByStoreId, [storeId]: products },
+        }))
+      },
+      addProduct: (storeId, product) => {
+        const current = get().productsByStoreId[storeId] ?? []
+        set((state) => ({
+          productsByStoreId: { ...state.productsByStoreId, [storeId]: [...current, product] },
         }))
       },
     }),

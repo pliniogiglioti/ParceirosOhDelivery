@@ -21,6 +21,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import toast from 'react-hot-toast'
 import { usePartnerPageDataSafe } from '@/hooks/usePartnerPageData'
+import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
 import type { PartnerDashboardData } from '@/types'
 import { cn, formatCurrency } from '@/lib/utils'
 import { AnimatedModal } from '@/components/partner/AnimatedModal'
@@ -205,6 +206,7 @@ export function PartnerCatalogPage({
 } = {}) {
   const pageContext = usePartnerPageDataSafe()
   const data = externalData ?? pageContext?.data
+  const { addCategory: draftAddCategory, addProduct: draftAddProduct } = usePartnerDraftStore()
   if (!data) return null
   const [catalogCategories, setCatalogCategories] = useState<PartnerCategory[]>(data.categories)
   const [selectedCategoryId, setSelectedCategoryId] = useState('all')
@@ -468,6 +470,7 @@ const normalizedSearch = search.trim().toLowerCase()
         template: selectedTemplate.id,
       })
 
+      draftAddCategory(data!.store.id, saved)
       setCatalogCategories((current) => [...current, saved])
       setCategoryOrderIds((current) => [...current, saved.id])
       setExpandedByCategoryId((current) => ({ ...current, [saved.id]: false }))
@@ -609,6 +612,7 @@ const normalizedSearch = search.trim().toLowerCase()
         active: industrializedActive,
         featured: industrializedFeatured,
       })
+      draftAddProduct(data!.store.id, saved)
       setCatalogProducts((current) => [...current, saved])
       setProductKindModalOpen(false)
       toast.success(`${industrializedName.trim()} adicionado ao cardapio.`)
