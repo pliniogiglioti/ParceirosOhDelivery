@@ -149,9 +149,6 @@ function LoggedInCard({
               Voce ja esta conectado como
             </p>
           </div>
-          <div className="rounded-full bg-[#fff1ee] px-3 py-1 text-[12px] font-bold uppercase tracking-[0.16em] text-[#ff3600]">
-            Parceiro
-          </div>
         </div>
 
         <div className="mt-5 flex items-center gap-3 rounded-xl border border-[#e8e8e8] bg-[#f9f9f9] px-4 py-3">
@@ -387,80 +384,26 @@ export function HomePage({
         }}
       />
 
-      <div className="relative flex min-h-dvh flex-col px-6 py-8 sm:px-10 lg:px-14">
-        <div className="flex min-h-[calc(100dvh-4rem)] items-center justify-between gap-10">
-          <section className="max-w-[460px] pt-6">
-            <h1 className="text-[2.45rem] font-bold leading-[1.06] tracking-[-0.04em] text-white sm:text-[3.45rem]">
-              Voce faz tudo pelo
-              <br />
-              seu negocio.
-              <br />
-              O iFood tambem!
-            </h1>
-          </section>
-
-          <section className="hidden w-full max-w-[462px] lg:block">
-            {loading ? (
-              <AuthSkeletonCard />
-            ) : loggedInName && loggedInEmail && onEnterPanel ? (
-              <LoggedInCard name={loggedInName} email={loggedInEmail} onEnterPanel={onEnterPanel} onSignOut={onSignOut} />
-            ) : (
-              <AuthCard
-                codeSent={codeSent}
-                sending={sending}
-                verifying={verifying}
-                email={email}
-                code={filledCode}
-                onEmailChange={setEmail}
-                onCodeChange={setCode}
-                onSend={handleSend}
-                onVerify={handleVerify}
-                onResend={handleResend}
-              />
-            )}
-          </section>
-        </div>
-
-        <div className="pointer-events-none absolute bottom-8 left-6 sm:left-10 lg:left-14">
-          <div className="flex overflow-hidden rounded-xl shadow-[0_12px_30px_rgba(0,0,0,0.28)]">
-            <div className="flex h-[72px] w-[88px] items-center justify-center bg-white">
-              <span className="text-[1.9rem] font-black italic tracking-[-0.08em] text-[#ff3600]">ifood</span>
-            </div>
-            <div className="flex h-[72px] w-[136px] items-center bg-[#cc2b00] px-4 text-left">
-              <p className="text-[12px] font-semibold leading-[1.15] text-white">
-                Faz tudo
-                <br />
-                para o seu
-                <br />
-                negocio
-                <br />
-                crescer
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <section className="mt-auto block pt-10 lg:hidden">
-          <div className="mx-auto w-full max-w-[462px]">
-            {loading ? (
-              <AuthSkeletonCard />
-            ) : loggedInName && loggedInEmail && onEnterPanel ? (
-              <LoggedInCard name={loggedInName} email={loggedInEmail} onEnterPanel={onEnterPanel} onSignOut={onSignOut} />
-            ) : (
-              <AuthCard
-                codeSent={codeSent}
-                sending={sending}
-                verifying={verifying}
-                email={email}
-                code={filledCode}
-                onEmailChange={setEmail}
-                onCodeChange={setCode}
-                onSend={handleSend}
-                onVerify={handleVerify}
-                onResend={handleResend}
-              />
-            )}
-          </div>
+      <div className="relative flex min-h-dvh items-center justify-center px-6 py-8 sm:px-10 lg:px-14">
+        <section className="w-full max-w-[462px]">
+          {loading ? (
+            <AuthSkeletonCard />
+          ) : loggedInName && loggedInEmail && onEnterPanel ? (
+            <LoggedInCard name={loggedInName} email={loggedInEmail} onEnterPanel={onEnterPanel} onSignOut={onSignOut} />
+          ) : (
+            <AuthCard
+              codeSent={codeSent}
+              sending={sending}
+              verifying={verifying}
+              email={email}
+              code={filledCode}
+              onEmailChange={setEmail}
+              onCodeChange={setCode}
+              onSend={handleSend}
+              onVerify={handleVerify}
+              onResend={handleResend}
+            />
+          )}
         </section>
       </div>
     </div>
