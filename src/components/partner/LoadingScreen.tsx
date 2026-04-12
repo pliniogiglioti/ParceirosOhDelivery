@@ -1,4 +1,15 @@
+import { useEffect, useState } from 'react'
+
 export function LoadingScreen() {
+  const [progress, setProgress] = useState(0)
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => {
+      setProgress(100)
+    })
+    return () => cancelAnimationFrame(raf)
+  }, [])
+
   return (
     <div className="flex min-h-dvh items-center justify-center px-4">
       <div className="panel-card max-w-md p-8 text-center">
@@ -26,7 +37,13 @@ export function LoadingScreen() {
         </p>
 
         <div className="mt-6 overflow-hidden rounded-full bg-[#f4d7da]">
-          <div className="h-2 w-2/3 animate-pulse rounded-full bg-coral-500" />
+          <div
+            className="h-2 rounded-full bg-coral-500"
+            style={{
+              width: `${progress}%`,
+              transition: 'width 2000ms linear',
+            }}
+          />
         </div>
 
         <div className="mt-4 flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">

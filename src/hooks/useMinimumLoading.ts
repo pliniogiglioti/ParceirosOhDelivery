@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-export function useMinimumLoading(loading: boolean, minimumMs = 3000) {
+export function useMinimumLoading(loading: boolean, minimumMs = 2000) {
   const [visible, setVisible] = useState(loading)
   const startedAtRef = useRef<number | null>(loading ? Date.now() : null)
 
