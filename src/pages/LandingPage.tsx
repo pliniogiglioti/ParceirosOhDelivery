@@ -84,8 +84,8 @@ const FEATURES = [
 ]
 
 const STATS = [
+  { value: '5%', label: 'de taxa por pedido' },
   { value: '+10 mil', label: 'lojas parceiras' },
-  { value: '98%', label: 'de satisfação' },
   { value: '24h', label: 'para ativar sua loja' },
 ]
 
@@ -109,6 +109,9 @@ export function LandingPage() {
             </button>
             <button type="button" onClick={() => scrollTo('beneficios')} className="transition hover:text-[#ea1d2c]">
               Benefícios
+            </button>
+            <button type="button" onClick={() => scrollTo('taxa')} className="transition hover:text-[#ea1d2c]">
+              Taxa
             </button>
             <button type="button" onClick={() => scrollTo('comece-agora')} className="transition hover:text-[#ea1d2c]">
               Comece agora
@@ -230,6 +233,81 @@ export function LandingPage() {
                 <p className="text-[14px] leading-[1.7] text-[#666]">{description}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Taxa de repasse */}
+      <section id="taxa" className="py-24">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="flex flex-col items-center gap-12 lg:flex-row lg:items-start lg:gap-20">
+            {/* Texto */}
+            <div className="flex-1">
+              <span className="mb-3 inline-block text-[12px] font-bold uppercase tracking-[0.16em] text-[#ea1d2c]">
+                Transparência total
+              </span>
+              <h2 className="mb-5 text-[2rem] font-bold leading-[1.1] tracking-[-0.03em] sm:text-[2.4rem]">
+                Só <span className="text-[#ea1d2c]">5%</span> de taxa.<br />Sem surpresas.
+              </h2>
+              <p className="max-w-[46ch] text-[16px] leading-[1.75] text-[#666]">
+                Cobramos apenas <strong className="text-[#1d1d1d]">5% sobre o valor de cada pedido</strong> pago pelo app. Sem mensalidade, sem taxa de adesão, sem letras miúdas.
+              </p>
+              <p className="mt-4 max-w-[46ch] text-[16px] leading-[1.75] text-[#666]">
+                Os repasses são realizados de forma automática e você acompanha tudo em tempo real pelo painel financeiro.
+              </p>
+
+              <div className="mt-8 flex flex-col gap-3">
+                {[
+                  'Apenas pedidos com checkout no app',
+                  'Sem cobrança sobre pedidos cancelados',
+                  'Extrato completo de cada repasse',
+                  'Previsão do próximo depósito no painel',
+                ].map((item) => (
+                  <div key={item} className="flex items-center gap-3">
+                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#ea1d2c]">
+                      <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <span className="text-[15px] text-[#444]">{item}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Card destaque */}
+            <div className="w-full max-w-[340px] shrink-0">
+              <div className="overflow-hidden rounded-3xl border border-[#f0f0f0] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.08)]">
+                <div className="bg-[#ea1d2c] px-8 py-8 text-center text-white">
+                  <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-white/70">Taxa por pedido</p>
+                  <p className="mt-2 text-[5rem] font-black leading-none tracking-[-0.04em]">5%</p>
+                  <p className="mt-2 text-[14px] text-white/80">somente checkout no app</p>
+                </div>
+                <div className="px-8 py-7">
+                  <ul className="space-y-3 text-[14px] text-[#555]">
+                    <li className="flex items-center gap-2">
+                      <span className="text-[#ea1d2c]">✓</span> Sem mensalidade
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-[#ea1d2c]">✓</span> Sem taxa de adesão
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-[#ea1d2c]">✓</span> Repasse automático
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="text-[#ea1d2c]">✓</span> Extrato em tempo real
+                    </li>
+                  </ul>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/cadastro')}
+                    className="mt-7 flex h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[#ea1d2c] text-[15px] font-bold text-white transition hover:brightness-95"
+                  >
+                    Começar agora <ChevronRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
