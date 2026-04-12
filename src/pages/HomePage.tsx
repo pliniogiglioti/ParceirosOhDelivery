@@ -3,8 +3,6 @@ import { useEffect, useRef, useState } from 'react'
 import { Mail } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
-import { LoadingScreen } from '@/components/partner/LoadingScreen'
-import { useMinimumLoading } from '@/hooks/useMinimumLoading'
 
 type HomePageProps = {
   loading: boolean
@@ -192,6 +190,36 @@ function LoggedInCard({
   )
 }
 
+function AuthSkeletonCard() {
+  return (
+    <div className="overflow-hidden rounded-xl bg-white shadow-[0_18px_50px_rgba(0,0,0,0.32)]">
+      <div className="animate-pulse px-8 pb-7 pt-8">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-3">
+            <div className="h-6 w-44 rounded-full bg-[#ededed]" />
+            <div className="h-4 w-36 rounded-full bg-[#f2f2f2]" />
+          </div>
+          <div className="h-7 w-24 rounded-full bg-[#fff1f2]" />
+        </div>
+
+        <div className="mt-5 flex items-center gap-3 rounded-xl border border-[#e8e8e8] bg-[#f9f9f9] px-4 py-3">
+          <div className="h-9 w-9 shrink-0 rounded-full bg-[#f0d6d9]" />
+          <div className="min-w-0 flex-1 space-y-2">
+            <div className="h-4 w-32 rounded-full bg-[#e6e6e6]" />
+            <div className="h-3 w-44 rounded-full bg-[#efefef]" />
+          </div>
+        </div>
+
+        <div className="mt-5 h-[50px] w-full rounded-xl bg-[#f1c3c8]" />
+      </div>
+
+      <div className="border-t border-[#ececec] px-6 py-5">
+        <div className="mx-auto h-4 w-40 animate-pulse rounded-full bg-[#efefef]" />
+      </div>
+    </div>
+  )
+}
+
 function AuthCard({
   codeSent,
   sending,
@@ -311,7 +339,6 @@ export function HomePage({
 }: HomePageProps) {
   const [email, setEmail] = useState(pendingEmail)
   const [code, setCode] = useState('')
-  const showLoading = useMinimumLoading(loading)
 
   useEffect(() => {
     if (pendingEmail) {
@@ -350,10 +377,6 @@ export function HomePage({
     await onSendCode(email)
   }
 
-  if (showLoading) {
-    return <LoadingScreen />
-  }
-
   return (
     <div className="relative min-h-dvh overflow-hidden bg-[#181310]">
       <div
@@ -377,7 +400,9 @@ export function HomePage({
           </section>
 
           <section className="hidden w-full max-w-[462px] lg:block">
-            {loggedInName && loggedInEmail && onEnterPanel ? (
+            {loading ? (
+              <AuthSkeletonCard />
+            ) : loggedInName && loggedInEmail && onEnterPanel ? (
               <LoggedInCard name={loggedInName} email={loggedInEmail} onEnterPanel={onEnterPanel} onSignOut={onSignOut} />
             ) : (
               <AuthCard
@@ -417,7 +442,9 @@ export function HomePage({
 
         <section className="mt-auto block pt-10 lg:hidden">
           <div className="mx-auto w-full max-w-[462px]">
-            {loggedInName && loggedInEmail && onEnterPanel ? (
+            {loading ? (
+              <AuthSkeletonCard />
+            ) : loggedInName && loggedInEmail && onEnterPanel ? (
               <LoggedInCard name={loggedInName} email={loggedInEmail} onEnterPanel={onEnterPanel} onSignOut={onSignOut} />
             ) : (
               <AuthCard

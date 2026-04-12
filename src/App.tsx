@@ -31,11 +31,6 @@ function LoginRoute() {
   const auth = usePartnerAuth()
   const location = useLocation()
   const navigate = useNavigate()
-  const showLoading = useMinimumLoading(auth.loading)
-
-  if (showLoading) {
-    return <LoadingScreen />
-  }
 
   const from = (location.state as { from?: string } | null)?.from
 
