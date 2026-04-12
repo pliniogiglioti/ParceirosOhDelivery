@@ -34,6 +34,7 @@ function LoginRoute() {
   const navigate = useNavigate()
 
   const from = (location.state as { from?: string } | null)?.from
+  const targetAfterLogin = from === '/cadastro' ? '/lojas' : from ?? '/lojas'
 
   return (
     <HomePage
@@ -46,7 +47,7 @@ function LoginRoute() {
       loggedInEmail={auth.user?.email}
       onSendCode={auth.sendCode}
       onVerifyCode={auth.verifyCode}
-      onEnterPanel={() => navigate(from ?? '/lojas')}
+      onEnterPanel={() => navigate(targetAfterLogin)}
       onSignOut={() => void auth.signOut()}
     />
   )

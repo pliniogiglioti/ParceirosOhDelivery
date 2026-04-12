@@ -110,7 +110,7 @@ function RegisterLink({ label = 'Cadastre sua loja', to = '/cadastro' }: { label
   function handleClick() {
     if (to === '/cadastro') {
       toast('Entre com o email para cadastrar sua loja.')
-      navigate('/login', { state: { from: '/cadastro' } })
+      navigate('/login')
       return
     }
 

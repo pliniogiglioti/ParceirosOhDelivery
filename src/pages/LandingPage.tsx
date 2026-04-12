@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   LayoutGrid,
@@ -124,15 +125,57 @@ const FEATURES = [
 
 const STATS = [
   { value: '5%', label: 'de taxa por pedido' },
-  { value: '+10 mil', label: 'lojas parceiras' },
-  { value: '24h', label: 'para ativar sua loja' },
+  { value: 'Painel', label: 'com controle da sua operacao' },
+  { value: 'Suporte', label: 'para acompanhar sua loja' },
 ]
+
+const HERO_AUDIENCES = [
+  'restaurante',
+  'sorveteria',
+  'hamburgueria',
+  'pizzaria',
+  'cafeteria',
+  'padaria',
+  'lanchonete',
+  'doceria',
+  'pastelaria',
+  'rotisseria',
+]
+
+function RotatingAudienceBadge() {
+  const [audienceIndex, setAudienceIndex] = useState(0)
+
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setAudienceIndex((current) => (current + 1) % HERO_AUDIENCES.length)
+    }, 2000)
+
+    return () => window.clearInterval(interval)
+  }, [])
+
+  const audience = HERO_AUDIENCES[audienceIndex]
+
+  return (
+    <span className="hero-rotating-badge mb-5 inline-flex flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-full px-4 py-2 text-[12px] font-bold uppercase tracking-[0.16em] text-[#ff3600]">
+      <span className="text-[#ff3600]/70">Para donos de</span>
+      <span className="hero-rotating-word-shell text-left">
+        <span key={audience} className="hero-rotating-word inline-block text-[#ff3600]">
+          {audience}
+        </span>
+      </span>
+    </span>
+  )
+}
 
 export function LandingPage() {
   const navigate = useNavigate()
 
   function scrollTo(id: string) {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  function goToLogin() {
+    navigate('/login')
   }
 
   return (
@@ -167,7 +210,7 @@ export function LandingPage() {
             </button>
             <button
               type="button"
-              onClick={() => navigate('/cadastro')}
+              onClick={goToLogin}
               className="h-[38px] rounded-xl bg-[#ff3600] px-5 text-[14px] font-bold text-white transition hover:brightness-95"
             >
               Seja parceiro
@@ -179,9 +222,7 @@ export function LandingPage() {
       {/* Hero */}
       <section className="border-b border-[#f0f0f0] bg-[#fafafa] py-24">
         <div className="mx-auto max-w-6xl px-6 text-center">
-          <span className="mb-5 inline-block rounded-full bg-[#fff1ee] px-4 py-1.5 text-[12px] font-bold uppercase tracking-[0.16em] text-[#ff3600]">
-            Para donos de restaurante
-          </span>
+          <RotatingAudienceBadge />
           <h1 className="mx-auto max-w-[18ch] text-[2.6rem] font-bold leading-[1.08] tracking-[-0.035em] sm:text-[3.6rem]">
             Venda mais. Gerencie melhor. Cresça de verdade.
           </h1>
@@ -192,7 +233,7 @@ export function LandingPage() {
           <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
             <button
               type="button"
-              onClick={() => navigate('/cadastro')}
+              onClick={goToLogin}
               className="flex h-[52px] items-center gap-2 rounded-xl bg-[#ff3600] px-8 text-[15px] font-bold text-white transition hover:brightness-95"
             >
               Cadastrar minha loja <ChevronRight className="h-4 w-4" />
@@ -339,7 +380,7 @@ export function LandingPage() {
                   </ul>
                   <button
                     type="button"
-                    onClick={() => navigate('/cadastro')}
+                    onClick={goToLogin}
                     className="mt-7 flex h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[#ff3600] text-[15px] font-bold text-white transition hover:brightness-95"
                   >
                     Começar agora <ChevronRight className="h-4 w-4" />
@@ -364,7 +405,7 @@ export function LandingPage() {
             <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
               <button
                 type="button"
-                onClick={() => navigate('/cadastro')}
+                onClick={goToLogin}
                 className="flex h-[52px] items-center gap-2 rounded-xl bg-white px-8 text-[15px] font-bold text-[#ff3600] transition hover:brightness-95"
               >
                 Cadastrar minha loja <ChevronRight className="h-4 w-4" />
@@ -414,7 +455,7 @@ export function LandingPage() {
                 <li><button type="button" onClick={() => scrollTo('como-funciona')} className="transition hover:text-[#ff3600]">Como funciona</button></li>
                 <li><button type="button" onClick={() => scrollTo('beneficios')} className="transition hover:text-[#ff3600]">Benefícios</button></li>
                 <li><button type="button" onClick={() => scrollTo('taxa')} className="transition hover:text-[#ff3600]">Taxa e repasse</button></li>
-                <li><button type="button" onClick={() => navigate('/cadastro')} className="transition hover:text-[#ff3600]">Cadastrar minha loja</button></li>
+                <li><button type="button" onClick={goToLogin} className="transition hover:text-[#ff3600]">Cadastrar minha loja</button></li>
               </ul>
             </div>
 
@@ -423,7 +464,7 @@ export function LandingPage() {
               <p className="mb-4 text-[13px] font-bold uppercase tracking-[0.1em] text-[#333]">Acesso</p>
               <ul className="space-y-3 text-[14px] text-[#666]">
                 <li><button type="button" onClick={() => navigate('/login')} className="transition hover:text-[#ff3600]">Entrar no painel</button></li>
-                <li><button type="button" onClick={() => navigate('/cadastro')} className="transition hover:text-[#ff3600]">Seja parceiro</button></li>
+                <li><button type="button" onClick={goToLogin} className="transition hover:text-[#ff3600]">Seja parceiro</button></li>
               </ul>
             </div>
 
