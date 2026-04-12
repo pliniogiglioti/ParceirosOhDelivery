@@ -98,15 +98,16 @@ export function PartnerTopbar({ data }: { data: PartnerDashboardData }) {
 
       {/* Actions */}
       <div className="flex items-center gap-1">
-        <button
-          type="button"
-          onClick={() => navigate('/app/suporte')}
+        <a
+          href="/ajuda"
+          target="_blank"
+          rel="noopener noreferrer"
           className="relative inline-flex h-9 w-9 items-center justify-center rounded-2xl text-ink-600 transition hover:bg-ink-50 hover:text-ink-900"
           aria-label="Ajuda"
-          title="Ajuda"
+          title="Central de Ajuda"
         >
           <HelpCircle className="h-5 w-5" />
-        </button>
+        </a>
 
         <button
           type="button"

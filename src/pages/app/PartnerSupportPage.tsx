@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle2, ChevronRight, Clock, Headphones, HelpCircle, MessageCircle, Plus, X } from 'lucide-react'
+import { AlertCircle, BookOpen, CheckCircle2, ChevronRight, Clock, ExternalLink, Headphones, HelpCircle, MessageCircle, Plus, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { cn } from '@/lib/utils'
@@ -63,6 +63,7 @@ function NewTicketModal({
   onSubmit: (title: string, category: TicketCategory, description: string) => Promise<void>
   submitting: boolean
 }) {
+  const [step, setStep] = useState<'confirm' | 'form'>('confirm')
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState<TicketCategory>('outro')
   const [description, setDescription] = useState('')
@@ -88,68 +89,103 @@ function NewTicketModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold text-ink-700">Categoria</label>
-            <div className="flex flex-wrap gap-2">
-              {CATEGORIES.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => setCategory(c.id)}
-                  className={cn(
-                    'rounded-2xl border px-3 py-1.5 text-xs font-semibold transition',
-                    category === c.id
-                      ? 'border-transparent bg-ink-900 text-white'
-                      : 'border-ink-100 text-ink-600 hover:bg-ink-50'
-                  )}
-                >
-                  {c.label}
-                </button>
-              ))}
+        {step === 'confirm' ? (
+          <div className="mt-5">
+            <div className="flex items-start gap-4 rounded-2xl border border-ink-100 bg-ink-50 p-4">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-coral-50 text-coral-500">
+                <BookOpen className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-ink-900">Você já consultou a Central de Ajuda?</p>
+                <p className="mt-1 text-xs leading-5 text-ink-500">
+                  Muitas dúvidas já têm resposta nos nossos artigos. Antes de abrir um chamado, confira se sua dúvida já foi respondida.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-col gap-2">
+              <a
+                href="/ajuda"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 rounded-2xl border border-ink-100 px-5 py-3 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
+              >
+                <ExternalLink className="h-4 w-4" />
+                Consultar Central de Ajuda
+              </a>
+              <button
+                type="button"
+                onClick={() => setStep('form')}
+                className="rounded-2xl bg-coral-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-coral-600"
+              >
+                Já consultei, quero abrir um chamado
+              </button>
             </div>
           </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-ink-700">Categoria</label>
+              <div className="flex flex-wrap gap-2">
+                {CATEGORIES.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setCategory(c.id)}
+                    className={cn(
+                      'rounded-2xl border px-3 py-1.5 text-xs font-semibold transition',
+                      category === c.id
+                        ? 'border-transparent bg-ink-900 text-white'
+                        : 'border-ink-100 text-ink-600 hover:bg-ink-50'
+                    )}
+                  >
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold text-ink-700">Assunto</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Descreva o problema em poucas palavras..."
-              className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-4 py-2.5 text-sm text-ink-900 outline-none placeholder:text-ink-400 focus:border-coral-300 focus:bg-white transition"
-            />
-          </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-ink-700">Assunto</label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Descreva o problema em poucas palavras..."
+                className="w-full rounded-2xl border border-ink-100 bg-ink-50 px-4 py-2.5 text-sm text-ink-900 outline-none placeholder:text-ink-400 focus:border-coral-300 focus:bg-white transition"
+              />
+            </div>
 
-          <div>
-            <label className="mb-1.5 block text-xs font-semibold text-ink-700">Detalhes</label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              rows={4}
-              placeholder="Explique com detalhes o que aconteceu..."
-              className="w-full resize-none rounded-2xl border border-ink-100 bg-ink-50 px-4 py-2.5 text-sm text-ink-900 outline-none placeholder:text-ink-400 focus:border-coral-300 focus:bg-white transition"
-            />
-          </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-ink-700">Detalhes</label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={4}
+                placeholder="Explique com detalhes o que aconteceu..."
+                className="w-full resize-none rounded-2xl border border-ink-100 bg-ink-50 px-4 py-2.5 text-sm text-ink-900 outline-none placeholder:text-ink-400 focus:border-coral-300 focus:bg-white transition"
+              />
+            </div>
 
-          <div className="flex justify-end gap-3 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={submitting}
-              className="rounded-2xl border border-ink-100 px-5 py-2.5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50 disabled:opacity-40"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={!title.trim() || !description.trim() || submitting}
-              className="rounded-2xl bg-coral-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-coral-600 disabled:opacity-40"
-            >
-              {submitting ? 'Enviando...' : 'Abrir chamado'}
-            </button>
-          </div>
-        </form>
+            <div className="flex justify-end gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setStep('confirm')}
+                disabled={submitting}
+                className="rounded-2xl border border-ink-100 px-5 py-2.5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50 disabled:opacity-40"
+              >
+                Voltar
+              </button>
+              <button
+                type="submit"
+                disabled={!title.trim() || !description.trim() || submitting}
+                className="rounded-2xl bg-coral-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-coral-600 disabled:opacity-40"
+              >
+                {submitting ? 'Enviando...' : 'Abrir chamado'}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   )
@@ -329,16 +365,21 @@ export function PartnerSupportPage() {
               </div>
               <ul className="mt-3 space-y-2">
                 {[
-                  'Como funciona o repasse?',
-                  'Como pausar minha loja?',
-                  'Como editar o cardápio?',
-                  'Prazo para receber pedidos?',
-                ].map((q) => (
-                  <li key={q}>
-                    <button type="button" className="flex w-full items-center justify-between gap-2 text-left text-xs text-ink-600 transition hover:text-coral-500">
-                      {q}
+                  { label: 'Como funciona o repasse?',        slug: 'como-funciona-o-repasse'      },
+                  { label: 'Como pausar minha loja?',         slug: 'como-pausar-minha-loja'       },
+                  { label: 'Como editar o cardápio?',         slug: 'como-editar-o-cardapio'       },
+                  { label: 'Prazo para receber pedidos?',     slug: 'prazo-para-receber-pedidos'   },
+                ].map(({ label, slug }) => (
+                  <li key={slug}>
+                    <a
+                      href={`/ajuda/${slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex w-full items-center justify-between gap-2 text-left text-xs text-ink-600 transition hover:text-coral-500"
+                    >
+                      {label}
                       <ChevronRight className="h-3 w-3 shrink-0" />
-                    </button>
+                    </a>
                   </li>
                 ))}
               </ul>
