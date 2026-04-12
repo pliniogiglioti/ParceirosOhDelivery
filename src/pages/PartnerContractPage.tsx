@@ -1,5 +1,5 @@
 import { type UIEvent, useEffect, useState } from 'react'
-import { FileSignature, Loader2, LogOut, ScrollText, ShieldCheck } from 'lucide-react'
+import { FileSignature, Loader2, LogOut, ScrollText } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 import { usePartnerAuth } from '@/hooks/usePartnerAuth'
@@ -540,49 +540,20 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
                 />
               </div>
 
-              <div className="mt-5 space-y-3">
-                {SIGNING_STATUS_STEPS.map((step, index) => {
-                  const isDone = index < processingStepIndex
-                  const isCurrent = index === processingStepIndex
-
-                  return (
-                    <div
-                      key={step}
-                      className={`flex items-center gap-3 rounded-2xl border px-4 py-3 transition ${
-                        isCurrent
-                          ? 'border-[#f6c2c7] bg-white shadow-sm'
-                          : isDone
-                            ? 'border-[#d8f1df] bg-[#f5fcf7]'
-                            : 'border-[#ececec] bg-[#fafafa]'
-                      }`}
-                    >
-                      <div
-                        className={`flex h-8 w-8 items-center justify-center rounded-full text-[12px] font-bold ${
-                          isCurrent
-                            ? 'bg-[#fff1f2] text-[#ea1d2c]'
-                            : isDone
-                              ? 'bg-[#e7f8ec] text-[#1f8b4c]'
-                              : 'bg-white text-[#9a9a9a]'
-                        }`}
-                      >
-                        {isDone ? (
-                          <ShieldCheck className="h-4 w-4" />
-                        ) : isCurrent ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          index + 1
-                        )}
-                      </div>
-                      <p
-                        className={`text-[14px] ${
-                          isCurrent || isDone ? 'font-semibold text-[#1d1d1d]' : 'text-[#7a7a7a]'
-                        }`}
-                      >
-                        {step}
-                      </p>
-                    </div>
-                  )
-                })}
+              <div className="mt-5 rounded-[24px] border border-[#f6c2c7] bg-white px-4 py-4 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff1f2] text-[#ea1d2c]">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#ea1d2c]">
+                      Em andamento
+                    </p>
+                    <p className="mt-1 text-[15px] font-semibold text-[#1d1d1d] transition-all duration-500">
+                      {SIGNING_STATUS_STEPS[processingStepIndex]}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
