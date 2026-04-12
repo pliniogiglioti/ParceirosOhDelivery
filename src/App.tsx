@@ -23,6 +23,8 @@ import { PartnerNotificationsPage } from '@/pages/app/PartnerNotificationsPage'
 import { PartnerStorePage } from '@/pages/app/PartnerStorePage'
 import { PartnerSupportPage } from '@/pages/app/PartnerSupportPage'
 import { HomePage } from '@/pages/HomePage'
+import { HelpPage } from '@/pages/HelpPage'
+import { HelpArticlePage } from '@/pages/HelpArticlePage'
 import { LandingPage } from '@/pages/LandingPage'
 import { StoreRejectedPage } from '@/pages/StoreRejectedPage'
 import { StoreSelectionPage } from '@/pages/StoreSelectionPage'
@@ -191,6 +193,8 @@ export function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/ajuda" element={<HelpPage />} />
+        <Route path="/ajuda/:slug" element={<HelpArticlePage />} />
         <Route path="/login" element={<LoginRoute />} />
         <Route path="/lojas" element={<StoreSelectionRoute />} />
         <Route path="/cadastro" element={<StoreRegisterRoute />} />
