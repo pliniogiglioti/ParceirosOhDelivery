@@ -8,7 +8,7 @@ import { usePartnerPageData } from '@/hooks/usePartnerPageData'
 import { saveDeliveryArea, saveStore } from '@/services/partner'
 import type { DeliveryArea } from '@/types'
 
-const ZONE_COLORS = ['#ea1d2c', '#f97316', '#eab308']
+const ZONE_COLORS = ['#ff3600', '#f97316', '#eab308']
 
 function createDefaultZone(): RadiusZone {
   return {

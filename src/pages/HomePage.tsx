@@ -28,8 +28,8 @@ function EmailField({
   return (
     <label className="mt-6 block">
       <span className="mb-2 block text-[13px] font-semibold text-[#4f4f4f]">Email</span>
-      <div className="group flex h-[56px] items-center gap-3 rounded-xl border border-[#d9d9d9] bg-[#fbfbfb] px-4 transition focus-within:border-[#ea1d2c] focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(234,29,44,0.09)]">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#fff1f2] text-[#ea1d2c]">
+      <div className="group flex h-[56px] items-center gap-3 rounded-xl border border-[#d9d9d9] bg-[#fbfbfb] px-4 transition focus-within:border-[#ff3600] focus-within:bg-white focus-within:shadow-[0_0_0_4px_rgba(255,54,0,0.09)]">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#fff1ee] text-[#ff3600]">
           <Mail className="h-4 w-4" />
         </div>
         <input
@@ -79,9 +79,9 @@ function VerificationCodeField({
                 className={[
                   'flex h-[58px] items-center justify-center rounded-xl border text-[22px] font-bold tracking-[0.02em] transition',
                   isFilled
-                    ? 'border-[#ea1d2c] bg-[#fff5f5] text-[#1d1d1d]'
+                    ? 'border-[#ff3600] bg-[#fff2ee] text-[#1d1d1d]'
                     : 'border-[#d9d9d9] bg-[#fbfbfb] text-[#b3b3b3]',
-                  isActive ? 'shadow-[0_0_0_4px_rgba(234,29,44,0.09)]' : '',
+                  isActive ? 'shadow-[0_0_0_4px_rgba(255,54,0,0.09)]' : '',
                 ].join(' ')}
               >
                 {digit || '-'}
@@ -121,7 +121,7 @@ function RegisterLink({ label = 'Cadastre sua loja', to = '/cadastro' }: { label
     <button
       type="button"
       onClick={handleClick}
-      className="font-medium text-[#ea1d2c] underline underline-offset-2"
+      className="font-medium text-[#ff3600] underline underline-offset-2"
     >
       {label}
     </button>
@@ -149,13 +149,13 @@ function LoggedInCard({
               Voce ja esta conectado como
             </p>
           </div>
-          <div className="rounded-full bg-[#fff1f2] px-3 py-1 text-[12px] font-bold uppercase tracking-[0.16em] text-[#ea1d2c]">
+          <div className="rounded-full bg-[#fff1ee] px-3 py-1 text-[12px] font-bold uppercase tracking-[0.16em] text-[#ff3600]">
             Parceiro
           </div>
         </div>
 
         <div className="mt-5 flex items-center gap-3 rounded-xl border border-[#e8e8e8] bg-[#f9f9f9] px-4 py-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#ea1d2c] text-[13px] font-bold text-white">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#ff3600] text-[13px] font-bold text-white">
             {name.charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0 flex-1">
@@ -166,7 +166,7 @@ function LoggedInCard({
             <button
               type="button"
               onClick={onSignOut}
-              className="shrink-0 rounded-lg border border-[#e0e0e0] px-3 py-1.5 text-[12px] font-semibold text-[#686868] transition hover:border-[#ea1d2c] hover:text-[#ea1d2c]"
+              className="shrink-0 rounded-lg border border-[#e0e0e0] px-3 py-1.5 text-[12px] font-semibold text-[#686868] transition hover:border-[#ff3600] hover:text-[#ff3600]"
             >
               Sair
             </button>
@@ -176,7 +176,7 @@ function LoggedInCard({
         <button
           type="button"
           onClick={onEnterPanel}
-          className="mt-5 h-[50px] w-full rounded-xl bg-[#ea1d2c] text-[15px] font-bold text-white transition hover:brightness-95"
+          className="mt-5 h-[50px] w-full rounded-xl bg-[#ff3600] text-[15px] font-bold text-white transition hover:brightness-95"
         >
           Entrar no painel
         </button>
@@ -199,18 +199,18 @@ function AuthSkeletonCard() {
             <div className="h-6 w-44 rounded-full bg-[#ededed]" />
             <div className="h-4 w-36 rounded-full bg-[#f2f2f2]" />
           </div>
-          <div className="h-7 w-24 rounded-full bg-[#fff1f2]" />
+          <div className="h-7 w-24 rounded-full bg-[#fff1ee]" />
         </div>
 
         <div className="mt-5 flex items-center gap-3 rounded-xl border border-[#e8e8e8] bg-[#f9f9f9] px-4 py-3">
-          <div className="h-9 w-9 shrink-0 rounded-full bg-[#f0d6d9]" />
+          <div className="h-9 w-9 shrink-0 rounded-full bg-[#ffd0bf]" />
           <div className="min-w-0 flex-1 space-y-2">
             <div className="h-4 w-32 rounded-full bg-[#e6e6e6]" />
             <div className="h-3 w-44 rounded-full bg-[#efefef]" />
           </div>
         </div>
 
-        <div className="mt-5 h-[50px] w-full rounded-xl bg-[#f1c3c8]" />
+        <div className="mt-5 h-[50px] w-full rounded-xl bg-[#ffbfae]" />
       </div>
 
       <div className="border-t border-[#ececec] px-6 py-5">
@@ -255,7 +255,7 @@ function AuthCard({
                   Entre com seu email para receber o codigo de acesso.
                 </p>
               </div>
-              <div className="rounded-full bg-[#fff1f2] px-3 py-1 text-[12px] font-bold uppercase tracking-[0.16em] text-[#ea1d2c]">
+              <div className="rounded-full bg-[#fff1ee] px-3 py-1 text-[12px] font-bold uppercase tracking-[0.16em] text-[#ff3600]">
                 Login
               </div>
             </div>
@@ -265,7 +265,7 @@ function AuthCard({
             <button
               type="submit"
               disabled={sending}
-              className="mt-6 h-[50px] w-full rounded-xl bg-[#ea1d2c] text-[15px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
+              className="mt-6 h-[50px] w-full rounded-xl bg-[#ff3600] text-[15px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {sending ? 'Enviando...' : 'Receber codigo'}
             </button>
@@ -297,7 +297,7 @@ function AuthCard({
               <button
                 type="submit"
                 disabled={verifying}
-                className="h-[50px] flex-1 rounded-xl bg-[#ea1d2c] text-[15px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
+                className="h-[50px] flex-1 rounded-xl bg-[#ff3600] text-[15px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {verifying ? 'Validando...' : 'Entrar'}
               </button>
@@ -424,9 +424,9 @@ export function HomePage({
         <div className="pointer-events-none absolute bottom-8 left-6 sm:left-10 lg:left-14">
           <div className="flex overflow-hidden rounded-xl shadow-[0_12px_30px_rgba(0,0,0,0.28)]">
             <div className="flex h-[72px] w-[88px] items-center justify-center bg-white">
-              <span className="text-[1.9rem] font-black italic tracking-[-0.08em] text-[#ea1d2c]">ifood</span>
+              <span className="text-[1.9rem] font-black italic tracking-[-0.08em] text-[#ff3600]">ifood</span>
             </div>
-            <div className="flex h-[72px] w-[136px] items-center bg-[#a5001e] px-4 text-left">
+            <div className="flex h-[72px] w-[136px] items-center bg-[#cc2b00] px-4 text-left">
               <p className="text-[12px] font-semibold leading-[1.15] text-white">
                 Faz tudo
                 <br />

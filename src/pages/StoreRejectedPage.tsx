@@ -109,7 +109,7 @@ export function StoreRejectedPage() {
     <div className="min-h-dvh bg-[#f5f5f5]">
       <header className="border-b border-[#ececec] bg-white px-4 py-4 sm:px-6">
         <div className="mx-auto flex max-w-3xl items-center justify-between">
-          <span className="text-[1.4rem] font-black italic tracking-[-0.06em] text-[#ea1d2c]">
+          <span className="text-[1.4rem] font-black italic tracking-[-0.06em] text-[#ff3600]">
             ohdelivery
           </span>
           <button
@@ -126,7 +126,7 @@ export function StoreRejectedPage() {
       <main className="mx-auto flex min-h-[calc(100dvh-81px)] max-w-3xl items-center justify-center px-4 py-8 sm:px-6">
         <div className="w-full rounded-[32px] border border-[#ececec] bg-white p-8 shadow-sm sm:p-10">
           <div className="flex flex-col items-center text-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#fff1f2] text-[#ea1d2c]">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-[#fff1ee] text-[#ff3600]">
               <AlertCircle className="h-10 w-10" />
             </div>
 
@@ -148,7 +148,7 @@ export function StoreRejectedPage() {
 
           <div className="mt-5 rounded-[28px] border border-[#ececec] bg-[#fafafa] p-6">
             <div className="flex items-start gap-3">
-              <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#fff1f2] text-[#ea1d2c]">
+              <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#fff1ee] text-[#ff3600]">
                 <Clock3 className="h-5 w-5" />
               </div>
               <div>
@@ -161,7 +161,7 @@ export function StoreRejectedPage() {
                     : 'A janela de espera terminou. Se quiser, voce ja pode cadastrar a loja novamente.'}
                 </p>
                 {availableAtLabel ? (
-                  <p className="mt-3 text-[13px] font-semibold text-[#ea1d2c]">
+                  <p className="mt-3 text-[13px] font-semibold text-[#ff3600]">
                     {blocked
                       ? `Disponivel em ${availableAtLabel}${remainingLabel ? ` (${remainingLabel})` : ''}`
                       : `Liberado desde ${availableAtLabel}`}
@@ -184,7 +184,7 @@ export function StoreRejectedPage() {
               type="button"
               onClick={() => navigate('/cadastro')}
               disabled={blocked}
-              className="inline-flex h-[52px] items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] px-6 text-[15px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-[52px] items-center justify-center gap-2 rounded-2xl bg-[#ff3600] px-6 text-[15px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <RefreshCcw className="h-4 w-4" />
               Cadastrar novamente

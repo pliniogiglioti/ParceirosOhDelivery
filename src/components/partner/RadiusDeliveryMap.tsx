@@ -10,7 +10,7 @@ export type RadiusZone = {
   color: string
 }
 
-const ZONE_COLORS = ['#ea1d2c', '#f97316', '#eab308']
+const ZONE_COLORS = ['#ff3600', '#f97316', '#eab308']
 
 const RADIUS_OPTIONS = [1, 2, 3, 4, 5, 7, 10, 12, 15, 20, 25, 30]
 
@@ -175,7 +175,7 @@ export function RadiusDeliveryMap({
         id: crypto.randomUUID(),
         radiusKm: nextRadius,
         fee: 0,
-        color: ZONE_COLORS[zones.length] ?? '#ea1d2c',
+        color: ZONE_COLORS[zones.length] ?? '#ff3600',
       },
     ])
   }
@@ -200,7 +200,7 @@ export function RadiusDeliveryMap({
             style={{
               width: '100%',
               height: '100%',
-              background: '#ea1d2c',
+              background: '#ff3600',
               borderRadius: '50% 50% 50% 0',
               transform: 'rotate(-45deg)',
               border: '3px solid white',
@@ -209,7 +209,7 @@ export function RadiusDeliveryMap({
           />
         </div>
         <div
-          className="pointer-events-none absolute rounded-full bg-white border-2 border-[#ea1d2c]"
+          className="pointer-events-none absolute rounded-full bg-white border-2 border-[#ff3600]"
           style={{ left: '50%', top: '50%', width: 8, height: 8, transform: 'translate(-50%, -50%)', zIndex: 9999 }}
         />
         <button
@@ -218,7 +218,7 @@ export function RadiusDeliveryMap({
           disabled={locating}
           className="absolute right-3 top-3 z-[9999] flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-[12px] font-semibold text-ink-700 shadow-md transition hover:bg-ink-50 disabled:opacity-70"
         >
-          {locating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LocateFixed className="h-3.5 w-3.5 text-[#ea1d2c]" />}
+          {locating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LocateFixed className="h-3.5 w-3.5 text-[#ff3600]" />}
           Minha localizacao
         </button>
 
@@ -250,7 +250,7 @@ export function RadiusDeliveryMap({
                   <select
                     value={zone.radiusKm}
                     onChange={(e) => updateZone(zone.id, { radiusKm: Number(e.target.value) })}
-                    className="h-11 w-full rounded-xl border border-ink-200 bg-white px-3 text-[13px] font-semibold text-ink-900 outline-none focus:border-[#ea1d2c]"
+                    className="h-11 w-full rounded-xl border border-ink-200 bg-white px-3 text-[13px] font-semibold text-ink-900 outline-none focus:border-[#ff3600]"
                   >
                     {RADIUS_OPTIONS.map((r) => (
                       <option key={r} value={r}>{r} km</option>
@@ -264,7 +264,7 @@ export function RadiusDeliveryMap({
                   <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.1em] text-ink-500">
                     Taxa de entrega
                   </span>
-                  <div className="flex h-11 items-center rounded-xl border border-ink-200 bg-white px-3 focus-within:border-[#ea1d2c]">
+                  <div className="flex h-11 items-center rounded-xl border border-ink-200 bg-white px-3 focus-within:border-[#ff3600]">
                     <span className="shrink-0 text-[13px] font-semibold text-ink-500">R$</span>
                     <input
                       type="text"
@@ -298,7 +298,7 @@ export function RadiusDeliveryMap({
           <button
             type="button"
             onClick={addZone}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-ink-200 py-3 text-[13px] font-semibold text-ink-500 transition hover:border-[#ea1d2c] hover:text-[#ea1d2c]"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-ink-200 py-3 text-[13px] font-semibold text-ink-500 transition hover:border-[#ff3600] hover:text-[#ff3600]"
           >
             <Plus className="h-4 w-4" />
             Adicionar outro raio de entrega

@@ -75,7 +75,7 @@ export function PartnerTopbar({ data }: { data: PartnerDashboardData }) {
               >
                 <span
                   className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
-                  style={{ backgroundColor: '#ea1d2c' }}
+                  style={{ backgroundColor: '#ff3600' }}
                 >
                   {store.logoImageUrl ? (
                     <img src={store.logoImageUrl} alt={store.name} className="h-full w-full rounded-full object-cover" />

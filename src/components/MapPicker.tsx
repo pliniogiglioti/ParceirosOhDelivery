@@ -82,7 +82,7 @@ export function MapPicker({
           style={{
             width: '100%',
             height: '100%',
-            background: '#ea1d2c',
+            background: '#ff3600',
             borderRadius: '50% 50% 50% 0',
             transform: 'rotate(-45deg)',
             border: '3px solid white',
@@ -91,7 +91,7 @@ export function MapPicker({
         />
       </div>
       <div
-        className="pointer-events-none absolute rounded-full bg-white border-2 border-[#ea1d2c]"
+        className="pointer-events-none absolute rounded-full bg-white border-2 border-[#ff3600]"
         style={{ left: '50%', top: '50%', width: 8, height: 8, transform: 'translate(-50%, -50%)', zIndex: 9999 }}
       />
       <p className="mt-1.5 text-[11px] text-ink-400">

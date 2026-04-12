@@ -43,7 +43,7 @@ const STEPS: Array<{ id: FirstAccessStepId; label: string; icon: React.ElementTy
 ]
 
 const inputClass =
-  'h-[48px] w-full rounded-xl border border-[#d9d9d9] bg-[#fbfbfb] px-4 text-[14px] text-[#1d1d1d] outline-none transition placeholder:text-[#9a9a9a] focus:border-[#ea1d2c] focus:bg-white focus:shadow-[0_0_0_4px_rgba(234,29,44,0.09)]'
+  'h-[48px] w-full rounded-xl border border-[#d9d9d9] bg-[#fbfbfb] px-4 text-[14px] text-[#1d1d1d] outline-none transition placeholder:text-[#9a9a9a] focus:border-[#ff3600] focus:bg-white focus:shadow-[0_0_0_4px_rgba(255,54,0,0.09)]'
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -98,7 +98,7 @@ export function PartnerFirstAccessPage() {
   const [productCategoriesDraft, setProductCategoriesDraft] = useState<PartnerCategory[]>([])
   const [productsDraft, setProductsDraft] = useState<PartnerProduct[]>([])
   const [radiusZones, setRadiusZones] = useState<RadiusZone[]>([
-    { id: crypto.randomUUID(), radiusKm: 3, fee: 0, color: '#ea1d2c' },
+    { id: crypto.randomUUID(), radiusKm: 3, fee: 0, color: '#ff3600' },
   ])
   const [mapLat, setMapLat] = useState<number | null>(null)
   const [mapLng, setMapLng] = useState<number | null>(null)
@@ -150,7 +150,7 @@ export function PartnerFirstAccessPage() {
           id: area.id || crypto.randomUUID(),
           radiusKm: Number(area.etaLabel.replace(/[^0-9.]/g, '')) || (i + 1) * 3,
           fee: area.fee,
-          color: ['#ea1d2c', '#f97316', '#eab308'][i] ?? '#ea1d2c',
+          color: ['#ff3600', '#f97316', '#eab308'][i] ?? '#ff3600',
         }))
       )
     }
@@ -419,12 +419,12 @@ export function PartnerFirstAccessPage() {
         <div className="flex-1 rounded-2xl bg-white p-8 shadow-sm">
           <div className="flex h-full flex-col justify-between gap-8">
             <div className="space-y-6">
-              <div className="flex h-16 w-16 items-center justify-center rounded-[24px] bg-[#fff1f2] text-[#ea1d2c]">
+              <div className="flex h-16 w-16 items-center justify-center rounded-[24px] bg-[#fff1ee] text-[#ff3600]">
                 <Sparkles className="h-8 w-8" />
               </div>
 
               <div>
-                <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-[#ea1d2c]">
+                <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-[#ff3600]">
                   Primeiro acesso
                 </p>
                 <h1 className="mt-3 text-[34px] font-black leading-tight tracking-[-0.04em] text-[#1d1d1d]">
@@ -506,7 +506,7 @@ export function PartnerFirstAccessPage() {
               rows={4}
               value={currentStore.description}
               onChange={(event) => updateStoreField('description', event.target.value)}
-              className="w-full rounded-xl border border-[#d9d9d9] bg-[#fbfbfb] px-4 py-3 text-[14px] text-[#1d1d1d] outline-none transition placeholder:text-[#9a9a9a] focus:border-[#ea1d2c] focus:bg-white focus:shadow-[0_0_0_4px_rgba(234,29,44,0.09)]"
+              className="w-full rounded-xl border border-[#d9d9d9] bg-[#fbfbfb] px-4 py-3 text-[14px] text-[#1d1d1d] outline-none transition placeholder:text-[#9a9a9a] focus:border-[#ff3600] focus:bg-white focus:shadow-[0_0_0_4px_rgba(255,54,0,0.09)]"
               placeholder="Conte um pouco sobre a sua operacao."
             />
           </Field>
@@ -663,7 +663,7 @@ export function PartnerFirstAccessPage() {
           type="button"
           onClick={() => void handleSaveAndNext()}
           disabled={savingStep !== null}
-          className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[13px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#ff3600] text-[13px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {savingStep !== null ? (
             <><Loader2 className="h-4 w-4 animate-spin" /> Salvando...</>
@@ -678,7 +678,7 @@ export function PartnerFirstAccessPage() {
           type="button"
           onClick={() => void handleSaveAndNext()}
           disabled={savingStep !== null || finishing}
-          className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[13px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-[#ff3600] text-[13px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {savingStep !== null || finishing ? (
             <><Loader2 className="h-4 w-4 animate-spin" /> Salvando...</>

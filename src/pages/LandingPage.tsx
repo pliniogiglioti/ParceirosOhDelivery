@@ -143,16 +143,16 @@ export function LandingPage() {
           <img src="/logo.png" alt="Logo" className="h-8 w-auto object-contain" />
 
           <nav className="hidden items-center gap-7 text-[14px] font-medium text-[#555] md:flex">
-            <button type="button" onClick={() => scrollTo('como-funciona')} className="transition hover:text-[#ea1d2c]">
+            <button type="button" onClick={() => scrollTo('como-funciona')} className="transition hover:text-[#ff3600]">
               Como funciona
             </button>
-            <button type="button" onClick={() => scrollTo('beneficios')} className="transition hover:text-[#ea1d2c]">
+            <button type="button" onClick={() => scrollTo('beneficios')} className="transition hover:text-[#ff3600]">
               Benefícios
             </button>
-            <button type="button" onClick={() => scrollTo('taxa')} className="transition hover:text-[#ea1d2c]">
+            <button type="button" onClick={() => scrollTo('taxa')} className="transition hover:text-[#ff3600]">
               Taxa
             </button>
-            <button type="button" onClick={() => scrollTo('comece-agora')} className="transition hover:text-[#ea1d2c]">
+            <button type="button" onClick={() => scrollTo('comece-agora')} className="transition hover:text-[#ff3600]">
               Comece agora
             </button>
           </nav>
@@ -161,14 +161,14 @@ export function LandingPage() {
             <button
               type="button"
               onClick={() => navigate('/login')}
-              className="hidden h-[38px] rounded-xl border border-[#d9d9d9] px-5 text-[14px] font-semibold text-[#303030] transition hover:border-[#ea1d2c] hover:text-[#ea1d2c] sm:block"
+              className="hidden h-[38px] rounded-xl border border-[#d9d9d9] px-5 text-[14px] font-semibold text-[#303030] transition hover:border-[#ff3600] hover:text-[#ff3600] sm:block"
             >
               Entrar
             </button>
             <button
               type="button"
               onClick={() => navigate('/cadastro')}
-              className="h-[38px] rounded-xl bg-[#ea1d2c] px-5 text-[14px] font-bold text-white transition hover:brightness-95"
+              className="h-[38px] rounded-xl bg-[#ff3600] px-5 text-[14px] font-bold text-white transition hover:brightness-95"
             >
               Seja parceiro
             </button>
@@ -179,7 +179,7 @@ export function LandingPage() {
       {/* Hero */}
       <section className="border-b border-[#f0f0f0] bg-[#fafafa] py-24">
         <div className="mx-auto max-w-6xl px-6 text-center">
-          <span className="mb-5 inline-block rounded-full bg-[#fff1f2] px-4 py-1.5 text-[12px] font-bold uppercase tracking-[0.16em] text-[#ea1d2c]">
+          <span className="mb-5 inline-block rounded-full bg-[#fff1ee] px-4 py-1.5 text-[12px] font-bold uppercase tracking-[0.16em] text-[#ff3600]">
             Para donos de restaurante
           </span>
           <h1 className="mx-auto max-w-[18ch] text-[2.6rem] font-bold leading-[1.08] tracking-[-0.035em] sm:text-[3.6rem]">
@@ -193,14 +193,14 @@ export function LandingPage() {
             <button
               type="button"
               onClick={() => navigate('/cadastro')}
-              className="flex h-[52px] items-center gap-2 rounded-xl bg-[#ea1d2c] px-8 text-[15px] font-bold text-white transition hover:brightness-95"
+              className="flex h-[52px] items-center gap-2 rounded-xl bg-[#ff3600] px-8 text-[15px] font-bold text-white transition hover:brightness-95"
             >
               Cadastrar minha loja <ChevronRight className="h-4 w-4" />
             </button>
             <button
               type="button"
               onClick={() => scrollTo('como-funciona')}
-              className="h-[52px] rounded-xl border border-[#d9d9d9] px-8 text-[15px] font-semibold text-[#303030] transition hover:border-[#ea1d2c] hover:text-[#ea1d2c]"
+              className="h-[52px] rounded-xl border border-[#d9d9d9] px-8 text-[15px] font-semibold text-[#303030] transition hover:border-[#ff3600] hover:text-[#ff3600]"
             >
               Como funciona
             </button>
@@ -210,7 +210,7 @@ export function LandingPage() {
           <div className="mx-auto mt-16 grid max-w-lg grid-cols-3 gap-6 border-t border-[#ececec] pt-12">
             {STATS.map(({ value, label }) => (
               <div key={label}>
-                <p className="text-[1.9rem] font-bold tracking-[-0.03em] text-[#ea1d2c]">{value}</p>
+                <p className="text-[1.9rem] font-bold tracking-[-0.03em] text-[#ff3600]">{value}</p>
                 <p className="mt-1 text-[13px] text-[#888]">{label}</p>
               </div>
             ))}
@@ -222,7 +222,7 @@ export function LandingPage() {
       <section id="como-funciona" className="py-24">
         <div className="mx-auto max-w-6xl px-6">
           <div className="mb-14 text-center">
-            <span className="mb-3 inline-block text-[12px] font-bold uppercase tracking-[0.16em] text-[#ea1d2c]">
+            <span className="mb-3 inline-block text-[12px] font-bold uppercase tracking-[0.16em] text-[#ff3600]">
               Simples e rápido
             </span>
             <h2 className="text-[2rem] font-bold tracking-[-0.03em] sm:text-[2.4rem]">
@@ -233,8 +233,8 @@ export function LandingPage() {
           <div className="grid gap-8 sm:grid-cols-3">
             {HOW_IT_WORKS.map(({ step, title, description }) => (
               <div key={step} className="relative">
-                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#fff1f2]">
-                  <span className="text-[1.1rem] font-black text-[#ea1d2c]">{step}</span>
+                <div className="mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#fff1ee]">
+                  <span className="text-[1.1rem] font-black text-[#ff3600]">{step}</span>
                 </div>
                 <h3 className="mb-2 text-[18px] font-bold">{title}</h3>
                 <p className="text-[15px] leading-[1.7] text-[#666]">{description}</p>
@@ -248,7 +248,7 @@ export function LandingPage() {
       <section id="beneficios" className="border-y border-[#f0f0f0] bg-[#fafafa] py-24">
         <div className="mx-auto max-w-6xl px-6">
           <div className="mb-14 text-center">
-            <span className="mb-3 inline-block text-[12px] font-bold uppercase tracking-[0.16em] text-[#ea1d2c]">
+            <span className="mb-3 inline-block text-[12px] font-bold uppercase tracking-[0.16em] text-[#ff3600]">
               Tudo em um só lugar
             </span>
             <h2 className="text-[2rem] font-bold tracking-[-0.03em] sm:text-[2.4rem]">
@@ -263,9 +263,9 @@ export function LandingPage() {
             {FEATURES.map(({ icon: Icon, title, description }) => (
               <div
                 key={title}
-                className="rounded-2xl border border-[#e8e8e8] bg-white p-7 transition hover:border-[#ea1d2c]/30 hover:shadow-sm"
+                className="rounded-2xl border border-[#e8e8e8] bg-white p-7 transition hover:border-[#ff3600]/30 hover:shadow-sm"
               >
-                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-[#fff1f2] text-[#ea1d2c]">
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-[#fff1ee] text-[#ff3600]">
                   <Icon className="h-5 w-5" />
                 </div>
                 <h3 className="mb-2 text-[16px] font-bold">{title}</h3>
@@ -282,11 +282,11 @@ export function LandingPage() {
           <div className="flex flex-col items-center gap-12 lg:flex-row lg:items-start lg:gap-20">
             {/* Texto */}
             <div className="flex-1">
-              <span className="mb-3 inline-block text-[12px] font-bold uppercase tracking-[0.16em] text-[#ea1d2c]">
+              <span className="mb-3 inline-block text-[12px] font-bold uppercase tracking-[0.16em] text-[#ff3600]">
                 Transparência total
               </span>
               <h2 className="mb-5 text-[2rem] font-bold leading-[1.1] tracking-[-0.03em] sm:text-[2.4rem]">
-                Só <span className="text-[#ea1d2c]">5%</span> de taxa.<br />Sem surpresas.
+                Só <span className="text-[#ff3600]">5%</span> de taxa.<br />Sem surpresas.
               </h2>
               <p className="max-w-[46ch] text-[16px] leading-[1.75] text-[#666]">
                 Cobramos apenas <strong className="text-[#1d1d1d]">5% sobre o valor de cada pedido</strong> pago pelo app. Sem mensalidade, sem taxa de adesão, sem letras miúdas.
@@ -303,7 +303,7 @@ export function LandingPage() {
                   'Previsão do próximo depósito no painel',
                 ].map((item) => (
                   <div key={item} className="flex items-center gap-3">
-                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#ea1d2c]">
+                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#ff3600]">
                       <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                       </svg>
@@ -317,7 +317,7 @@ export function LandingPage() {
             {/* Card destaque */}
             <div className="w-full max-w-[340px] shrink-0">
               <div className="overflow-hidden rounded-3xl border border-[#f0f0f0] bg-white shadow-[0_8px_40px_rgba(0,0,0,0.08)]">
-                <div className="bg-[#ea1d2c] px-8 py-8 text-center text-white">
+                <div className="bg-[#ff3600] px-8 py-8 text-center text-white">
                   <p className="text-[13px] font-bold uppercase tracking-[0.14em] text-white/70">Taxa por pedido</p>
                   <p className="mt-2 text-[5rem] font-black leading-none tracking-[-0.04em]">5%</p>
                   <p className="mt-2 text-[14px] text-white/80">somente checkout no app</p>
@@ -325,22 +325,22 @@ export function LandingPage() {
                 <div className="px-8 py-7">
                   <ul className="space-y-3 text-[14px] text-[#555]">
                     <li className="flex items-center gap-2">
-                      <span className="text-[#ea1d2c]">✓</span> Sem mensalidade
+                      <span className="text-[#ff3600]">✓</span> Sem mensalidade
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-[#ea1d2c]">✓</span> Sem taxa de adesão
+                      <span className="text-[#ff3600]">✓</span> Sem taxa de adesão
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-[#ea1d2c]">✓</span> Repasse automático
+                      <span className="text-[#ff3600]">✓</span> Repasse automático
                     </li>
                     <li className="flex items-center gap-2">
-                      <span className="text-[#ea1d2c]">✓</span> Extrato em tempo real
+                      <span className="text-[#ff3600]">✓</span> Extrato em tempo real
                     </li>
                   </ul>
                   <button
                     type="button"
                     onClick={() => navigate('/cadastro')}
-                    className="mt-7 flex h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[#ea1d2c] text-[15px] font-bold text-white transition hover:brightness-95"
+                    className="mt-7 flex h-[48px] w-full items-center justify-center gap-2 rounded-xl bg-[#ff3600] text-[15px] font-bold text-white transition hover:brightness-95"
                   >
                     Começar agora <ChevronRight className="h-4 w-4" />
                   </button>
@@ -354,7 +354,7 @@ export function LandingPage() {
       {/* CTA Final */}
       <section id="comece-agora" className="py-24">
         <div className="mx-auto max-w-6xl px-6">
-          <div className="overflow-hidden rounded-3xl bg-[#ea1d2c] px-10 py-16 text-center text-white">
+          <div className="overflow-hidden rounded-3xl bg-[#ff3600] px-10 py-16 text-center text-white">
             <h2 className="mx-auto max-w-[20ch] text-[2rem] font-bold leading-[1.1] tracking-[-0.03em] sm:text-[2.6rem]">
               Pronto para colocar sua loja no mapa?
             </h2>
@@ -365,7 +365,7 @@ export function LandingPage() {
               <button
                 type="button"
                 onClick={() => navigate('/cadastro')}
-                className="flex h-[52px] items-center gap-2 rounded-xl bg-white px-8 text-[15px] font-bold text-[#ea1d2c] transition hover:brightness-95"
+                className="flex h-[52px] items-center gap-2 rounded-xl bg-white px-8 text-[15px] font-bold text-[#ff3600] transition hover:brightness-95"
               >
                 Cadastrar minha loja <ChevronRight className="h-4 w-4" />
               </button>
@@ -399,7 +399,7 @@ export function LandingPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={label}
-                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#e0e0e0] bg-white text-[#555] transition hover:border-[#ea1d2c] hover:text-[#ea1d2c]"
+                    className="flex h-9 w-9 items-center justify-center rounded-xl border border-[#e0e0e0] bg-white text-[#555] transition hover:border-[#ff3600] hover:text-[#ff3600]"
                   >
                     {icon}
                   </a>
@@ -411,10 +411,10 @@ export function LandingPage() {
             <div>
               <p className="mb-4 text-[13px] font-bold uppercase tracking-[0.1em] text-[#333]">Plataforma</p>
               <ul className="space-y-3 text-[14px] text-[#666]">
-                <li><button type="button" onClick={() => scrollTo('como-funciona')} className="transition hover:text-[#ea1d2c]">Como funciona</button></li>
-                <li><button type="button" onClick={() => scrollTo('beneficios')} className="transition hover:text-[#ea1d2c]">Benefícios</button></li>
-                <li><button type="button" onClick={() => scrollTo('taxa')} className="transition hover:text-[#ea1d2c]">Taxa e repasse</button></li>
-                <li><button type="button" onClick={() => navigate('/cadastro')} className="transition hover:text-[#ea1d2c]">Cadastrar minha loja</button></li>
+                <li><button type="button" onClick={() => scrollTo('como-funciona')} className="transition hover:text-[#ff3600]">Como funciona</button></li>
+                <li><button type="button" onClick={() => scrollTo('beneficios')} className="transition hover:text-[#ff3600]">Benefícios</button></li>
+                <li><button type="button" onClick={() => scrollTo('taxa')} className="transition hover:text-[#ff3600]">Taxa e repasse</button></li>
+                <li><button type="button" onClick={() => navigate('/cadastro')} className="transition hover:text-[#ff3600]">Cadastrar minha loja</button></li>
               </ul>
             </div>
 
@@ -422,8 +422,8 @@ export function LandingPage() {
             <div>
               <p className="mb-4 text-[13px] font-bold uppercase tracking-[0.1em] text-[#333]">Acesso</p>
               <ul className="space-y-3 text-[14px] text-[#666]">
-                <li><button type="button" onClick={() => navigate('/login')} className="transition hover:text-[#ea1d2c]">Entrar no painel</button></li>
-                <li><button type="button" onClick={() => navigate('/cadastro')} className="transition hover:text-[#ea1d2c]">Seja parceiro</button></li>
+                <li><button type="button" onClick={() => navigate('/login')} className="transition hover:text-[#ff3600]">Entrar no painel</button></li>
+                <li><button type="button" onClick={() => navigate('/cadastro')} className="transition hover:text-[#ff3600]">Seja parceiro</button></li>
               </ul>
             </div>
 
@@ -431,8 +431,8 @@ export function LandingPage() {
             <div>
               <p className="mb-4 text-[13px] font-bold uppercase tracking-[0.1em] text-[#333]">Legal</p>
               <ul className="space-y-3 text-[14px] text-[#666]">
-                <li><a href="#" className="transition hover:text-[#ea1d2c]">Termos de uso</a></li>
-                <li><a href="#" className="transition hover:text-[#ea1d2c]">Política de privacidade</a></li>
+                <li><a href="#" className="transition hover:text-[#ff3600]">Termos de uso</a></li>
+                <li><a href="#" className="transition hover:text-[#ff3600]">Política de privacidade</a></li>
               </ul>
             </div>
           </div>

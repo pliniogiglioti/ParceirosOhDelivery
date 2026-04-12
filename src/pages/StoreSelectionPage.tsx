@@ -9,7 +9,7 @@ import type { PartnerStoreCard, RegistrationStatus, UserRole } from '@/types'
 const STATUS_CONFIG: Record<RegistrationStatus, { label: string; className: string }> = {
   pendente: { label: 'Pendente de aceitação', className: 'bg-[#fffbeb] text-[#d97706]' },
   aprovado: { label: 'Aprovada', className: 'bg-[#f0fdf4] text-[#16a34a]' },
-  rejeitado: { label: 'Rejeitada', className: 'bg-[#fff1f2] text-[#ea1d2c]' },
+  rejeitado: { label: 'Rejeitada', className: 'bg-[#fff1ee] text-[#ff3600]' },
 }
 
 const ROLE_LABELS: Record<UserRole, string> = {
@@ -19,7 +19,7 @@ const ROLE_LABELS: Record<UserRole, string> = {
 }
 
 const ROLE_COLORS: Record<UserRole, string> = {
-  store_owner: 'bg-[#fff1f2] text-[#ea1d2c]',
+  store_owner: 'bg-[#fff1ee] text-[#ff3600]',
   customer: 'bg-[#eff6ff] text-[#2563eb]',
   delivery: 'bg-[#f0fdf4] text-[#16a34a]',
 }
@@ -95,7 +95,7 @@ export function StoreSelectionPage() {
     <div className="min-h-dvh bg-[#f5f5f5]">
       <header className="bg-white border-b border-[#ececec] px-4 py-4 sm:px-6">
         <div className="mx-auto flex max-w-2xl items-center justify-between">
-          <span className="text-[1.4rem] font-black italic tracking-[-0.06em] text-[#ea1d2c]">
+          <span className="text-[1.4rem] font-black italic tracking-[-0.06em] text-[#ff3600]">
             ohdelivery
           </span>
           <button
@@ -112,7 +112,7 @@ export function StoreSelectionPage() {
       <main className="mx-auto max-w-2xl px-4 py-8 sm:px-6">
         <div className="mb-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#ea1d2c] text-white font-bold text-lg">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#ff3600] text-white font-bold text-lg">
               {(profile?.name ?? user?.name ?? 'P').charAt(0).toUpperCase()}
             </div>
             <div>
@@ -202,7 +202,7 @@ export function StoreSelectionPage() {
                       <p className="text-[12px] text-[#8b8b8b]">{store.categoryName}</p>
                     )}
                     {store.registrationStatus === 'rejeitado' && store.rejectionReason && (
-                      <p className="text-[11px] text-[#ea1d2c] mt-0.5">{store.rejectionReason}</p>
+                      <p className="text-[11px] text-[#ff3600] mt-0.5">{store.rejectionReason}</p>
                     )}
                   </div>
 
@@ -227,12 +227,12 @@ export function StoreSelectionPage() {
 
                 navigate('/cadastro')
               }}
-              className="flex w-full items-center gap-4 rounded-2xl border-2 border-dashed border-[#d9d9d9] bg-white px-4 py-4 transition hover:border-[#ea1d2c] hover:bg-[#fff5f5] group"
+              className="flex w-full items-center gap-4 rounded-2xl border-2 border-dashed border-[#d9d9d9] bg-white px-4 py-4 transition hover:border-[#ff3600] hover:bg-[#fff2ee] group"
             >
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#f5f5f5] group-hover:bg-[#fff1f2]">
-                <Plus className="h-5 w-5 text-[#8b8b8b] group-hover:text-[#ea1d2c]" />
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#f5f5f5] group-hover:bg-[#fff1ee]">
+                <Plus className="h-5 w-5 text-[#8b8b8b] group-hover:text-[#ff3600]" />
               </div>
-              <p className="font-semibold text-[#686868] group-hover:text-[#ea1d2c] text-[15px]">
+              <p className="font-semibold text-[#686868] group-hover:text-[#ff3600] text-[15px]">
                 Cadastrar nova loja
               </p>
             </button>

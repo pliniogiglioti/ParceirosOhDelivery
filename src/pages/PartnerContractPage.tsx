@@ -306,7 +306,7 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
     <div className="min-h-dvh bg-[#f5f5f5]">
       <header className="border-b border-[#ececec] bg-white px-4 py-4 sm:px-6">
         <div className="mx-auto flex max-w-6xl items-center justify-between">
-          <span className="text-[1.4rem] font-black italic tracking-[-0.06em] text-[#ea1d2c]">
+          <span className="text-[1.4rem] font-black italic tracking-[-0.06em] text-[#ff3600]">
             ohdelivery
           </span>
           <button
@@ -325,11 +325,11 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
           <div className="h-full w-full">
             <section className="flex h-full min-h-0 flex-col rounded-[28px] border border-[#ececec] bg-white p-6 shadow-sm sm:p-7">
               <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff1f2] text-[#ea1d2c]">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff1ee] text-[#ff3600]">
                   <ScrollText className="h-6 w-6" />
                 </div>
                 <div>
-                  <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#ea1d2c]">
+                  <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#ff3600]">
                     Assinatura de contrato
                   </p>
                   <h1 className="mt-1 text-[28px] font-black tracking-[-0.03em] text-[#1d1d1d]">
@@ -413,7 +413,7 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
                       type="checkbox"
                       checked={hasAcceptedContract}
                       onChange={(event) => setHasAcceptedContract(event.target.checked)}
-                      className="mt-1 h-4 w-4 rounded border-[#cfcfcf] text-[#ea1d2c] focus:ring-[#ea1d2c]"
+                      className="mt-1 h-4 w-4 rounded border-[#cfcfcf] text-[#ff3600] focus:ring-[#ff3600]"
                     />
                     <span>Li e concordo com este contrato e sou o responsavel autorizado pela loja.</span>
                   </label>
@@ -422,7 +422,7 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
                     type="button"
                     onClick={() => setSignatureStep('sign')}
                     disabled={!hasReachedContractEnd || !hasAcceptedContract}
-                    className="flex h-[50px] shrink-0 items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] px-6 text-[14px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex h-[50px] shrink-0 items-center justify-center gap-2 rounded-2xl bg-[#ff3600] px-6 text-[14px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     Ir para assinatura
                   </button>
@@ -434,7 +434,7 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
       ) : signatureStep === 'sign' ? (
         <main className="mx-auto flex min-h-[calc(100dvh-81px)] max-w-6xl items-center justify-center px-4 py-8 sm:px-6">
           <div className="w-full max-w-2xl rounded-[28px] border border-[#ececec] bg-white p-7 shadow-sm sm:p-8">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff1f2] text-[#ea1d2c]">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff1ee] text-[#ff3600]">
               <FileSignature className="h-6 w-6" />
             </div>
 
@@ -466,7 +466,7 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
                   value={signatureCpf}
                   onChange={(event) => setSignatureCpf(formatCpf(event.target.value))}
                   placeholder="000.000.000-00"
-                  className="h-[48px] w-full rounded-xl border border-[#d9d9d9] bg-[#fbfbfb] px-4 pr-12 text-[14px] text-[#1d1d1d] outline-none transition placeholder:text-[#9a9a9a] focus:border-[#ea1d2c] focus:bg-white focus:shadow-[0_0_0_4px_rgba(234,29,44,0.09)]"
+                  className="h-[48px] w-full rounded-xl border border-[#d9d9d9] bg-[#fbfbfb] px-4 pr-12 text-[14px] text-[#1d1d1d] outline-none transition placeholder:text-[#9a9a9a] focus:border-[#ff3600] focus:bg-white focus:shadow-[0_0_0_4px_rgba(255,54,0,0.09)]"
                 />
                 <FileSignature className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9a9a9a]" />
               </div>
@@ -485,7 +485,7 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
                 type="button"
                 onClick={() => void handleSignContract()}
                 disabled={submitting}
-                className="flex h-[50px] items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] px-6 text-[14px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex h-[50px] items-center justify-center gap-2 rounded-2xl bg-[#ff3600] px-6 text-[14px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitting ? (
                   <>
@@ -503,11 +503,11 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
         <main className="mx-auto flex min-h-[calc(100dvh-81px)] max-w-6xl items-center justify-center px-4 py-8 sm:px-6">
           <div className="w-full max-w-2xl rounded-[28px] border border-[#ececec] bg-white p-7 shadow-sm sm:p-8">
             <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#fff1f2] text-[#ea1d2c]">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#fff1ee] text-[#ff3600]">
                 <Loader2 className="h-7 w-7 animate-spin" />
               </div>
               <div>
-                <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#ea1d2c]">
+                <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#ff3600]">
                   Assinando contrato
                 </p>
                 <h1 className="mt-1 text-[28px] font-black tracking-[-0.03em] text-[#1d1d1d]">
@@ -526,14 +526,14 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
                 <p className="text-[15px] font-bold text-[#1d1d1d]">
                   {SIGNING_STATUS_STEPS[processingStepIndex]}
                 </p>
-                <span className="rounded-full bg-[#fff1f2] px-3 py-1 text-[12px] font-bold text-[#ea1d2c]">
+                <span className="rounded-full bg-[#fff1ee] px-3 py-1 text-[12px] font-bold text-[#ff3600]">
                   {processingStepIndex + 1}/{SIGNING_STATUS_STEPS.length}
                 </span>
               </div>
 
               <div className="mt-4 h-2 overflow-hidden rounded-full bg-[#ececec]">
                 <div
-                  className="h-full rounded-full bg-[#ea1d2c] transition-all duration-700"
+                  className="h-full rounded-full bg-[#ff3600] transition-all duration-700"
                   style={{
                     width: `${((processingStepIndex + 1) / SIGNING_STATUS_STEPS.length) * 100}%`,
                   }}
@@ -542,11 +542,11 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
 
               <div className="mt-5 rounded-[24px] border border-[#f6c2c7] bg-white px-4 py-4 shadow-sm">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff1f2] text-[#ea1d2c]">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#fff1ee] text-[#ff3600]">
                     <Loader2 className="h-4 w-4 animate-spin" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#ea1d2c]">
+                    <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#ff3600]">
                       Em andamento
                     </p>
                     <p className="mt-1 text-[15px] font-semibold text-[#1d1d1d] transition-all duration-500">

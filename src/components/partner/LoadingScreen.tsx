@@ -5,7 +5,7 @@ export function LoadingScreen() {
         <div className="relative mx-auto flex h-24 w-24 items-center justify-center">
           <div className="absolute h-24 w-24 rounded-full bg-coral-500/10 animate-ping" />
           <div className="absolute h-20 w-20 rounded-full border border-coral-500/20 bg-coral-500/5" />
-          <div className="relative flex h-14 w-14 items-center justify-center rounded-[22px] bg-coral-500 shadow-[0_18px_40px_rgba(234,29,44,0.22)]">
+          <div className="relative flex h-14 w-14 items-center justify-center rounded-[22px] bg-coral-500 shadow-[0_18px_40px_rgba(255,54,0,0.22)]">
             <div className="flex items-center gap-1.5">
               <span className="h-2.5 w-2.5 animate-bounce rounded-full bg-white" />
               <span

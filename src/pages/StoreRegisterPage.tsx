@@ -87,7 +87,7 @@ function StepperBar({ current }: { current: number }) {
             <p
               className={[
                 'shrink-0 text-center text-[11px] font-semibold uppercase tracking-[0.12em]',
-                index === current ? 'text-[#ea1d2c]' : index < current ? 'text-[#666]' : 'text-[#bbb]',
+                index === current ? 'text-[#ff3600]' : index < current ? 'text-[#666]' : 'text-[#bbb]',
               ].join(' ')}
             >
               {label}
@@ -96,7 +96,7 @@ function StepperBar({ current }: { current: number }) {
               <div
                 className={[
                   'mx-4 h-[2px] w-20 rounded-full transition-all',
-                  index < current ? 'bg-[#ea1d2c]' : 'bg-[#d9d9d9]',
+                  index < current ? 'bg-[#ff3600]' : 'bg-[#d9d9d9]',
                 ].join(' ')}
               />
             ) : null}
@@ -108,7 +108,7 @@ function StepperBar({ current }: { current: number }) {
 }
 
 const inputClass =
-  'h-[48px] w-full rounded-xl border border-[#d9d9d9] bg-[#fbfbfb] px-4 text-[14px] text-[#1d1d1d] outline-none transition placeholder:text-[#9a9a9a] focus:border-[#ea1d2c] focus:bg-white focus:shadow-[0_0_0_4px_rgba(234,29,44,0.09)]'
+  'h-[48px] w-full rounded-xl border border-[#d9d9d9] bg-[#fbfbfb] px-4 text-[14px] text-[#1d1d1d] outline-none transition placeholder:text-[#9a9a9a] focus:border-[#ff3600] focus:bg-white focus:shadow-[0_0_0_4px_rgba(255,54,0,0.09)]'
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -376,7 +376,7 @@ export function StoreRegisterPage() {
               <button
                 type="button"
                 onClick={() => navigate('/lojas')}
-                className="inline-flex h-[52px] items-center justify-center rounded-2xl bg-[#ea1d2c] px-8 text-[15px] font-bold text-white transition hover:brightness-95"
+                className="inline-flex h-[52px] items-center justify-center rounded-2xl bg-[#ff3600] px-8 text-[15px] font-bold text-white transition hover:brightness-95"
               >
                 Sair
               </button>
@@ -412,7 +412,7 @@ export function StoreRegisterPage() {
                     onClick={() => setHasCnpj(true)}
                     className={[
                       'flex w-full items-center gap-4 rounded-xl border px-4 py-4 text-left transition',
-                      hasCnpj === true ? 'border-[#ea1d2c] bg-[#fff8f8]' : 'border-[#d9d9d9] bg-[#fbfbfb]',
+                      hasCnpj === true ? 'border-[#ff3600] bg-[#fff8f8]' : 'border-[#d9d9d9] bg-[#fbfbfb]',
                     ].join(' ')}
                   >
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#f3f3f3] text-[#1d1d1d]">
@@ -424,7 +424,7 @@ export function StoreRegisterPage() {
                     </div>
                     <div className="flex h-6 w-6 shrink-0 items-center justify-center">
                       {hasCnpj === true ? (
-                        <Check className="h-5 w-5 text-[#ea1d2c]" />
+                        <Check className="h-5 w-5 text-[#ff3600]" />
                       ) : (
                         <Circle className="h-5 w-5 text-[#bbb]" />
                       )}
@@ -439,7 +439,7 @@ export function StoreRegisterPage() {
                     }}
                     className={[
                       'flex w-full items-center gap-4 rounded-xl border px-4 py-4 text-left transition',
-                      hasCnpj === false ? 'border-[#ea1d2c] bg-[#fff8f8]' : 'border-[#d9d9d9] bg-[#fbfbfb]',
+                      hasCnpj === false ? 'border-[#ff3600] bg-[#fff8f8]' : 'border-[#d9d9d9] bg-[#fbfbfb]',
                     ].join(' ')}
                   >
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#f3f3f3] text-[#1d1d1d]">
@@ -451,7 +451,7 @@ export function StoreRegisterPage() {
                     </div>
                     <div className="flex h-6 w-6 shrink-0 items-center justify-center">
                       {hasCnpj === false ? (
-                        <Check className="h-5 w-5 text-[#ea1d2c]" />
+                        <Check className="h-5 w-5 text-[#ff3600]" />
                       ) : (
                         <Circle className="h-5 w-5 text-[#bbb]" />
                       )}
@@ -615,7 +615,7 @@ export function StoreRegisterPage() {
                       autoFocus
                     />
                     {cepLoading ? (
-                      <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-[#ea1d2c]" />
+                      <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-[#ff3600]" />
                     ) : null}
                   </div>
                 </Field>
@@ -677,7 +677,7 @@ export function StoreRegisterPage() {
 
                 <div className="rounded-xl border border-[#e8e8e8] bg-[#f9f9f9] px-4 py-3">
                   <p className="mb-1 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-[#8b8b8b]">
-                    <MapPin className="h-3 w-3 text-[#ea1d2c]" />
+                    <MapPin className="h-3 w-3 text-[#ff3600]" />
                     Endereco
                   </p>
                   <p className="text-[13px] text-[#1d1d1d]">
@@ -797,10 +797,10 @@ export function StoreRegisterPage() {
                       ajusta textos, beneficios e detalhes finos do jeito que quiser.
                     </p>
 
-                    <div className="mt-8 rounded-[28px] border-2 border-[#ea1d2c] bg-white p-6 shadow-[0_16px_40px_rgba(234,29,44,0.08)]">
+                    <div className="mt-8 rounded-[28px] border-2 border-[#ff3600] bg-white p-6 shadow-[0_16px_40px_rgba(255,54,0,0.08)]">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex items-start gap-3">
-                          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#fff1f2] text-[#ea1d2c]">
+                          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#fff1ee] text-[#ff3600]">
                             <ShieldCheck className="h-5 w-5" />
                           </div>
                           <div>
@@ -809,7 +809,7 @@ export function StoreRegisterPage() {
                           </div>
                         </div>
 
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#ea1d2c] text-white">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#ff3600] text-white">
                           <Check className="h-4 w-4" />
                         </div>
                       </div>
@@ -870,7 +870,7 @@ export function StoreRegisterPage() {
                     <div className="rounded-[26px] border border-[#ededed] bg-white p-5">
                       <p className="text-[14px] font-bold text-[#1d1d1d]">Plano escolhido</p>
                       <div className="mt-3 flex items-center gap-3">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#fff1f2] text-[#ea1d2c]">
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#fff1ee] text-[#ff3600]">
                           <CircleDollarSign className="h-5 w-5" />
                         </div>
                         <div>
@@ -898,7 +898,7 @@ export function StoreRegisterPage() {
                   type="button"
                   onClick={() => void handleNext()}
                   disabled={step === 3 && cepLoading}
-                  className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[15px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-2xl bg-[#ff3600] text-[15px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {step === 3 && cepLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -913,7 +913,7 @@ export function StoreRegisterPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[15px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex h-[52px] flex-1 items-center justify-center gap-2 rounded-2xl bg-[#ff3600] text-[15px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {submitting ? (
                     <>
