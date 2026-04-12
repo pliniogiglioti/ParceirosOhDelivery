@@ -288,8 +288,8 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
 
       {signatureStep === 'read' ? (
         <main className="mx-auto h-[calc(100dvh-81px)] max-w-6xl px-4 py-4 sm:px-6 sm:py-5">
-          <div className="grid h-full w-full grid-rows-[minmax(0,1fr)_auto] gap-4">
-            <section className="flex min-h-0 flex-col rounded-[28px] border border-[#ececec] bg-white p-6 shadow-sm sm:p-7">
+          <div className="h-full w-full">
+            <section className="flex h-full min-h-0 flex-col rounded-[28px] border border-[#ececec] bg-white p-6 shadow-sm sm:p-7">
               <div className="mb-5 flex items-center gap-3 rounded-2xl border border-[#ececec] bg-[#fafafa] px-4 py-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ea1d2c] text-[13px] font-black text-white">
                   1
@@ -382,33 +382,25 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
                   </div>
                 </div>
               </div>
+
+              <div className="mt-4 shrink-0 border-t border-[#ececec] pt-4">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-3 rounded-2xl border border-[#ececec] bg-[#fafafa] px-4 py-3 text-[13px] leading-6 text-[#555] sm:max-w-[70%]">
+                    <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#16a34a]" />
+                    <span>Li e concordo com este contrato e sou o responsavel autorizado pela loja.</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setSignatureStep('sign')}
+                    disabled={!hasReachedContractEnd}
+                    className="flex h-[50px] shrink-0 items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] px-6 text-[14px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {hasReachedContractEnd ? 'Ir para assinatura' : 'Role o contrato ate o final'}
+                  </button>
+                </div>
+              </div>
             </section>
-
-            <aside className="w-full shrink-0 rounded-[28px] border border-[#ececec] bg-white p-5 shadow-sm sm:p-6">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#f0fdf4] text-[#16a34a]">
-                <ShieldCheck className="h-6 w-6" />
-              </div>
-
-              <h2 className="mt-4 text-[22px] font-black tracking-[-0.02em] text-[#1d1d1d]">
-                Li e concordo
-              </h2>
-              <p className="mt-2 text-[14px] leading-6 text-[#686868]">
-                Leia o contrato ate o final e confirme o aceite para seguir para a assinatura.
-              </p>
-
-              <div className="mt-4 rounded-2xl border border-[#ececec] bg-[#fafafa] px-4 py-4 text-[13px] leading-6 text-[#555]">
-                Confirmo que li e concordo com este contrato e que sou o responsavel autorizado pela loja.
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setSignatureStep('sign')}
-                disabled={!hasReachedContractEnd}
-                className="mt-4 flex h-[50px] w-full items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[14px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {hasReachedContractEnd ? 'Ir para assinatura' : 'Role o contrato ate o final'}
-              </button>
-            </aside>
           </div>
         </main>
       ) : (
