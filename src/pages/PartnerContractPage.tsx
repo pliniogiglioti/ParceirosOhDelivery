@@ -222,7 +222,7 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
   const navigate = useNavigate()
   const { signOut } = usePartnerAuth()
   const [signatureCpf, setSignatureCpf] = useState('')
-  const [acceptTerms, setAcceptTerms] = useState(false)
+  const [signatureStep, setSignatureStep] = useState<'read' | 'sign'>('read')
   const [submitting, setSubmitting] = useState(false)
   const [hasReachedContractEnd, setHasReachedContractEnd] = useState(false)
 
@@ -250,11 +250,6 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
   }
 
   async function handleSignContract() {
-    if (!acceptTerms) {
-      toast.error('Confirme que voce leu e concorda com o contrato.')
-      return
-    }
-
     if (signatureCpf.replace(/\D/g, '').length !== 11) {
       toast.error('Digite um CPF valido para registrar a assinatura.')
       return
@@ -383,59 +378,66 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
             </div>
 
             <h2 className="mt-4 text-[22px] font-black tracking-[-0.02em] text-[#1d1d1d]">
-              Confirmar assinatura
+              {signatureStep === 'read' ? 'Li e concordo' : 'Assinar contrato'}
             </h2>
             <p className="mt-2 text-[14px] leading-6 text-[#686868]">
-              Role o contrato ate o final para liberar a assinatura. Depois disso, digite o CPF do responsavel para registrar o aceite.
+              {signatureStep === 'read'
+                ? 'Leia o contrato ate o final e confirme o aceite para seguir para a assinatura.'
+                : 'Agora digite o CPF do responsavel para concluir a assinatura do contrato.'}
             </p>
 
-            <label className="mt-4 block">
-              <span className="mb-1.5 block text-[13px] font-semibold text-[#4f4f4f]">
-                Digite o CPF para assinar
-              </span>
-              <div className="relative">
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  autoFocus
-                  value={signatureCpf}
-                  onChange={(event) => setSignatureCpf(formatCpf(event.target.value))}
-                  placeholder="000.000.000-00"
-                  className="h-[48px] w-full rounded-xl border border-[#d9d9d9] bg-[#fbfbfb] px-4 pr-12 text-[14px] text-[#1d1d1d] outline-none transition placeholder:text-[#9a9a9a] focus:border-[#ea1d2c] focus:bg-white focus:shadow-[0_0_0_4px_rgba(234,29,44,0.09)]"
-                />
-                <FileSignature className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9a9a9a]" />
-              </div>
-            </label>
+            {signatureStep === 'read' ? (
+              <>
+                <div className="mt-4 rounded-2xl border border-[#ececec] bg-[#fafafa] px-4 py-4 text-[13px] leading-6 text-[#555]">
+                  Confirmo que li e concordo com este contrato e que sou o responsavel autorizado pela loja.
+                </div>
 
-            <label className="mt-3 flex items-start gap-3 rounded-2xl border border-[#ececec] bg-[#fafafa] px-4 py-4">
-              <input
-                type="checkbox"
-                checked={acceptTerms}
-                onChange={(event) => setAcceptTerms(event.target.checked)}
-                className="mt-1 h-4 w-4 rounded border-[#cfcfcf] text-[#ea1d2c] focus:ring-[#ea1d2c]"
-              />
-              <span className="text-[13px] leading-6 text-[#555]">
-                Confirmo que li e concordo com este contrato e que sou o responsavel autorizado pela loja.
-              </span>
-            </label>
+                <button
+                  type="button"
+                  onClick={() => setSignatureStep('sign')}
+                  disabled={!hasReachedContractEnd}
+                  className="mt-4 flex h-[50px] w-full items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[14px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {hasReachedContractEnd ? 'Li e concordo' : 'Role o contrato ate o final'}
+                </button>
+              </>
+            ) : (
+              <>
+                <label className="mt-4 block">
+                  <span className="mb-1.5 block text-[13px] font-semibold text-[#4f4f4f]">
+                    Digite o CPF para assinar
+                  </span>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      autoFocus
+                      value={signatureCpf}
+                      onChange={(event) => setSignatureCpf(formatCpf(event.target.value))}
+                      placeholder="000.000.000-00"
+                      className="h-[48px] w-full rounded-xl border border-[#d9d9d9] bg-[#fbfbfb] px-4 pr-12 text-[14px] text-[#1d1d1d] outline-none transition placeholder:text-[#9a9a9a] focus:border-[#ea1d2c] focus:bg-white focus:shadow-[0_0_0_4px_rgba(234,29,44,0.09)]"
+                    />
+                    <FileSignature className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9a9a9a]" />
+                  </div>
+                </label>
 
-            <button
-              type="button"
-              onClick={() => void handleSignContract()}
-              disabled={submitting || !hasReachedContractEnd}
-              className="mt-4 flex h-[50px] w-full items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[14px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Assinando...
-                </>
-              ) : !hasReachedContractEnd ? (
-                'Role o contrato ate o final'
-              ) : (
-                'Assinar contrato'
-              )}
-            </button>
+                <button
+                  type="button"
+                  onClick={() => void handleSignContract()}
+                  disabled={submitting}
+                  className="mt-4 flex h-[50px] w-full items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[14px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {submitting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Assinando...
+                    </>
+                  ) : (
+                    'Assinar contrato'
+                  )}
+                </button>
+              </>
+            )}
           </aside>
         </div>
       </main>
