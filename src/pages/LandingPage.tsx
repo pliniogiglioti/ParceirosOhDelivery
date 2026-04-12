@@ -482,7 +482,7 @@ export function LandingPage() {
             <p className="text-[13px] text-[#aaa]">
               © {new Date().getFullYear()} Oh Delivery. Todos os direitos reservados.
             </p>
-            <p className="text-[13px] text-[#ccc]">CNPJ 00.000.000/0001-00</p>
+            <p className="text-[13px] text-[#ccc]">CNPJ 62.622.102/0001-04</p>
           </div>
         </div>
       </footer>
