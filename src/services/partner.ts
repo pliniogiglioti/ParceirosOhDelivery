@@ -255,6 +255,58 @@ export async function registerStore(
   return String(store.id)
 }
 
+export type StoreImageItem = {
+  name: string
+  path: string
+  publicUrl: string
+  updatedAt: string
+}
+
+export async function listStoreImages(storeId: string): Promise<StoreImageItem[]> {
+  if (!isSupabaseConfigured || !supabase) return []
+
+  const { data, error } = await supabase.storage
+    .from('store-images')
+    .list(storeId, { sortBy: { column: 'updated_at', order: 'desc' } })
+
+  if (error) throw error
+
+  return (data ?? [])
+    .filter((item) => item.id != null && !item.id.endsWith('/'))
+    .map((item) => {
+      const path = `${storeId}/${item.name}`
+      const { data: urlData } = supabase!.storage.from('store-images').getPublicUrl(path)
+      return {
+        name: item.name,
+        path,
+        publicUrl: urlData.publicUrl,
+        updatedAt: item.updated_at ?? '',
+      }
+    })
+}
+
+export async function uploadStoreImage(
+  storeId: string,
+  file: File
+): Promise<string> {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
+
+  const ext = file.name.split('.').pop() ?? 'jpg'
+  const ts = Date.now()
+  const baseName = file.name.replace(/\.[^.]+$/, '').replace(/[^a-z0-9]/gi, '_').slice(0, 40)
+  const path = `${storeId}/${baseName}_${ts}.${ext}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('store-images')
+    .upload(path, file, { upsert: false, contentType: file.type })
+
+  if (uploadError) throw uploadError
+
+  const { data } = supabase.storage.from('store-images').getPublicUrl(path)
+
+  return data.publicUrl
+}
+
 export async function saveStore(storeId: string, patch: Partial<import('@/types').PartnerStore>): Promise<void> {
   if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
 
@@ -273,6 +325,8 @@ export async function saveStore(storeId: string, patch: Partial<import('@/types'
       ...(patch.etaMax !== undefined && { eta_max: patch.etaMax }),
       ...(patch.pickupEta !== undefined && { pickup_eta: patch.pickupEta }),
       ...(patch.active !== undefined && { active: patch.active }),
+      ...(patch.coverImageUrl !== undefined && { cover_image_url: patch.coverImageUrl }),
+      ...(patch.logoImageUrl !== undefined && { logo_image_url: patch.logoImageUrl }),
       ...(patch.addressStreet !== undefined && { address_street: patch.addressStreet }),
       ...(patch.addressNumber !== undefined && { address_number: patch.addressNumber }),
       ...(patch.addressComplement !== undefined && { address_complement: patch.addressComplement }),

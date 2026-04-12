@@ -1,6 +1,5 @@
-import type { ChangeEvent } from 'react'
 import { Camera, ChevronDown, Clock3, Star } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
 import { usePartnerPageData } from '@/hooks/usePartnerPageData'
@@ -10,6 +9,7 @@ import { MapPicker } from '@/components/MapPicker'
 import type { PartnerStore, StoreCategory } from '@/types'
 import { formatCurrency, formatTime } from '@/lib/utils'
 import { MiniInfoCard, SectionFrame } from '@/components/partner/PartnerUi'
+import { StoreImagePickerModal } from '@/components/partner/StoreImagePickerModal'
 
 type StoreTabId = 'loja' | 'endereco' | 'acesso'
 
@@ -28,15 +28,6 @@ function parseCurrencyNumber(value: string) {
 function parseInteger(value: string) {
   const parsed = Number.parseInt(value, 10)
   return Number.isFinite(parsed) ? parsed : 0
-}
-
-function readFileAsDataUrl(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(String(reader.result ?? ''))
-    reader.onerror = () => reject(reader.error)
-    reader.readAsDataURL(file)
-  })
 }
 
 function ThemeSwitch({
@@ -121,11 +112,10 @@ function hasStoreAddressChanges(current: PartnerStore, initial: PartnerStore) {
 function StoreEditorTab() {
   const { data } = usePartnerPageData()
   const { updateStore } = usePartnerDraftStore()
-  const coverInputRef = useRef<HTMLInputElement | null>(null)
-  const logoInputRef = useRef<HTMLInputElement | null>(null)
   const [draftStore, setDraftStore] = useState<PartnerStore>(data.store)
   const [categories, setCategories] = useState<StoreCategory[]>([])
   const [isSaving, setIsSaving] = useState(false)
+  const [imagePickerSlot, setImagePickerSlot] = useState<'logo' | 'cover' | null>(null)
 
   useEffect(() => {
     setDraftStore(data.store)
@@ -139,6 +129,8 @@ function StoreEditorTab() {
       ...patch,
     }))
   }
+
+  const [savingImageSlot, setSavingImageSlot] = useState<'cover' | 'logo' | null>(null)
 
   const hasActiveProduct = data.products.some((p) => p.active)
   const blockers = storeActivationBlockers(draftStore, hasActiveProduct)
@@ -160,30 +152,37 @@ function StoreEditorTab() {
     }
   }
 
-  async function handleImageUpload(
-    event: ChangeEvent<HTMLInputElement>,
-    field: 'coverImageUrl' | 'logoImageUrl'
-  ) {
-    const file = event.target.files?.[0]
-    if (!file) return
+  // Chamado quando o usuario seleciona uma imagem do modal da galeria
+  async function handleImageSelected(publicUrl: string, slot: 'cover' | 'logo') {
+    const field = slot === 'cover' ? 'coverImageUrl' : 'logoImageUrl'
+    handleStorePatch({ [field]: publicUrl })
 
-    const dataUrl = await readFileAsDataUrl(file)
-    handleStorePatch({ [field]: dataUrl })
-    event.target.value = ''
+    setSavingImageSlot(slot)
+    try {
+      await saveStore(data.store.id, { [field]: publicUrl })
+      updateStore(data.store.id, { ...draftStore, [field]: publicUrl })
+      toast.success('Imagem atualizada com sucesso.')
+    } catch {
+      toast.error('Nao foi possivel salvar a imagem. Tente novamente.')
+    } finally {
+      setSavingImageSlot(null)
+    }
   }
 
+
   return (
+    <>
+    <StoreImagePickerModal
+      open={imagePickerSlot !== null}
+      storeId={data.store.id}
+      slot={imagePickerSlot ?? 'logo'}
+      onSelect={(url) => imagePickerSlot && void handleImageSelected(url, imagePickerSlot)}
+      onClose={() => setImagePickerSlot(null)}
+    />
     <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
       <article className="panel-card overflow-hidden">
         <div className="space-y-5">
           <div className="relative overflow-hidden">
-            <input
-              ref={coverInputRef}
-              type="file"
-              accept="image/*"
-              onChange={(event) => void handleImageUpload(event, 'coverImageUrl')}
-              className="hidden"
-            />
             <div
               className="h-[260px] w-full bg-cover bg-center"
               style={{
@@ -195,11 +194,12 @@ function StoreEditorTab() {
 
             <button
               type="button"
-              onClick={() => coverInputRef.current?.click()}
-              className="absolute right-4 top-4 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-[0.14em] text-ink-700 shadow-soft transition hover:bg-coral-500 hover:text-white"
+              onClick={() => !savingImageSlot && setImagePickerSlot('cover')}
+              disabled={savingImageSlot !== null}
+              className="absolute right-4 top-4 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-xs font-bold uppercase tracking-[0.14em] text-ink-700 shadow-soft transition hover:bg-coral-500 hover:text-white disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Camera className="h-4 w-4" />
-              Trocar capa
+              {savingImageSlot === 'cover' ? 'Salvando...' : 'Trocar capa'}
             </button>
 
             <div className="absolute inset-x-0 bottom-0 flex justify-end p-4">
@@ -220,17 +220,11 @@ function StoreEditorTab() {
               {draftStore.categoryName || 'Loja'}
             </p>
             <div className="mt-3 flex items-start gap-4">
-              <input
-                ref={logoInputRef}
-                type="file"
-                accept="image/*"
-                onChange={(event) => void handleImageUpload(event, 'logoImageUrl')}
-                className="hidden"
-              />
               <button
                 type="button"
-                onClick={() => logoInputRef.current?.click()}
-                className="group relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-ink-100 bg-white shadow-soft transition hover:scale-[1.02]"
+                onClick={() => !savingImageSlot && setImagePickerSlot('logo')}
+                disabled={savingImageSlot !== null}
+                className="group relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-ink-100 bg-white shadow-soft transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60"
                 title="Trocar logo"
               >
                 {draftStore.logoImageUrl ? (
@@ -239,7 +233,11 @@ function StoreEditorTab() {
                   <span className="text-2xl font-black text-ink-700">{draftStore.name.slice(0, 1)}</span>
                 )}
                 <span className="absolute bottom-1 right-1 inline-flex h-7 w-7 items-center justify-center rounded-full bg-white text-ink-700 shadow-soft transition group-hover:bg-coral-500 group-hover:text-white">
-                  <Camera className="h-3.5 w-3.5" />
+                  {savingImageSlot === 'logo' ? (
+                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-ink-300 border-t-coral-500" />
+                  ) : (
+                    <Camera className="h-3.5 w-3.5" />
+                  )}
                 </span>
               </button>
               <div className="min-w-0">
@@ -459,6 +457,7 @@ function StoreEditorTab() {
         </div>
       </article>
     </div>
+    </>
   )
 }
 
