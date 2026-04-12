@@ -1,4 +1,4 @@
-import { Bell, ChevronDown, MessageCircle, Store } from 'lucide-react'
+import { Bell, ChevronDown, HelpCircle, MessageCircle, Store } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePartnerAuth } from '@/hooks/usePartnerAuth'
@@ -98,6 +98,16 @@ export function PartnerTopbar({ data }: { data: PartnerDashboardData }) {
 
       {/* Actions */}
       <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => navigate('/app/suporte')}
+          className="relative inline-flex h-9 w-9 items-center justify-center rounded-2xl text-ink-600 transition hover:bg-ink-50 hover:text-ink-900"
+          aria-label="Ajuda"
+          title="Ajuda"
+        >
+          <HelpCircle className="h-5 w-5" />
+        </button>
+
         <button
           type="button"
           onClick={() => navigate('/app/mensagens')}
