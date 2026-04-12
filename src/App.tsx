@@ -70,9 +70,8 @@ function StoreSelectionRoute() {
 function StoreRegisterRoute() {
   const auth = usePartnerAuth()
   const location = useLocation()
-  const showLoading = useMinimumLoading(auth.loading)
 
-  if (showLoading) {
+  if (auth.loading) {
     return <LoadingScreen />
   }
 
