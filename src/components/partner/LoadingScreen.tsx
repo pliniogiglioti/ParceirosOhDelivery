@@ -20,7 +20,7 @@ export function LoadingScreen() {
           </div>
         </div>
 
-        <h1 className="mt-6 font-display text-3xl font-bold text-ink-900">Carregando painel</h1>
+        <h1 className="mt-6 font-display text-3xl font-bold text-ink-900">Carregando...</h1>
         <p className="mt-2 text-sm leading-6 text-ink-500">
           Estamos preparando seus dados e sincronizando as informacoes da loja.
         </p>
