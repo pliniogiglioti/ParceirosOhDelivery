@@ -114,7 +114,10 @@ function StoreStatusToggleCard({
 
       <div
         className={cn(
-          'store-status-popover absolute left-0 right-0 top-[calc(100%+10px)] z-30 rounded-xl border border-ink-100 bg-white p-3 text-ink-900 shadow-float',
+          'store-status-popover absolute z-30 rounded-xl border border-ink-100 bg-white p-3 text-ink-900 shadow-float',
+          collapsed
+            ? 'left-full top-0 ml-2 w-52'
+            : 'left-0 right-0 top-[calc(100%+10px)]',
           confirmOpen ? 'store-status-popover-open' : 'store-status-popover-closed'
         )}
         aria-hidden={!confirmOpen}
