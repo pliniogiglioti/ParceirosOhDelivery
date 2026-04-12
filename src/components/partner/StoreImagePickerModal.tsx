@@ -4,6 +4,34 @@ import toast from 'react-hot-toast'
 import { AnimatedModal } from './AnimatedModal'
 import { listStoreImages, uploadStoreImage, type StoreImageItem } from '@/services/partner'
 
+const MAX_FILE_SIZE = 1_048_576   // 1 MB
+const MAX_DIMENSION = 800         // px
+
+function validateImage(file: File): Promise<string | null> {
+  return new Promise((resolve) => {
+    if (file.size > MAX_FILE_SIZE) {
+      resolve(`A imagem deve ter no maximo 1 MB (atual: ${(file.size / 1_048_576).toFixed(1)} MB).`)
+      return
+    }
+
+    const url = URL.createObjectURL(file)
+    const img = new Image()
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      if (img.width > MAX_DIMENSION || img.height > MAX_DIMENSION) {
+        resolve(`A imagem deve ter no maximo ${MAX_DIMENSION}x${MAX_DIMENSION}px (atual: ${img.width}x${img.height}px).`)
+      } else {
+        resolve(null)
+      }
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      resolve('Nao foi possivel ler a imagem.')
+    }
+    img.src = url
+  })
+}
+
 type Props = {
   open: boolean
   storeId: string
@@ -36,6 +64,12 @@ export function StoreImagePickerModal({ open, storeId, slot, onSelect, onClose }
     const file = event.target.files?.[0]
     if (!file) return
     event.target.value = ''
+
+    const validationError = await validateImage(file)
+    if (validationError) {
+      toast.error(validationError)
+      return
+    }
 
     setUploading(true)
     try {

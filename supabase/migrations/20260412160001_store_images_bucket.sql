@@ -4,8 +4,8 @@ VALUES (
   'store-images',
   'store-images',
   true,
-  5242880,                                             -- 5 MB por arquivo
-  ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+  1048576,                                             -- 1 MB por arquivo
+  ARRAY['image/jpeg', 'image/png', 'image/webp']
 )
 ON CONFLICT (id) DO NOTHING;
 
