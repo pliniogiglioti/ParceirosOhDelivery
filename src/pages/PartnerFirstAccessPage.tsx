@@ -1,5 +1,5 @@
 import React, { type ReactNode, useEffect, useState } from 'react'
-import { ArrowRight, CheckCircle2, ChevronDown, Circle, Clock3, Loader2, LogOut, MapPinned, ShoppingBag, Store, WalletCards } from 'lucide-react'
+import { ArrowRight, CheckCircle2, ChevronDown, Circle, Clock3, Loader2, LogOut, MapPinned, ShoppingBag, Sparkles, Store, WalletCards } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { LoadingScreen } from '@/components/partner/LoadingScreen'
@@ -24,7 +24,7 @@ import {
 } from '@/services/partner'
 import type { DeliveryArea, PartnerCategory, PartnerHour, PartnerProduct, PartnerStore, PaymentMethodItem, StoreCategory } from '@/types'
 
-type FirstAccessStepId = 'loja' | 'horarios' | 'entrega' | 'pagamentos' | 'produto'
+type FirstAccessStepId = 'boasvindas' | 'loja' | 'horarios' | 'entrega' | 'pagamentos' | 'produto'
 
 type ProductDraft = {
   categoryId: string
@@ -34,6 +34,7 @@ type ProductDraft = {
 }
 
 const STEPS: Array<{ id: FirstAccessStepId; label: string; icon: React.ElementType }> = [
+  { id: 'boasvindas', label: 'Boas-vindas', icon: Sparkles },
   { id: 'loja', label: 'Loja', icon: Store },
   { id: 'horarios', label: 'Horarios', icon: Clock3 },
   { id: 'entrega', label: 'Entrega', icon: MapPinned },
@@ -108,6 +109,7 @@ export function PartnerFirstAccessPage() {
     price: '',
   })
   const [savedSteps, setSavedSteps] = useState({
+    boasvindas: false,
     loja: false,
     horarios: false,
     entrega: false,
@@ -161,6 +163,7 @@ export function PartnerFirstAccessPage() {
     })
 
     setSavedSteps({
+      boasvindas: false,
       loja: isStoreStepValid(data.store),
       horarios: isHoursStepValid(data.hours),
       entrega: data.deliveryAreas.some((area) => area.active),
@@ -196,7 +199,7 @@ export function PartnerFirstAccessPage() {
 
   const dashboardData = data
   const currentStore = storeDraft
-  const currentStepId = STEPS[activeStep]?.id ?? 'loja'
+  const currentStepId = STEPS[activeStep]?.id ?? 'boasvindas'
   const storeStepComplete = savedSteps.loja && isStoreStepValid(currentStore)
   const hoursStepComplete = savedSteps.horarios && isHoursStepValid(hoursDraft)
   const deliveryStepComplete = savedSteps.entrega && deliveryAreasDraft.length > 0
@@ -204,6 +207,7 @@ export function PartnerFirstAccessPage() {
   const productStepComplete = savedSteps.produto && productsDraft.some((product) => product.active)
 
   const completedMap: Record<FirstAccessStepId, boolean> = {
+    boasvindas: activeStep > 0,
     loja: storeStepComplete,
     horarios: hoursStepComplete,
     entrega: deliveryStepComplete,
@@ -369,7 +373,12 @@ export function PartnerFirstAccessPage() {
   }
 
   async function handleSaveAndNext() {
-    const saveMap: Record<FirstAccessStepId, () => Promise<boolean>> = {
+    if (currentStepId === 'boasvindas') {
+      goNext()
+      return
+    }
+
+    const saveMap: Record<Exclude<FirstAccessStepId, 'boasvindas'>, () => Promise<boolean>> = {
       loja: handleSaveStoreStep,
       horarios: handleSaveHoursStep,
       entrega: handleSaveDeliveryStep,
@@ -405,6 +414,53 @@ export function PartnerFirstAccessPage() {
   }
 
   function renderCurrentStep() {
+    if (currentStepId === 'boasvindas') {
+      return (
+        <div className="flex-1 rounded-2xl bg-white p-8 shadow-sm">
+          <div className="flex h-full flex-col justify-between gap-8">
+            <div className="space-y-6">
+              <div className="flex h-16 w-16 items-center justify-center rounded-[24px] bg-[#fff1f2] text-[#ea1d2c]">
+                <Sparkles className="h-8 w-8" />
+              </div>
+
+              <div>
+                <p className="text-[12px] font-bold uppercase tracking-[0.18em] text-[#ea1d2c]">
+                  Primeiro acesso
+                </p>
+                <h1 className="mt-3 text-[34px] font-black leading-tight tracking-[-0.04em] text-[#1d1d1d]">
+                  Boas-vindas ao painel da sua loja
+                </h1>
+                <p className="mt-4 max-w-3xl text-[15px] leading-7 text-[#666]">
+                  Vamos configurar os pontos principais da operacao para sua loja entrar no ar com
+                  tudo pronto: dados da loja, horarios, entrega, pagamentos e o primeiro produto.
+                </p>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {[
+                  'Revise as informacoes da loja antes de publicar.',
+                  'Defina horarios e areas de entrega no mesmo fluxo.',
+                  'Ative pagamentos e finalize com o primeiro produto.',
+                ].map((item) => (
+                  <div key={item} className="rounded-3xl border border-[#ececec] bg-[#fafafa] p-5">
+                    <p className="text-[14px] font-semibold leading-6 text-[#1d1d1d]">{item}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-[#ececec] bg-[#fafafa] p-6">
+              <p className="text-[14px] font-bold text-[#1d1d1d]">Como funciona</p>
+              <p className="mt-2 text-[14px] leading-6 text-[#666]">
+                Sao algumas etapas rapidas. Quando tudo estiver salvo, o painel libera a operacao
+                completa da loja automaticamente.
+              </p>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
     if (currentStepId === 'loja') {
       return (
         <div className="flex-1 rounded-2xl bg-white p-8 shadow-sm space-y-5">
@@ -611,6 +667,8 @@ export function PartnerFirstAccessPage() {
         >
           {savingStep !== null ? (
             <><Loader2 className="h-4 w-4 animate-spin" /> Salvando...</>
+          ) : currentStepId === 'boasvindas' ? (
+            <>Comecar configuracao <ArrowRight className="h-4 w-4" /></>
           ) : (
             <>Salvar e proximo <ArrowRight className="h-4 w-4" /></>
           )}
