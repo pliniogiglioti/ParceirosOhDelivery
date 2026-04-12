@@ -291,9 +291,9 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
         </div>
       </header>
 
-      <main className="mx-auto flex min-h-[calc(100dvh-81px)] max-w-6xl items-start px-4 py-10 sm:px-6">
+      <main className="mx-auto flex min-h-[calc(100dvh-81px)] max-w-6xl items-stretch px-4 py-10 sm:px-6">
         <div className="w-full space-y-6">
-          <section className="rounded-[28px] border border-[#ececec] bg-white p-7 shadow-sm sm:p-8">
+          <section className="flex min-h-[calc(100dvh-161px)] flex-col rounded-[28px] border border-[#ececec] bg-white p-7 shadow-sm sm:p-8">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff1f2] text-[#ea1d2c]">
                 <ScrollText className="h-6 w-6" />
@@ -308,8 +308,8 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
               </div>
             </div>
 
-            <div className="mt-6 space-y-4 text-[14px] leading-7 text-[#555]">
-              <div className="rounded-3xl border border-[#ececec] bg-[#fafafa] p-5">
+            <div className="mt-6 flex flex-1 flex-col space-y-4 text-[14px] leading-7 text-[#555]">
+              <div className="shrink-0 rounded-3xl border border-[#ececec] bg-[#fafafa] p-5">
                 <p className="font-bold text-[#1d1d1d]">Partes do contrato</p>
                 <p className="mt-2">
                   Loja: <span className="font-semibold text-[#1d1d1d]">{data.store.name}</span>
@@ -319,11 +319,11 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
                 </p>
               </div>
 
-              <div className="rounded-3xl border border-[#ececec] p-6 sm:p-8">
+              <div className="flex flex-1 flex-col rounded-3xl border border-[#ececec] p-6 sm:p-8">
                 <p className="font-bold text-[#1d1d1d]">Contrato completo</p>
                 <div
                   onScroll={handleContractScroll}
-                  className="mt-4 max-h-[68dvh] space-y-6 overflow-y-auto pr-2 text-[13px] leading-6 text-[#555]"
+                  className="mt-4 flex-1 space-y-6 overflow-y-auto pr-2 text-[13px] leading-6 text-[#555]"
                 >
                   <div className="space-y-4">
                     <p className="text-[15px] font-bold uppercase tracking-[0.04em] text-[#1d1d1d]">
@@ -377,7 +377,7 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
             </div>
           </section>
 
-          <aside className="ml-auto w-full max-w-[420px] rounded-[28px] border border-[#ececec] bg-white p-7 shadow-sm sm:p-8">
+          <aside className="w-full rounded-[28px] border border-[#ececec] bg-white p-7 shadow-sm sm:p-8">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#f0fdf4] text-[#16a34a]">
               <ShieldCheck className="h-6 w-6" />
             </div>
