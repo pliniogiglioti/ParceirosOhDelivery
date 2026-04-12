@@ -51,9 +51,40 @@ function VerificationCodeField({
   value: string
   onChange: (value: string) => void
 }) {
-  const inputRef = useRef<HTMLInputElement | null>(null)
+  const inputRefs = useRef<Array<HTMLInputElement | null>>(Array(6).fill(null))
   const digits = Array.from({ length: 6 }, (_, index) => value[index] ?? '')
-  const activeIndex = Math.min(value.length, 5)
+
+  function handleChange(index: number, raw: string) {
+    const char = raw.replace(/\D/g, '').slice(-1)
+    const next = [...digits]
+    next[index] = char
+    onChange(next.join(''))
+    if (char && index < 5) inputRefs.current[index + 1]?.focus()
+  }
+
+  function handleKeyDown(index: number, event: React.KeyboardEvent<HTMLInputElement>) {
+    if (event.key === 'Backspace') {
+      if (digits[index]) {
+        const next = [...digits]
+        next[index] = ''
+        onChange(next.join(''))
+      } else if (index > 0) {
+        inputRefs.current[index - 1]?.focus()
+      }
+    } else if (event.key === 'ArrowLeft' && index > 0) {
+      inputRefs.current[index - 1]?.focus()
+    } else if (event.key === 'ArrowRight' && index < 5) {
+      inputRefs.current[index + 1]?.focus()
+    }
+  }
+
+  function handlePaste(event: React.ClipboardEvent) {
+    event.preventDefault()
+    const pasted = event.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)
+    onChange(pasted)
+    const focusIndex = Math.min(pasted.length, 5)
+    inputRefs.current[focusIndex]?.focus()
+  }
 
   return (
     <div className="mt-5">
@@ -62,44 +93,30 @@ function VerificationCodeField({
         <span className="text-[12px] text-[#8b8b8b]">6 digitos</span>
       </div>
 
-      <button
-        type="button"
-        onClick={() => inputRef.current?.focus()}
-        className="relative block w-full"
-        aria-label="Digitar codigo de 6 digitos"
-      >
-        <div className="grid grid-cols-6 gap-2 sm:gap-3">
-          {digits.map((digit, index) => {
-            const isFilled = digit !== ''
-            const isActive = !isFilled && index === activeIndex
-
-            return (
-              <span
-                key={index}
-                className={[
-                  'flex h-[58px] items-center justify-center rounded-xl border text-[22px] font-bold tracking-[0.02em] transition',
-                  isFilled
-                    ? 'border-[#ff3600] bg-[#fff2ee] text-[#1d1d1d]'
-                    : 'border-[#d9d9d9] bg-[#fbfbfb] text-[#b3b3b3]',
-                  isActive ? 'shadow-[0_0_0_4px_rgba(255,54,0,0.09)]' : '',
-                ].join(' ')}
-              >
-                {digit || '-'}
-              </span>
-            )
-          })}
-        </div>
-
-        <input
-          ref={inputRef}
-          type="text"
-          inputMode="numeric"
-          autoComplete="one-time-code"
-          value={value}
-          onChange={(event) => onChange(event.target.value.replace(/\D/g, '').slice(0, 6))}
-          className="absolute left-0 top-0 h-px w-px opacity-0"
-        />
-      </button>
+      <div className="grid grid-cols-6 gap-2 sm:gap-3">
+        {digits.map((digit, index) => (
+          <input
+            key={index}
+            ref={(el) => { inputRefs.current[index] = el }}
+            type="text"
+            inputMode="numeric"
+            autoComplete={index === 0 ? 'one-time-code' : 'off'}
+            maxLength={1}
+            value={digit}
+            onChange={(event) => handleChange(index, event.target.value)}
+            onKeyDown={(event) => handleKeyDown(index, event)}
+            onPaste={handlePaste}
+            onFocus={(event) => event.target.select()}
+            className={[
+              'h-[58px] w-full rounded-xl border text-center text-[22px] font-bold tracking-[0.02em] outline-none transition',
+              digit
+                ? 'border-[#ff3600] bg-[#fff2ee] text-[#1d1d1d]'
+                : 'border-[#d9d9d9] bg-[#fbfbfb] text-[#b3b3b3]',
+              'focus:border-[#ff3600] focus:shadow-[0_0_0_4px_rgba(255,54,0,0.09)]',
+            ].join(' ')}
+          />
+        ))}
+      </div>
     </div>
   )
 }
@@ -217,6 +234,8 @@ function AuthSkeletonCard() {
   )
 }
 
+const RESEND_COOLDOWN_SECONDS = 120
+
 function AuthCard({
   codeSent,
   sending,
@@ -240,6 +259,30 @@ function AuthCard({
   onVerify: (event: FormEvent<HTMLFormElement>) => Promise<void>
   onResend: () => Promise<void>
 }) {
+  const [cooldown, setCooldown] = useState(codeSent ? RESEND_COOLDOWN_SECONDS : 0)
+  const prevCodeSent = useRef(codeSent)
+
+  useEffect(() => {
+    if (!prevCodeSent.current && codeSent) {
+      setCooldown(RESEND_COOLDOWN_SECONDS)
+    }
+    prevCodeSent.current = codeSent
+  }, [codeSent])
+
+  useEffect(() => {
+    if (cooldown <= 0) return
+    const timer = setTimeout(() => setCooldown((c) => c - 1), 1000)
+    return () => clearTimeout(timer)
+  }, [cooldown])
+
+  const cooldownLabel = `${Math.floor(cooldown / 60)}:${String(cooldown % 60).padStart(2, '0')}`
+
+  async function handleResendClick() {
+    setCooldown(RESEND_COOLDOWN_SECONDS)
+    onCodeChange('')
+    await onResend()
+  }
+
   return (
     <div className="overflow-hidden rounded-xl bg-white shadow-[0_18px_50px_rgba(0,0,0,0.32)]">
       {!codeSent ? (
@@ -300,20 +343,19 @@ function AuthCard({
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  onCodeChange('')
-                  void onResend()
-                }}
-                disabled={sending}
+                onClick={() => void handleResendClick()}
+                disabled={sending || cooldown > 0}
                 className="h-[50px] flex-1 rounded-xl border border-[#dddddd] text-[14px] font-semibold text-[#303030] transition hover:bg-[#f7f7f7] disabled:cursor-not-allowed disabled:opacity-70"
               >
-                Reenviar
+                {cooldown > 0 ? `Reenviar ${cooldownLabel}` : 'Reenviar'}
               </button>
             </div>
           </div>
 
           <div className="border-t border-[#ececec] px-6 py-5 text-center text-[13px] text-[#2f2f2f]">
-            Nao recebeu? Confira spam ou tente reenviar em alguns segundos.
+            {cooldown > 0
+              ? `Novo codigo disponivel em ${cooldownLabel}.`
+              : 'Nao recebeu? Confira o spam ou reenvie o codigo.'}
           </div>
         </form>
       )}
