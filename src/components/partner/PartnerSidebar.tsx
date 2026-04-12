@@ -195,7 +195,7 @@ export function PartnerSidebar({
           <div className={cn('flex items-center', collapsed ? 'justify-center' : 'gap-3')}>
             <div className={cn('min-w-0', collapsed ? 'flex justify-center' : 'flex-1')}>
               <img
-                src="/logo.png"
+                src={collapsed ? '/logoreduzido.png' : '/logo.png'}
                 alt="Oh Delivery"
                 style={collapsed ? undefined : { width: '155px', height: 'auto' }}
                 className={cn('object-contain', collapsed ? 'h-9 w-auto' : 'pl-3')}
