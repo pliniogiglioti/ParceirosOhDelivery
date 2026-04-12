@@ -290,6 +290,17 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
         <main className="mx-auto h-[calc(100dvh-81px)] max-w-6xl px-4 py-4 sm:px-6 sm:py-5">
           <div className="grid h-full w-full grid-rows-[minmax(0,1fr)_auto] gap-4">
             <section className="flex min-h-0 flex-col rounded-[28px] border border-[#ececec] bg-white p-6 shadow-sm sm:p-7">
+              <div className="mb-5 flex items-center gap-3 rounded-2xl border border-[#ececec] bg-[#fafafa] px-4 py-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ea1d2c] text-[13px] font-black text-white">
+                  1
+                </div>
+                <div className="flex-1">
+                  <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#8b8b8b]">Etapa 1 de 2</p>
+                  <p className="text-[14px] font-semibold text-[#1d1d1d]">Leitura e aceite do contrato</p>
+                </div>
+                <div className="h-[2px] w-16 rounded-full bg-[#ea1d2c]" />
+              </div>
+
               <div className="flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff1f2] text-[#ea1d2c]">
                   <ScrollText className="h-6 w-6" />
@@ -395,7 +406,7 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
                 disabled={!hasReachedContractEnd}
                 className="mt-4 flex h-[50px] w-full items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[14px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {hasReachedContractEnd ? 'Li e concordo' : 'Role o contrato ate o final'}
+                {hasReachedContractEnd ? 'Ir para assinatura' : 'Role o contrato ate o final'}
               </button>
             </aside>
           </div>
@@ -403,6 +414,17 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
       ) : (
         <main className="mx-auto flex min-h-[calc(100dvh-81px)] max-w-6xl items-center justify-center px-4 py-8 sm:px-6">
           <div className="w-full max-w-2xl rounded-[28px] border border-[#ececec] bg-white p-7 shadow-sm sm:p-8">
+            <div className="mb-5 flex items-center gap-3 rounded-2xl border border-[#ececec] bg-[#fafafa] px-4 py-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ea1d2c] text-[13px] font-black text-white">
+                2
+              </div>
+              <div className="flex-1">
+                <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#8b8b8b]">Etapa 2 de 2</p>
+                <p className="text-[14px] font-semibold text-[#1d1d1d]">Assinatura do contrato</p>
+              </div>
+              <div className="h-[2px] w-16 rounded-full bg-[#d9d9d9]" />
+            </div>
+
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff1f2] text-[#ea1d2c]">
               <FileSignature className="h-6 w-6" />
             </div>
