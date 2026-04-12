@@ -115,6 +115,13 @@ export function StoreImagePickerModal({ open, storeId, slot, onSelect, onClose }
         </button>
       </div>
 
+      {/* Aviso de limites */}
+      <div className="flex items-center gap-2 border-b border-ink-100 bg-amber-50 px-6 py-2.5">
+        <span className="text-xs text-amber-700">
+          Tamanho maximo: <strong>1 MB</strong> &nbsp;·&nbsp; Dimensoes maximas: <strong>800 × 800 px</strong> &nbsp;·&nbsp; Formatos: JPG, PNG, WebP
+        </span>
+      </div>
+
       {/* Grid de imagens */}
       <div className="flex-1 overflow-y-auto p-5">
         {loading ? (
