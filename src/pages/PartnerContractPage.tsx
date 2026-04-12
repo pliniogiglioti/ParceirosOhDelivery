@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { FileSignature, Loader2, LogOut, ScrollText, ShieldCheck } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
@@ -21,24 +21,14 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
   const [acceptTerms, setAcceptTerms] = useState(false)
   const [submitting, setSubmitting] = useState(false)
 
-  const responsibleCpf = useMemo(
-    () => formatCpf(data.store.responsavelCpf ?? ''),
-    [data.store.responsavelCpf]
-  )
-
   async function handleSignContract() {
-    if (!responsibleCpf) {
-      toast.error('Nao encontramos o CPF do responsavel desta loja.')
-      return
-    }
-
     if (!acceptTerms) {
       toast.error('Confirme que voce leu e concorda com o contrato.')
       return
     }
 
-    if (signatureCpf.replace(/\D/g, '') !== responsibleCpf.replace(/\D/g, '')) {
-      toast.error('Digite o mesmo CPF do responsavel para assinar o contrato.')
+    if (signatureCpf.replace(/\D/g, '').length !== 11) {
+      toast.error('Digite um CPF valido para registrar a assinatura.')
       return
     }
 
@@ -58,7 +48,7 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
   return (
     <div className="min-h-dvh bg-[#f5f5f5]">
       <header className="border-b border-[#ececec] bg-white px-4 py-4 sm:px-6">
-        <div className="mx-auto flex max-w-5xl items-center justify-between">
+        <div className="mx-auto flex max-w-6xl items-center justify-between">
           <span className="text-[1.4rem] font-black italic tracking-[-0.06em] text-[#ea1d2c]">
             ohdelivery
           </span>
@@ -73,8 +63,8 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
         </div>
       </header>
 
-      <main className="mx-auto flex min-h-[calc(100dvh-81px)] max-w-5xl items-center px-4 py-10 sm:px-6">
-        <div className="grid w-full gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+      <main className="mx-auto flex min-h-[calc(100dvh-81px)] max-w-6xl items-center px-4 py-10 sm:px-6">
+        <div className="grid w-full gap-6 lg:grid-cols-[1.55fr_0.78fr]">
           <section className="rounded-[28px] border border-[#ececec] bg-white p-7 shadow-sm sm:p-8">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff1f2] text-[#ea1d2c]">
@@ -101,7 +91,7 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
                 </p>
               </div>
 
-              <div className="rounded-3xl border border-[#ececec] p-5">
+              <div className="rounded-3xl border border-[#ececec] p-6 sm:p-8">
                 <p className="font-bold text-[#1d1d1d]">Resumo</p>
                 <p className="mt-2">
                   Este contrato autoriza o uso da plataforma Oh Delivery para recebimento, gerenciamento e acompanhamento de pedidos da loja cadastrada.
@@ -125,19 +115,10 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
               Confirmar assinatura
             </h2>
             <p className="mt-2 text-[14px] leading-6 text-[#686868]">
-              Para assinar, digite o mesmo CPF do responsavel cadastrado pela loja.
+              Digite o CPF do responsavel para registrar a assinatura. A validacao final sera conferida no painel administrativo.
             </p>
 
-            <div className="mt-6 rounded-3xl border border-[#ececec] bg-[#fafafa] p-5">
-              <p className="text-[12px] font-bold uppercase tracking-[0.12em] text-[#8b8b8b]">
-                CPF do responsavel
-              </p>
-              <p className="mt-2 text-[20px] font-black tracking-[-0.02em] text-[#1d1d1d]">
-                {responsibleCpf || 'Nao informado'}
-              </p>
-            </div>
-
-            <label className="mt-5 block">
+            <label className="mt-6 block">
               <span className="mb-1.5 block text-[13px] font-semibold text-[#4f4f4f]">
                 Digite o CPF para assinar
               </span>
