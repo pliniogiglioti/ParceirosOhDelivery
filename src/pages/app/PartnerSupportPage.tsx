@@ -1,41 +1,14 @@
 import { AlertCircle, CheckCircle2, ChevronRight, Clock, Headphones, HelpCircle, MessageCircle, Plus, X } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import toast from 'react-hot-toast'
 import { cn } from '@/lib/utils'
 import { SectionFrame } from '@/components/partner/PartnerUi'
-
-type TicketStatus = 'aberto' | 'em_andamento' | 'resolvido'
-type TicketCategory = 'financeiro' | 'pedido' | 'cardapio' | 'tecnico' | 'outro'
-
-interface Ticket {
-  id: string
-  protocol: string
-  title: string
-  category: TicketCategory
-  status: TicketStatus
-  createdAt: string
-  updatedAt: string
-}
-
-const INITIAL_TICKETS: Ticket[] = [
-  {
-    id: 't1',
-    protocol: '#SUP-00142',
-    title: 'Repasse financeiro com valor incorreto',
-    category: 'financeiro',
-    status: 'em_andamento',
-    createdAt: '08/04/2026',
-    updatedAt: 'Hoje, 10:02',
-  },
-  {
-    id: 't2',
-    protocol: '#SUP-00138',
-    title: 'Produto sumiu do cardápio após atualização',
-    category: 'cardapio',
-    status: 'resolvido',
-    createdAt: '05/04/2026',
-    updatedAt: '06/04/2026',
-  },
-]
+import { usePartnerPageData } from '@/hooks/usePartnerPageData'
+import {
+  createSupportTicket,
+  fetchSupportTickets,
+} from '@/services/support'
+import type { SupportTicket, TicketCategory, TicketStatus } from '@/services/support'
 
 const CATEGORIES: { id: TicketCategory; label: string }[] = [
   { id: 'financeiro', label: 'Financeiro / Repasse' },
@@ -59,21 +32,45 @@ const CATEGORY_COLOR: Record<TicketCategory, string> = {
   outro:      'bg-ink-100 text-ink-600',
 }
 
+function formatTicketDate(iso: string): string {
+  const date = new Date(iso)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffMinutes = Math.floor(diffMs / 60000)
+
+  if (diffMinutes < 1) return 'Agora'
+  if (diffMinutes < 60) return `Há ${diffMinutes} min`
+
+  const diffHours = Math.floor(diffMinutes / 60)
+  if (diffHours < 24) return `Há ${diffHours}h`
+
+  const isToday =
+    date.getDate() === now.getDate() &&
+    date.getMonth() === now.getMonth() &&
+    date.getFullYear() === now.getFullYear()
+
+  if (isToday) return `Hoje, ${date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+
+  return date.toLocaleDateString('pt-BR')
+}
+
 function NewTicketModal({
   onClose,
   onSubmit,
+  submitting,
 }: {
   onClose: () => void
-  onSubmit: (title: string, category: TicketCategory, description: string) => void
+  onSubmit: (title: string, category: TicketCategory, description: string) => Promise<void>
+  submitting: boolean
 }) {
   const [title, setTitle] = useState('')
   const [category, setCategory] = useState<TicketCategory>('outro')
   const [description, setDescription] = useState('')
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim() || !description.trim()) return
-    onSubmit(title, category, description)
+    await onSubmit(title, category, description)
   }
 
   return (
@@ -84,6 +81,7 @@ function NewTicketModal({
           <button
             type="button"
             onClick={onClose}
+            disabled={submitting}
             className="inline-flex h-8 w-8 items-center justify-center rounded-2xl text-ink-400 transition hover:bg-ink-50 hover:text-ink-700"
           >
             <X className="h-4 w-4" />
@@ -138,16 +136,17 @@ function NewTicketModal({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-2xl border border-ink-100 px-5 py-2.5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
+              disabled={submitting}
+              className="rounded-2xl border border-ink-100 px-5 py-2.5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50 disabled:opacity-40"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              disabled={!title.trim() || !description.trim()}
+              disabled={!title.trim() || !description.trim() || submitting}
               className="rounded-2xl bg-coral-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-coral-600 disabled:opacity-40"
             >
-              Abrir chamado
+              {submitting ? 'Enviando...' : 'Abrir chamado'}
             </button>
           </div>
         </form>
@@ -157,29 +156,49 @@ function NewTicketModal({
 }
 
 export function PartnerSupportPage() {
-  const [tickets, setTickets] = useState(INITIAL_TICKETS)
+  const { data } = usePartnerPageData()
+  const storeId = data.store.id
+
+  const [tickets, setTickets] = useState<SupportTicket[]>([])
+  const [loading, setLoading] = useState(true)
   const [modalOpen, setModalOpen] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
-  const open      = tickets.filter((t) => t.status === 'aberto').length
+  useEffect(() => {
+    if (!storeId) return
+    let active = true
+
+    void (async () => {
+      setLoading(true)
+      try {
+        const result = await fetchSupportTickets(storeId)
+        if (active) setTickets(result)
+      } catch {
+        if (active) toast.error('Nao foi possivel carregar os chamados.')
+      } finally {
+        if (active) setLoading(false)
+      }
+    })()
+
+    return () => { active = false }
+  }, [storeId])
+
+  const open       = tickets.filter((t) => t.status === 'aberto').length
   const inProgress = tickets.filter((t) => t.status === 'em_andamento').length
-  const resolved  = tickets.filter((t) => t.status === 'resolvido').length
+  const resolved   = tickets.filter((t) => t.status === 'resolvido').length
 
-  function handleNewTicket(title: string, category: TicketCategory, _description: string) {
-    const id = `t${Date.now()}`
-    const protocol = `#SUP-${String(Math.floor(Math.random() * 900) + 100).padStart(5, '0')}`
-    setTickets((prev) => [
-      {
-        id,
-        protocol,
-        title,
-        category,
-        status: 'aberto',
-        createdAt: new Date().toLocaleDateString('pt-BR'),
-        updatedAt: 'Agora',
-      },
-      ...prev,
-    ])
-    setModalOpen(false)
+  async function handleNewTicket(title: string, category: TicketCategory, description: string) {
+    setSubmitting(true)
+    try {
+      const ticket = await createSupportTicket(storeId, { title, category, description })
+      setTickets((prev) => [ticket, ...prev])
+      setModalOpen(false)
+      toast.success('Chamado aberto com sucesso!')
+    } catch {
+      toast.error('Nao foi possivel abrir o chamado. Tente novamente.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -215,7 +234,8 @@ export function PartnerSupportPage() {
             <p className="mt-1 text-xs text-ink-400">neste mês</p>
           </div>
 
-          <div className="panel-card flex cursor-pointer flex-col items-center justify-center gap-2 p-5 transition hover:bg-ink-50"
+          <div
+            className="panel-card flex cursor-pointer flex-col items-center justify-center gap-2 p-5 transition hover:bg-ink-50"
             onClick={() => setModalOpen(true)}
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-coral-500 text-white">
@@ -231,10 +251,23 @@ export function PartnerSupportPage() {
           {/* Tickets list */}
           <div className="flex flex-col gap-3">
             <p className="pl-1 text-xs font-semibold uppercase tracking-[0.18em] text-ink-400">Seus chamados</p>
-            {tickets.length === 0 ? (
+
+            {loading ? (
+              <div className="panel-card flex flex-col items-center justify-center gap-3 py-16">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-ink-200 border-t-coral-500" />
+                <p className="text-sm text-ink-400">Carregando chamados...</p>
+              </div>
+            ) : tickets.length === 0 ? (
               <div className="panel-card flex flex-col items-center justify-center gap-3 py-16">
                 <Headphones className="h-10 w-10 text-ink-200" />
                 <p className="text-sm text-ink-400">Nenhum chamado aberto.</p>
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(true)}
+                  className="mt-1 rounded-2xl bg-coral-500 px-4 py-2 text-xs font-semibold text-white transition hover:bg-coral-600"
+                >
+                  Abrir primeiro chamado
+                </button>
               </div>
             ) : (
               <div className="panel-card divide-y divide-ink-100 overflow-hidden">
@@ -249,15 +282,15 @@ export function PartnerSupportPage() {
 
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-ink-900 truncate">{ticket.title}</p>
+                          <p className="truncate text-sm font-semibold text-ink-900">{ticket.title}</p>
                           <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold', CATEGORY_COLOR[ticket.category])}>
                             {CATEGORIES.find((c) => c.id === ticket.category)?.label}
                           </span>
                         </div>
                         <div className="mt-0.5 flex items-center gap-3">
-                          <span className="text-xs text-ink-400">{ticket.protocol}</span>
+                          <span className="text-xs text-ink-400">#{ticket.protocol}</span>
                           <span className="text-xs text-ink-300">·</span>
-                          <span className="text-xs text-ink-400">Atualizado {ticket.updatedAt}</span>
+                          <span className="text-xs text-ink-400">Atualizado {formatTicketDate(ticket.updatedAt)}</span>
                         </div>
                       </div>
 
@@ -285,7 +318,7 @@ export function PartnerSupportPage() {
               <p className="mt-0.5 text-xs text-ink-400">Sáb, 9h às 14h</p>
               <div className="mt-3 flex items-center gap-1.5">
                 <span className="h-2 w-2 rounded-full bg-green-400" />
-                <span className="text-xs text-green-600 font-medium">Online agora</span>
+                <span className="text-xs font-medium text-green-600">Online agora</span>
               </div>
             </div>
 
@@ -316,7 +349,11 @@ export function PartnerSupportPage() {
       </SectionFrame>
 
       {modalOpen && (
-        <NewTicketModal onClose={() => setModalOpen(false)} onSubmit={handleNewTicket} />
+        <NewTicketModal
+          onClose={() => setModalOpen(false)}
+          onSubmit={handleNewTicket}
+          submitting={submitting}
+        />
       )}
     </>
   )
