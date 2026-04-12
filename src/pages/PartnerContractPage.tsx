@@ -286,161 +286,192 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
         </div>
       </header>
 
-      <main className="mx-auto h-[calc(100dvh-81px)] max-w-6xl px-4 py-4 sm:px-6 sm:py-5">
-        <div className="grid h-full w-full grid-rows-[minmax(0,1fr)_auto] gap-4">
-          <section className="flex min-h-0 flex-col rounded-[28px] border border-[#ececec] bg-white p-6 shadow-sm sm:p-7">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff1f2] text-[#ea1d2c]">
-                <ScrollText className="h-6 w-6" />
-              </div>
-              <div>
-                <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#ea1d2c]">
-                  Assinatura de contrato
-                </p>
-                <h1 className="mt-1 text-[28px] font-black tracking-[-0.03em] text-[#1d1d1d]">
-                  Revise e assine o contrato da loja
-                </h1>
-              </div>
-            </div>
-
-            <div className="mt-5 flex min-h-0 flex-1 flex-col space-y-3 text-[14px] leading-7 text-[#555]">
-              <div className="shrink-0 rounded-3xl border border-[#ececec] bg-[#fafafa] p-5">
-                <p className="font-bold text-[#1d1d1d]">Partes do contrato</p>
-                <p className="mt-2">
-                  Loja: <span className="font-semibold text-[#1d1d1d]">{data.store.name}</span>
-                </p>
-                <p>
-                  Responsavel: <span className="font-semibold text-[#1d1d1d]">{data.store.responsavelNome || 'Nao informado'}</span>
-                </p>
-              </div>
-
-              <div className="flex min-h-0 flex-1 flex-col rounded-3xl border border-[#ececec] p-5 sm:p-6">
-                <p className="font-bold text-[#1d1d1d]">Contrato completo</p>
-                <div
-                  onScroll={handleContractScroll}
-                  className="mt-3 min-h-0 flex-1 space-y-6 overflow-y-auto pr-2 text-[13px] leading-6 text-[#555]"
-                >
-                  <div className="space-y-4">
-                    <p className="text-[15px] font-bold uppercase tracking-[0.04em] text-[#1d1d1d]">
-                      CONTRATO DE PRESTACAO DE SERVICOS, LICENCIAMENTO DE USO DE PLATAFORMA E INTERMEDIACAO DIGITAL
-                    </p>
-                    <p>Pelo presente instrumento particular, de um lado:</p>
-                    <p>
-                      <span className="font-semibold text-[#1d1d1d]">OH DELIVERY</span>, nome empresarial{' '}
-                      <span className="font-semibold text-[#1d1d1d]">62.622.102 PLINIO HENRIQUE NOVAES GIGLIOTI</span>,
-                      inscrita no CNPJ n. <span className="font-semibold text-[#1d1d1d]">62.622.102/0001-04</span>,
-                      com sede na Rua Engenheiro Hans Klots, 417, 11A, Centro, Osvaldo Cruz/SP, CEP 17700-970,
-                      telefone (18) 9751-1381, e-mail plinio.giglioti@gmail.com, doravante denominada simplesmente
-                      CONTRATADA;
-                    </p>
-                    <p>e, de outro lado:</p>
-                    <p>
-                      <span className="font-semibold text-[#1d1d1d]">{data.store.name || '[NOME DO ESTABELECIMENTO PARCEIRO]'}</span>,
-                      inscrito(a) no CNPJ/CPF n. <span className="font-semibold text-[#1d1d1d]">{storeDocument}</span>,
-                      com sede/endereco em{' '}
-                      <span className="font-semibold text-[#1d1d1d]">{storeAddress || 'endereco informado no cadastro'}</span>,
-                      telefone <span className="font-semibold text-[#1d1d1d]">[informado no cadastro]</span>, e-mail{' '}
-                      <span className="font-semibold text-[#1d1d1d]">{data.profile.email || '[informado no cadastro]'}</span>,
-                      neste ato representado(a) por{' '}
-                      <span className="font-semibold text-[#1d1d1d]">{data.store.responsavelNome || '[NOME DO REPRESENTANTE]'}</span>,
-                      CPF n. <span className="font-semibold text-[#1d1d1d]">{representativeDocument}</span>, doravante
-                      denominado(a) simplesmente CONTRATANTE;
-                    </p>
-                    <p>tem entre si justo e contratado o seguinte:</p>
-                  </div>
-
-                  {CONTRACT_SECTIONS.map((section) => (
-                    <div key={section.title} className="space-y-3">
-                      <p className="font-bold uppercase tracking-[0.04em] text-[#1d1d1d]">{section.title}</p>
-                      {section.paragraphs.map((paragraph) => (
-                        <p key={paragraph}>{paragraph}</p>
-                      ))}
-                      {section.items?.length ? (
-                        <div className="space-y-2 pl-3">
-                          {section.items.map((item) => (
-                            <p key={item}>{item}</p>
-                          ))}
-                        </div>
-                      ) : null}
-                      {section.trailing?.map((paragraph) => (
-                        <p key={paragraph}>{paragraph}</p>
-                      ))}
-                    </div>
-                  ))}
+      {signatureStep === 'read' ? (
+        <main className="mx-auto h-[calc(100dvh-81px)] max-w-6xl px-4 py-4 sm:px-6 sm:py-5">
+          <div className="grid h-full w-full grid-rows-[minmax(0,1fr)_auto] gap-4">
+            <section className="flex min-h-0 flex-col rounded-[28px] border border-[#ececec] bg-white p-6 shadow-sm sm:p-7">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff1f2] text-[#ea1d2c]">
+                  <ScrollText className="h-6 w-6" />
+                </div>
+                <div>
+                  <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#ea1d2c]">
+                    Assinatura de contrato
+                  </p>
+                  <h1 className="mt-1 text-[28px] font-black tracking-[-0.03em] text-[#1d1d1d]">
+                    Revise e aceite o contrato da loja
+                  </h1>
                 </div>
               </div>
-            </div>
-          </section>
 
-          <aside className="w-full shrink-0 rounded-[28px] border border-[#ececec] bg-white p-5 shadow-sm sm:p-6">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#f0fdf4] text-[#16a34a]">
-              <ShieldCheck className="h-6 w-6" />
+              <div className="mt-5 flex min-h-0 flex-1 flex-col space-y-3 text-[14px] leading-7 text-[#555]">
+                <div className="shrink-0 rounded-3xl border border-[#ececec] bg-[#fafafa] p-5">
+                  <p className="font-bold text-[#1d1d1d]">Partes do contrato</p>
+                  <p className="mt-2">
+                    Loja: <span className="font-semibold text-[#1d1d1d]">{data.store.name}</span>
+                  </p>
+                  <p>
+                    Responsavel: <span className="font-semibold text-[#1d1d1d]">{data.store.responsavelNome || 'Nao informado'}</span>
+                  </p>
+                </div>
+
+                <div className="flex min-h-0 flex-1 flex-col rounded-3xl border border-[#ececec] p-5 sm:p-6">
+                  <p className="font-bold text-[#1d1d1d]">Contrato completo</p>
+                  <div
+                    onScroll={handleContractScroll}
+                    className="mt-3 min-h-0 flex-1 space-y-6 overflow-y-auto pr-2 text-[13px] leading-6 text-[#555]"
+                  >
+                    <div className="space-y-4">
+                      <p className="text-[15px] font-bold uppercase tracking-[0.04em] text-[#1d1d1d]">
+                        CONTRATO DE PRESTACAO DE SERVICOS, LICENCIAMENTO DE USO DE PLATAFORMA E INTERMEDIACAO DIGITAL
+                      </p>
+                      <p>Pelo presente instrumento particular, de um lado:</p>
+                      <p>
+                        <span className="font-semibold text-[#1d1d1d]">OH DELIVERY</span>, nome empresarial{' '}
+                        <span className="font-semibold text-[#1d1d1d]">62.622.102 PLINIO HENRIQUE NOVAES GIGLIOTI</span>,
+                        inscrita no CNPJ n. <span className="font-semibold text-[#1d1d1d]">62.622.102/0001-04</span>,
+                        com sede na Rua Engenheiro Hans Klots, 417, 11A, Centro, Osvaldo Cruz/SP, CEP 17700-970,
+                        telefone (18) 9751-1381, e-mail plinio.giglioti@gmail.com, doravante denominada simplesmente
+                        CONTRATADA;
+                      </p>
+                      <p>e, de outro lado:</p>
+                      <p>
+                        <span className="font-semibold text-[#1d1d1d]">{data.store.name || '[NOME DO ESTABELECIMENTO PARCEIRO]'}</span>,
+                        inscrito(a) no CNPJ/CPF n. <span className="font-semibold text-[#1d1d1d]">{storeDocument}</span>,
+                        com sede/endereco em{' '}
+                        <span className="font-semibold text-[#1d1d1d]">{storeAddress || 'endereco informado no cadastro'}</span>,
+                        telefone <span className="font-semibold text-[#1d1d1d]">[informado no cadastro]</span>, e-mail{' '}
+                        <span className="font-semibold text-[#1d1d1d]">{data.profile.email || '[informado no cadastro]'}</span>,
+                        neste ato representado(a) por{' '}
+                        <span className="font-semibold text-[#1d1d1d]">{data.store.responsavelNome || '[NOME DO REPRESENTANTE]'}</span>,
+                        CPF n. <span className="font-semibold text-[#1d1d1d]">{representativeDocument}</span>, doravante
+                        denominado(a) simplesmente CONTRATANTE;
+                      </p>
+                      <p>tem entre si justo e contratado o seguinte:</p>
+                    </div>
+
+                    {CONTRACT_SECTIONS.map((section) => (
+                      <div key={section.title} className="space-y-3">
+                        <p className="font-bold uppercase tracking-[0.04em] text-[#1d1d1d]">{section.title}</p>
+                        {section.paragraphs.map((paragraph) => (
+                          <p key={paragraph}>{paragraph}</p>
+                        ))}
+                        {section.items?.length ? (
+                          <div className="space-y-2 pl-3">
+                            {section.items.map((item) => (
+                              <p key={item}>{item}</p>
+                            ))}
+                          </div>
+                        ) : null}
+                        {section.trailing?.map((paragraph) => (
+                          <p key={paragraph}>{paragraph}</p>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <aside className="w-full shrink-0 rounded-[28px] border border-[#ececec] bg-white p-5 shadow-sm sm:p-6">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#f0fdf4] text-[#16a34a]">
+                <ShieldCheck className="h-6 w-6" />
+              </div>
+
+              <h2 className="mt-4 text-[22px] font-black tracking-[-0.02em] text-[#1d1d1d]">
+                Li e concordo
+              </h2>
+              <p className="mt-2 text-[14px] leading-6 text-[#686868]">
+                Leia o contrato ate o final e confirme o aceite para seguir para a assinatura.
+              </p>
+
+              <div className="mt-4 rounded-2xl border border-[#ececec] bg-[#fafafa] px-4 py-4 text-[13px] leading-6 text-[#555]">
+                Confirmo que li e concordo com este contrato e que sou o responsavel autorizado pela loja.
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSignatureStep('sign')}
+                disabled={!hasReachedContractEnd}
+                className="mt-4 flex h-[50px] w-full items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[14px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {hasReachedContractEnd ? 'Li e concordo' : 'Role o contrato ate o final'}
+              </button>
+            </aside>
+          </div>
+        </main>
+      ) : (
+        <main className="mx-auto flex min-h-[calc(100dvh-81px)] max-w-6xl items-center justify-center px-4 py-8 sm:px-6">
+          <div className="w-full max-w-2xl rounded-[28px] border border-[#ececec] bg-white p-7 shadow-sm sm:p-8">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff1f2] text-[#ea1d2c]">
+              <FileSignature className="h-6 w-6" />
             </div>
 
-            <h2 className="mt-4 text-[22px] font-black tracking-[-0.02em] text-[#1d1d1d]">
-              {signatureStep === 'read' ? 'Li e concordo' : 'Assinar contrato'}
-            </h2>
-            <p className="mt-2 text-[14px] leading-6 text-[#686868]">
-              {signatureStep === 'read'
-                ? 'Leia o contrato ate o final e confirme o aceite para seguir para a assinatura.'
-                : 'Agora digite o CPF do responsavel para concluir a assinatura do contrato.'}
+            <p className="mt-5 text-[12px] font-bold uppercase tracking-[0.14em] text-[#ea1d2c]">
+              Etapa final
+            </p>
+            <h1 className="mt-2 text-[28px] font-black tracking-[-0.03em] text-[#1d1d1d]">
+              Assinar contrato
+            </h1>
+            <p className="mt-3 text-[14px] leading-6 text-[#686868]">
+              O contrato foi lido e aceito. Agora digite o CPF do responsavel para concluir a assinatura da loja.
             </p>
 
-            {signatureStep === 'read' ? (
-              <>
-                <div className="mt-4 rounded-2xl border border-[#ececec] bg-[#fafafa] px-4 py-4 text-[13px] leading-6 text-[#555]">
-                  Confirmo que li e concordo com este contrato e que sou o responsavel autorizado pela loja.
-                </div>
+            <div className="mt-5 rounded-3xl border border-[#ececec] bg-[#fafafa] p-5 text-[14px] leading-6 text-[#555]">
+              <p>
+                Loja: <span className="font-semibold text-[#1d1d1d]">{data.store.name}</span>
+              </p>
+              <p className="mt-1">
+                Responsavel: <span className="font-semibold text-[#1d1d1d]">{data.store.responsavelNome || 'Nao informado'}</span>
+              </p>
+            </div>
 
-                <button
-                  type="button"
-                  onClick={() => setSignatureStep('sign')}
-                  disabled={!hasReachedContractEnd}
-                  className="mt-4 flex h-[50px] w-full items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[14px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {hasReachedContractEnd ? 'Li e concordo' : 'Role o contrato ate o final'}
-                </button>
-              </>
-            ) : (
-              <>
-                <label className="mt-4 block">
-                  <span className="mb-1.5 block text-[13px] font-semibold text-[#4f4f4f]">
-                    Digite o CPF para assinar
-                  </span>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      autoFocus
-                      value={signatureCpf}
-                      onChange={(event) => setSignatureCpf(formatCpf(event.target.value))}
-                      placeholder="000.000.000-00"
-                      className="h-[48px] w-full rounded-xl border border-[#d9d9d9] bg-[#fbfbfb] px-4 pr-12 text-[14px] text-[#1d1d1d] outline-none transition placeholder:text-[#9a9a9a] focus:border-[#ea1d2c] focus:bg-white focus:shadow-[0_0_0_4px_rgba(234,29,44,0.09)]"
-                    />
-                    <FileSignature className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9a9a9a]" />
-                  </div>
-                </label>
+            <label className="mt-5 block">
+              <span className="mb-1.5 block text-[13px] font-semibold text-[#4f4f4f]">
+                Digite o CPF para assinar
+              </span>
+              <div className="relative">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoFocus
+                  value={signatureCpf}
+                  onChange={(event) => setSignatureCpf(formatCpf(event.target.value))}
+                  placeholder="000.000.000-00"
+                  className="h-[48px] w-full rounded-xl border border-[#d9d9d9] bg-[#fbfbfb] px-4 pr-12 text-[14px] text-[#1d1d1d] outline-none transition placeholder:text-[#9a9a9a] focus:border-[#ea1d2c] focus:bg-white focus:shadow-[0_0_0_4px_rgba(234,29,44,0.09)]"
+                />
+                <FileSignature className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9a9a9a]" />
+              </div>
+            </label>
 
-                <button
-                  type="button"
-                  onClick={() => void handleSignContract()}
-                  disabled={submitting}
-                  className="mt-4 flex h-[50px] w-full items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[14px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Assinando...
-                    </>
-                  ) : (
-                    'Assinar contrato'
-                  )}
-                </button>
-              </>
-            )}
-          </aside>
-        </div>
-      </main>
+            <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+              <button
+                type="button"
+                onClick={() => setSignatureStep('read')}
+                className="flex h-[46px] items-center justify-center rounded-2xl border border-[#d9d9d9] px-5 text-[14px] font-semibold text-[#555] transition hover:bg-[#f5f5f5]"
+              >
+                Voltar para o contrato
+              </button>
+
+              <button
+                type="button"
+                onClick={() => void handleSignContract()}
+                disabled={submitting}
+                className="flex h-[50px] items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] px-6 text-[14px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Assinando...
+                  </>
+                ) : (
+                  'Assinar contrato'
+                )}
+              </button>
+            </div>
+          </div>
+        </main>
+      )}
     </div>
   )
 }
