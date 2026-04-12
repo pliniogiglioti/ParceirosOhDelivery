@@ -23,7 +23,7 @@ create policy "partner_select_own_tickets"
   using (
     store_id in (
       select id from public.stores
-      where partner_email = (select email from auth.users where id = auth.uid())
+      where partner_email = (auth.jwt() ->> 'email')
     )
   );
 
@@ -33,7 +33,7 @@ create policy "partner_insert_own_tickets"
   with check (
     store_id in (
       select id from public.stores
-      where partner_email = (select email from auth.users where id = auth.uid())
+      where partner_email = (auth.jwt() ->> 'email')
     )
   );
 
