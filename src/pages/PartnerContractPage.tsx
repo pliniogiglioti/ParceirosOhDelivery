@@ -225,6 +225,7 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
   const [signatureStep, setSignatureStep] = useState<'read' | 'sign'>('read')
   const [submitting, setSubmitting] = useState(false)
   const [hasReachedContractEnd, setHasReachedContractEnd] = useState(false)
+  const [hasAcceptedContract, setHasAcceptedContract] = useState(false)
 
   const storeAddress = [
     data.store.addressStreet,
@@ -290,17 +291,6 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
         <main className="mx-auto h-[calc(100dvh-81px)] max-w-6xl px-4 py-4 sm:px-6 sm:py-5">
           <div className="h-full w-full">
             <section className="flex h-full min-h-0 flex-col rounded-[28px] border border-[#ececec] bg-white p-6 shadow-sm sm:p-7">
-              <div className="mb-5 flex items-center gap-3 rounded-2xl border border-[#ececec] bg-[#fafafa] px-4 py-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ea1d2c] text-[13px] font-black text-white">
-                  1
-                </div>
-                <div className="flex-1">
-                  <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#8b8b8b]">Etapa 1 de 2</p>
-                  <p className="text-[14px] font-semibold text-[#1d1d1d]">Leitura e aceite do contrato</p>
-                </div>
-                <div className="h-[2px] w-16 rounded-full bg-[#ea1d2c]" />
-              </div>
-
               <div className="flex items-center gap-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff1f2] text-[#ea1d2c]">
                   <ScrollText className="h-6 w-6" />
@@ -385,18 +375,23 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
 
               <div className="mt-4 shrink-0 border-t border-[#ececec] pt-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-start gap-3 rounded-2xl border border-[#ececec] bg-[#fafafa] px-4 py-3 text-[13px] leading-6 text-[#555] sm:max-w-[70%]">
-                    <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-[#16a34a]" />
+                  <label className="flex items-start gap-3 rounded-2xl border border-[#ececec] bg-[#fafafa] px-4 py-3 text-[13px] leading-6 text-[#555] sm:max-w-[70%]">
+                    <input
+                      type="checkbox"
+                      checked={hasAcceptedContract}
+                      onChange={(event) => setHasAcceptedContract(event.target.checked)}
+                      className="mt-1 h-4 w-4 rounded border-[#cfcfcf] text-[#ea1d2c] focus:ring-[#ea1d2c]"
+                    />
                     <span>Li e concordo com este contrato e sou o responsavel autorizado pela loja.</span>
-                  </div>
+                  </label>
 
                   <button
                     type="button"
                     onClick={() => setSignatureStep('sign')}
-                    disabled={!hasReachedContractEnd}
+                    disabled={!hasReachedContractEnd || !hasAcceptedContract}
                     className="flex h-[50px] shrink-0 items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] px-6 text-[14px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {hasReachedContractEnd ? 'Ir para assinatura' : 'Role o contrato ate o final'}
+                    Ir para assinatura
                   </button>
                 </div>
               </div>
@@ -406,25 +401,11 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
       ) : (
         <main className="mx-auto flex min-h-[calc(100dvh-81px)] max-w-6xl items-center justify-center px-4 py-8 sm:px-6">
           <div className="w-full max-w-2xl rounded-[28px] border border-[#ececec] bg-white p-7 shadow-sm sm:p-8">
-            <div className="mb-5 flex items-center gap-3 rounded-2xl border border-[#ececec] bg-[#fafafa] px-4 py-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#ea1d2c] text-[13px] font-black text-white">
-                2
-              </div>
-              <div className="flex-1">
-                <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-[#8b8b8b]">Etapa 2 de 2</p>
-                <p className="text-[14px] font-semibold text-[#1d1d1d]">Assinatura do contrato</p>
-              </div>
-              <div className="h-[2px] w-16 rounded-full bg-[#d9d9d9]" />
-            </div>
-
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff1f2] text-[#ea1d2c]">
               <FileSignature className="h-6 w-6" />
             </div>
 
-            <p className="mt-5 text-[12px] font-bold uppercase tracking-[0.14em] text-[#ea1d2c]">
-              Etapa final
-            </p>
-            <h1 className="mt-2 text-[28px] font-black tracking-[-0.03em] text-[#1d1d1d]">
+            <h1 className="mt-5 text-[28px] font-black tracking-[-0.03em] text-[#1d1d1d]">
               Assinar contrato
             </h1>
             <p className="mt-3 text-[14px] leading-6 text-[#686868]">
