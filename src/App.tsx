@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 import { PartnerLayout } from '@/components/partner/PartnerLayout'
 import { LoadingScreen } from '@/components/partner/LoadingScreen'
+import { useMinimumLoading } from '@/hooks/useMinimumLoading'
 import { usePartnerAuth } from '@/hooks/usePartnerAuth'
 import { usePartnerDashboard } from '@/hooks/usePartnerDashboard'
 import { PartnerFirstAccessPage } from '@/pages/PartnerFirstAccessPage'
@@ -29,8 +30,9 @@ function LoginRoute() {
   const auth = usePartnerAuth()
   const location = useLocation()
   const navigate = useNavigate()
+  const showLoading = useMinimumLoading(auth.loading)
 
-  if (auth.loading) {
+  if (showLoading) {
     return <LoadingScreen />
   }
 
@@ -55,8 +57,9 @@ function LoginRoute() {
 
 function StoreSelectionRoute() {
   const auth = usePartnerAuth()
+  const showLoading = useMinimumLoading(auth.loading)
 
-  if (auth.loading) {
+  if (showLoading) {
     return <LoadingScreen />
   }
 
@@ -70,8 +73,9 @@ function StoreSelectionRoute() {
 function StoreRegisterRoute() {
   const auth = usePartnerAuth()
   const location = useLocation()
+  const showLoading = useMinimumLoading(auth.loading)
 
-  if (auth.loading) {
+  if (showLoading) {
     return <LoadingScreen />
   }
 
@@ -85,8 +89,9 @@ function StoreRegisterRoute() {
 function ProtectedLayoutRoute() {
   const auth = usePartnerAuth()
   const { data, loading } = usePartnerDashboard(auth.selectedStoreId)
+  const showLoading = useMinimumLoading(auth.loading || loading)
 
-  if (auth.loading || loading) {
+  if (showLoading) {
     return <LoadingScreen />
   }
 
@@ -116,8 +121,9 @@ function ProtectedLayoutRoute() {
 function AppIndexRoute() {
   const auth = usePartnerAuth()
   const { data, loading } = usePartnerDashboard(auth.selectedStoreId)
+  const showLoading = useMinimumLoading(loading)
 
-  if (loading) {
+  if (showLoading) {
     return <LoadingScreen />
   }
 
@@ -135,8 +141,9 @@ function AppIndexRoute() {
 function ContractRoute() {
   const auth = usePartnerAuth()
   const { data, loading } = usePartnerDashboard(auth.selectedStoreId)
+  const showLoading = useMinimumLoading(auth.loading || loading)
 
-  if (auth.loading || loading) {
+  if (showLoading) {
     return <LoadingScreen />
   }
 
@@ -162,8 +169,9 @@ function ContractRoute() {
 function FirstAccessRoute() {
   const auth = usePartnerAuth()
   const { data, loading } = usePartnerDashboard(auth.selectedStoreId)
+  const showLoading = useMinimumLoading(auth.loading || loading)
 
-  if (auth.loading || loading) {
+  if (showLoading) {
     return <LoadingScreen />
   }
 

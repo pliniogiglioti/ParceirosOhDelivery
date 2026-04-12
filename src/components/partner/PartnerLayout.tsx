@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { LoadingScreen } from '@/components/partner/LoadingScreen'
+import { useMinimumLoading } from '@/hooks/useMinimumLoading'
 import { PartnerSidebar } from '@/components/partner/PartnerSidebar'
 import { PartnerTopbar } from '@/components/partner/PartnerTopbar'
 import { useOrderNotifications } from '@/hooks/useOrderNotifications'
@@ -15,6 +16,7 @@ import { cn, isSameUtcDate } from '@/lib/utils'
 export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
   const { selectedStoreId } = usePartnerAuth()
   const { data, loading, error, source } = usePartnerDashboard(selectedStoreId)
+  const showLoading = useMinimumLoading(loading)
   const { sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCollapsed } = usePartnerUiStore()
   const {
     storeOpen,
@@ -64,7 +66,7 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
 
   useOrderNotifications(data?.store.id ?? '')
 
-  if (loading) {
+  if (showLoading) {
     return <LoadingScreen />
   }
 

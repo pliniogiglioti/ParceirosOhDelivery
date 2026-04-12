@@ -4,6 +4,7 @@ import { Mail } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
 import { LoadingScreen } from '@/components/partner/LoadingScreen'
+import { useMinimumLoading } from '@/hooks/useMinimumLoading'
 
 type HomePageProps = {
   loading: boolean
@@ -310,6 +311,7 @@ export function HomePage({
 }: HomePageProps) {
   const [email, setEmail] = useState(pendingEmail)
   const [code, setCode] = useState('')
+  const showLoading = useMinimumLoading(loading)
 
   useEffect(() => {
     if (pendingEmail) {
@@ -348,7 +350,7 @@ export function HomePage({
     await onSendCode(email)
   }
 
-  if (loading) {
+  if (showLoading) {
     return <LoadingScreen />
   }
 

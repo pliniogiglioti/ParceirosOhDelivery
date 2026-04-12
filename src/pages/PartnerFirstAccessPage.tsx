@@ -9,6 +9,7 @@ import { weekDays } from '@/components/partner/PartnerUi'
 import { PartnerCatalogPage } from '@/pages/app/PartnerCatalogPage'
 import { usePartnerAuth } from '@/hooks/usePartnerAuth'
 import { usePartnerDashboard } from '@/hooks/usePartnerDashboard'
+import { useMinimumLoading } from '@/hooks/useMinimumLoading'
 import { buildDefaultPaymentMethods, hasActivePaymentMethods } from '@/lib/paymentMethods'
 import { getStoreCategories } from '@/services/profile'
 import { formatTime } from '@/lib/utils'
@@ -86,6 +87,7 @@ export function PartnerFirstAccessPage() {
   const navigate = useNavigate()
   const { selectedStoreId, signOut } = usePartnerAuth()
   const { data, loading, error } = usePartnerDashboard(selectedStoreId)
+  const showLoading = useMinimumLoading(loading)
   const [activeStep, setActiveStep] = useState(0)
   const [availableCategories, setAvailableCategories] = useState<StoreCategory[]>([])
   const [storeDraft, setStoreDraft] = useState<PartnerStore | null>(null)
@@ -167,7 +169,7 @@ export function PartnerFirstAccessPage() {
     })
   }, [data])
 
-  if (loading) {
+  if (showLoading) {
     return <LoadingScreen />
   }
 
