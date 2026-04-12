@@ -86,9 +86,8 @@ function StoreRegisterRoute() {
 function ProtectedLayoutRoute() {
   const auth = usePartnerAuth()
   const { data, loading } = usePartnerDashboard(auth.selectedStoreId)
-  const showLoading = useMinimumLoading(auth.loading || loading)
 
-  if (showLoading) {
+  if (auth.loading || loading) {
     return <LoadingScreen />
   }
 
@@ -120,27 +119,7 @@ function ProtectedLayoutRoute() {
 }
 
 function AppIndexRoute() {
-  const auth = usePartnerAuth()
-  const { data, loading } = usePartnerDashboard(auth.selectedStoreId)
-  const showLoading = useMinimumLoading(loading)
-
-  if (showLoading) {
-    return <LoadingScreen />
-  }
-
-  if (!data) {
-    return <Navigate to="/lojas" replace />
-  }
-
-  if (data.store.registrationStatus === 'rejeitado') {
-    return <Navigate to="/cadastro-rejeitado" replace />
-  }
-
-  if (!data.store.contract) {
-    return <Navigate to="/contrato" replace />
-  }
-
-  return data.store.firstAccess ? <PartnerOverviewPage /> : <Navigate to="/primeiro-acesso" replace />
+  return <PartnerOverviewPage />
 }
 
 function ContractRoute() {

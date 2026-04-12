@@ -264,7 +264,7 @@ function AuthCard({
               disabled={sending}
               className="mt-6 h-[50px] w-full rounded-xl bg-[#ff3600] text-[15px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
             >
-              {sending ? 'Enviando...' : 'Receber codigo'}
+              {sending ? 'Enviando...' : 'Entrar'}
             </button>
           </div>
 
