@@ -20,16 +20,6 @@ export const PAYMENT_METHOD_TEMPLATES: PaymentMethodTemplate[] = [
     ],
   },
   {
-    id: 'pix',
-    label: 'Pix',
-    detail: 'Pagamento instantaneo via chave Pix.',
-  },
-  {
-    id: 'dinheiro',
-    label: 'Dinheiro',
-    detail: 'Recebimento direto no ato da entrega.',
-  },
-  {
     id: 'vale',
     label: 'Vale-Refeicao',
     detail: 'Selecione as bandeiras aceitas.',
@@ -40,6 +30,16 @@ export const PAYMENT_METHOD_TEMPLATES: PaymentMethodTemplate[] = [
       { id: 'ticket', label: 'Ticket',  logo: 'TKT', color: '#e8292b', active: false },
       { id: 'vr',     label: 'VR',      logo: 'VR',  color: '#e8292b', active: false },
     ],
+  },
+  {
+    id: 'pix',
+    label: 'Pix',
+    detail: 'Pagamento instantaneo via chave Pix.',
+  },
+  {
+    id: 'dinheiro',
+    label: 'Dinheiro',
+    detail: 'Recebimento direto no ato da entrega.',
   },
 ]
 
