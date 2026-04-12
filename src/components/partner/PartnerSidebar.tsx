@@ -193,12 +193,14 @@ export function PartnerSidebar({
       <aside className={cn('panel-card sidebar-content flex h-full w-full flex-col overflow-hidden bg-white', className)}>
         <div className={cn('sidebar-content border-b border-ink-100 pb-4 pt-5', collapsed ? 'px-3' : 'px-4')}>
           <div className={cn('flex items-center', collapsed ? 'justify-center' : 'gap-3')}>
-            {!collapsed ? (
-              <div className="min-w-0 flex-1">
-                <p className="font-display text-lg font-bold text-coral-500 pl-3">oh! Delivery</p>
-                <p className="text-sm text-ink-500 pl-3">{data.store.name}</p>
-              </div>
-            ) : null}
+            <div className={cn('min-w-0', collapsed ? 'flex justify-center' : 'flex-1')}>
+              <img
+                src="/logo.png"
+                alt="Oh Delivery"
+                className={cn('w-auto object-contain', collapsed ? 'h-9' : 'h-10 pl-3')}
+              />
+              {!collapsed ? <p className="pl-3 text-sm text-ink-500">{data.store.name}</p> : null}
+            </div>
             <button
               type="button"
               onClick={onToggleCollapsed}
