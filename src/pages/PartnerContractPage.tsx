@@ -291,9 +291,9 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
         </div>
       </header>
 
-      <main className="mx-auto h-[calc(100dvh-81px)] max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
-        <div className="grid h-full w-full grid-rows-[minmax(0,1fr)_auto] gap-6">
-          <section className="flex min-h-0 flex-col rounded-[28px] border border-[#ececec] bg-white p-7 shadow-sm sm:p-8">
+      <main className="mx-auto h-[calc(100dvh-81px)] max-w-6xl px-4 py-4 sm:px-6 sm:py-5">
+        <div className="grid h-full w-full grid-rows-[minmax(0,1fr)_auto] gap-4">
+          <section className="flex min-h-0 flex-col rounded-[28px] border border-[#ececec] bg-white p-6 shadow-sm sm:p-7">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff1f2] text-[#ea1d2c]">
                 <ScrollText className="h-6 w-6" />
@@ -308,7 +308,7 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
               </div>
             </div>
 
-            <div className="mt-6 flex min-h-0 flex-1 flex-col space-y-4 text-[14px] leading-7 text-[#555]">
+            <div className="mt-5 flex min-h-0 flex-1 flex-col space-y-3 text-[14px] leading-7 text-[#555]">
               <div className="shrink-0 rounded-3xl border border-[#ececec] bg-[#fafafa] p-5">
                 <p className="font-bold text-[#1d1d1d]">Partes do contrato</p>
                 <p className="mt-2">
@@ -319,11 +319,11 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
                 </p>
               </div>
 
-              <div className="flex min-h-0 flex-1 flex-col rounded-3xl border border-[#ececec] p-6 sm:p-8">
+              <div className="flex min-h-0 flex-1 flex-col rounded-3xl border border-[#ececec] p-5 sm:p-6">
                 <p className="font-bold text-[#1d1d1d]">Contrato completo</p>
                 <div
                   onScroll={handleContractScroll}
-                  className="mt-4 min-h-0 flex-1 space-y-6 overflow-y-auto pr-2 text-[13px] leading-6 text-[#555]"
+                  className="mt-3 min-h-0 flex-1 space-y-6 overflow-y-auto pr-2 text-[13px] leading-6 text-[#555]"
                 >
                   <div className="space-y-4">
                     <p className="text-[15px] font-bold uppercase tracking-[0.04em] text-[#1d1d1d]">
@@ -377,19 +377,19 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
             </div>
           </section>
 
-          <aside className="w-full shrink-0 rounded-[28px] border border-[#ececec] bg-white p-7 shadow-sm sm:p-8">
+          <aside className="w-full shrink-0 rounded-[28px] border border-[#ececec] bg-white p-5 shadow-sm sm:p-6">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#f0fdf4] text-[#16a34a]">
               <ShieldCheck className="h-6 w-6" />
             </div>
 
-            <h2 className="mt-5 text-[22px] font-black tracking-[-0.02em] text-[#1d1d1d]">
+            <h2 className="mt-4 text-[22px] font-black tracking-[-0.02em] text-[#1d1d1d]">
               Confirmar assinatura
             </h2>
             <p className="mt-2 text-[14px] leading-6 text-[#686868]">
               Role o contrato ate o final para liberar a assinatura. Depois disso, digite o CPF do responsavel para registrar o aceite.
             </p>
 
-            <label className="mt-6 block">
+            <label className="mt-4 block">
               <span className="mb-1.5 block text-[13px] font-semibold text-[#4f4f4f]">
                 Digite o CPF para assinar
               </span>
@@ -407,7 +407,7 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
               </div>
             </label>
 
-            <label className="mt-4 flex items-start gap-3 rounded-2xl border border-[#ececec] bg-[#fafafa] px-4 py-4">
+            <label className="mt-3 flex items-start gap-3 rounded-2xl border border-[#ececec] bg-[#fafafa] px-4 py-4">
               <input
                 type="checkbox"
                 checked={acceptTerms}
@@ -423,7 +423,7 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
               type="button"
               onClick={() => void handleSignContract()}
               disabled={submitting || !hasReachedContractEnd}
-              className="mt-6 flex h-[50px] w-full items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[14px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-4 flex h-[50px] w-full items-center justify-center gap-2 rounded-2xl bg-[#ea1d2c] text-[14px] font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {submitting ? (
                 <>
