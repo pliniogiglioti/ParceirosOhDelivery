@@ -1,4 +1,4 @@
-import { type UIEvent, useState } from 'react'
+import { type UIEvent, useEffect, useState } from 'react'
 import { FileSignature, Loader2, LogOut, ScrollText, ShieldCheck } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useNavigate } from 'react-router-dom'
@@ -218,14 +218,26 @@ const CONTRACT_SECTIONS: ContractSection[] = [
   },
 ]
 
+const SIGNING_STATUS_STEPS = [
+  'Assinando contrato digital',
+  'Revendo seus dados cadastrais',
+  'Verificando analise novamente',
+  'Validando autorizacao do responsavel',
+  'Conferindo integridade do cadastro',
+  'Preparando liberacao da loja',
+  'Sincronizando permissoes iniciais',
+  'Finalizando assinatura eletronica',
+]
+
 export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
   const navigate = useNavigate()
   const { signOut } = usePartnerAuth()
   const [signatureCpf, setSignatureCpf] = useState('')
-  const [signatureStep, setSignatureStep] = useState<'read' | 'sign'>('read')
+  const [signatureStep, setSignatureStep] = useState<'read' | 'sign' | 'processing'>('read')
   const [submitting, setSubmitting] = useState(false)
   const [hasReachedContractEnd, setHasReachedContractEnd] = useState(false)
   const [hasAcceptedContract, setHasAcceptedContract] = useState(false)
+  const [processingStepIndex, setProcessingStepIndex] = useState(0)
 
   const storeAddress = [
     data.store.addressStreet,
@@ -240,6 +252,22 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
 
   const storeDocument = 'informado no cadastro'
   const representativeDocument = 'informado no cadastro'
+
+  useEffect(() => {
+    if (signatureStep !== 'processing') {
+      return
+    }
+
+    setProcessingStepIndex(0)
+
+    const interval = window.setInterval(() => {
+      setProcessingStepIndex((current) =>
+        current < SIGNING_STATUS_STEPS.length - 1 ? current + 1 : current,
+      )
+    }, 1000)
+
+    return () => window.clearInterval(interval)
+  }, [signatureStep])
 
   function handleContractScroll(event: UIEvent<HTMLDivElement>) {
     const target = event.currentTarget
@@ -257,12 +285,17 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
     }
 
     setSubmitting(true)
+    setSignatureStep('processing')
 
     try {
-      await saveStore(data.store.id, { contract: true })
+      await Promise.all([
+        saveStore(data.store.id, { contract: true }),
+        new Promise((resolve) => window.setTimeout(resolve, 8000)),
+      ])
       toast.success('Contrato assinado com sucesso.')
       navigate(data.store.firstAccess ? '/app' : '/primeiro-acesso', { replace: true })
     } catch {
+      setSignatureStep('sign')
       toast.error('Nao foi possivel concluir a assinatura do contrato.')
     } finally {
       setSubmitting(false)
@@ -398,7 +431,7 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
             </section>
           </div>
         </main>
-      ) : (
+      ) : signatureStep === 'sign' ? (
         <main className="mx-auto flex min-h-[calc(100dvh-81px)] max-w-6xl items-center justify-center px-4 py-8 sm:px-6">
           <div className="w-full max-w-2xl rounded-[28px] border border-[#ececec] bg-white p-7 shadow-sm sm:p-8">
             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#fff1f2] text-[#ea1d2c]">
@@ -463,6 +496,94 @@ export function PartnerContractPage({ data }: { data: PartnerDashboardData }) {
                   'Assinar contrato'
                 )}
               </button>
+            </div>
+          </div>
+        </main>
+      ) : (
+        <main className="mx-auto flex min-h-[calc(100dvh-81px)] max-w-6xl items-center justify-center px-4 py-8 sm:px-6">
+          <div className="w-full max-w-2xl rounded-[28px] border border-[#ececec] bg-white p-7 shadow-sm sm:p-8">
+            <div className="flex items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#fff1f2] text-[#ea1d2c]">
+                <Loader2 className="h-7 w-7 animate-spin" />
+              </div>
+              <div>
+                <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-[#ea1d2c]">
+                  Assinando contrato
+                </p>
+                <h1 className="mt-1 text-[28px] font-black tracking-[-0.03em] text-[#1d1d1d]">
+                  Estamos finalizando sua assinatura
+                </h1>
+              </div>
+            </div>
+
+            <p className="mt-5 text-[14px] leading-6 text-[#686868]">
+              Estamos validando seu aceite digital, revisando o cadastro da loja e preparando a
+              liberacao das proximas etapas.
+            </p>
+
+            <div className="mt-6 rounded-3xl border border-[#ececec] bg-[#fafafa] p-5">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[15px] font-bold text-[#1d1d1d]">
+                  {SIGNING_STATUS_STEPS[processingStepIndex]}
+                </p>
+                <span className="rounded-full bg-[#fff1f2] px-3 py-1 text-[12px] font-bold text-[#ea1d2c]">
+                  {processingStepIndex + 1}/{SIGNING_STATUS_STEPS.length}
+                </span>
+              </div>
+
+              <div className="mt-4 h-2 overflow-hidden rounded-full bg-[#ececec]">
+                <div
+                  className="h-full rounded-full bg-[#ea1d2c] transition-all duration-700"
+                  style={{
+                    width: `${((processingStepIndex + 1) / SIGNING_STATUS_STEPS.length) * 100}%`,
+                  }}
+                />
+              </div>
+
+              <div className="mt-5 space-y-3">
+                {SIGNING_STATUS_STEPS.map((step, index) => {
+                  const isDone = index < processingStepIndex
+                  const isCurrent = index === processingStepIndex
+
+                  return (
+                    <div
+                      key={step}
+                      className={`flex items-center gap-3 rounded-2xl border px-4 py-3 transition ${
+                        isCurrent
+                          ? 'border-[#f6c2c7] bg-white shadow-sm'
+                          : isDone
+                            ? 'border-[#d8f1df] bg-[#f5fcf7]'
+                            : 'border-[#ececec] bg-[#fafafa]'
+                      }`}
+                    >
+                      <div
+                        className={`flex h-8 w-8 items-center justify-center rounded-full text-[12px] font-bold ${
+                          isCurrent
+                            ? 'bg-[#fff1f2] text-[#ea1d2c]'
+                            : isDone
+                              ? 'bg-[#e7f8ec] text-[#1f8b4c]'
+                              : 'bg-white text-[#9a9a9a]'
+                        }`}
+                      >
+                        {isDone ? (
+                          <ShieldCheck className="h-4 w-4" />
+                        ) : isCurrent ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          index + 1
+                        )}
+                      </div>
+                      <p
+                        className={`text-[14px] ${
+                          isCurrent || isDone ? 'font-semibold text-[#1d1d1d]' : 'text-[#7a7a7a]'
+                        }`}
+                      >
+                        {step}
+                      </p>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           </div>
         </main>
