@@ -25,6 +25,10 @@ function emptyDashboard(): PartnerDashboardData {
       id: '',
       firstAccess: false,
       contract: false,
+      registrationStatus: 'pendente',
+      rejectionReason: null,
+      rejectedAt: null,
+      reapplyAvailableAt: null,
       responsavelNome: '',
       responsavelCpf: '',
       categoryId: '',
@@ -117,22 +121,8 @@ function calculateMetrics(orders: PartnerOrder[]) {
   }
 }
 
-export async function getStoresByEmail(email: string): Promise<PartnerStoreCard[]> {
-  if (!isSupabaseConfigured || !supabase) {
-    return []
-  }
-
-  const normalizedEmail = email.trim()
-
-  const { data, error } = await supabase
-    .from('stores')
-    .select('id, first_access, contract, name, category_name, logo_image_url, is_open, active, registration_status, rejection_reason')
-    .ilike('partner_email', normalizedEmail)
-    .order('created_at', { ascending: false })
-
-  if (error) throw error
-
-  return (data ?? []).map((row) => ({
+function mapStoreCard(row: Record<string, unknown>): PartnerStoreCard {
+  return {
     id: String(row.id),
     firstAccess: Boolean(row.first_access ?? false),
     contract: Boolean(row.contract ?? false),
@@ -143,7 +133,57 @@ export async function getStoresByEmail(email: string): Promise<PartnerStoreCard[
     active: Boolean(row.active),
     registrationStatus: (row.registration_status ?? 'pendente') as import('@/types').RegistrationStatus,
     rejectionReason: row.rejection_reason ? String(row.rejection_reason) : null,
-  }))
+    rejectedAt: row.rejected_at ? String(row.rejected_at) : null,
+    reapplyAvailableAt: row.reapply_available_at ? String(row.reapply_available_at) : null,
+  }
+}
+
+export function isStoreReapplicationBlocked(store: Pick<PartnerStoreCard, 'registrationStatus' | 'reapplyAvailableAt'>) {
+  if (store.registrationStatus !== 'rejeitado' || !store.reapplyAvailableAt) {
+    return false
+  }
+
+  return new Date(store.reapplyAvailableAt).getTime() > Date.now()
+}
+
+export async function getLatestBlockedRejectedStore(email: string): Promise<PartnerStoreCard | null> {
+  if (!isSupabaseConfigured || !supabase) {
+    return null
+  }
+
+  const normalizedEmail = email.trim()
+
+  const { data, error } = await supabase
+    .from('stores')
+    .select('id, first_access, contract, name, category_name, logo_image_url, is_open, active, registration_status, rejection_reason, rejected_at, reapply_available_at')
+    .ilike('partner_email', normalizedEmail)
+    .eq('registration_status', 'rejeitado')
+    .gt('reapply_available_at', new Date().toISOString())
+    .order('reapply_available_at', { ascending: false })
+    .limit(1)
+
+  if (error) throw error
+
+  const blockedStore = data?.[0]
+  return blockedStore ? mapStoreCard(blockedStore) : null
+}
+
+export async function getStoresByEmail(email: string): Promise<PartnerStoreCard[]> {
+  if (!isSupabaseConfigured || !supabase) {
+    return []
+  }
+
+  const normalizedEmail = email.trim()
+
+  const { data, error } = await supabase
+    .from('stores')
+    .select('id, first_access, contract, name, category_name, logo_image_url, is_open, active, registration_status, rejection_reason, rejected_at, reapply_available_at')
+    .ilike('partner_email', normalizedEmail)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+
+  return (data ?? []).map((row) => mapStoreCard(row))
 }
 
 export async function registerStore(
@@ -154,6 +194,12 @@ export async function registerStore(
 ): Promise<string> {
   if (!isSupabaseConfigured || !supabase) {
     throw new Error('Supabase nao configurado.')
+  }
+
+  const blockedStore = await getLatestBlockedRejectedStore(partnerEmail)
+
+  if (blockedStore) {
+    throw new Error('Seu cadastro anterior nao foi aprovado. Tente novamente em 48 horas.')
   }
 
   const { data: store, error } = await supabase
@@ -192,7 +238,13 @@ export async function registerStore(
     .select('id')
     .single()
 
-  if (error) throw error
+  if (error) {
+    if (String(error.message).includes('REAPPLY_BLOCKED')) {
+      throw new Error('Seu cadastro anterior nao foi aprovado. Tente novamente em 48 horas.')
+    }
+
+    throw error
+  }
 
   try {
     await addRoleToProfile(partnerId, 'store_owner')
@@ -821,6 +873,10 @@ export async function loadPartnerDashboard(storeId: string): Promise<{
       id: String(storeRow.id),
       firstAccess: Boolean(storeRow.first_access ?? false),
       contract: Boolean(storeRow.contract ?? false),
+      registrationStatus: (storeRow.registration_status ?? 'pendente') as import('@/types').RegistrationStatus,
+      rejectionReason: storeRow.rejection_reason ? String(storeRow.rejection_reason) : null,
+      rejectedAt: storeRow.rejected_at ? String(storeRow.rejected_at) : null,
+      reapplyAvailableAt: storeRow.reapply_available_at ? String(storeRow.reapply_available_at) : null,
       responsavelNome: String(storeRow.responsavel_nome ?? ''),
       responsavelCpf: String(storeRow.responsavel_cpf ?? ''),
       categoryId: String(storeRow.category_id ?? ''),

@@ -28,6 +28,10 @@ export interface PartnerStore {
   id: string
   firstAccess: boolean
   contract: boolean
+  registrationStatus: RegistrationStatus
+  rejectionReason: string | null
+  rejectedAt: string | null
+  reapplyAvailableAt: string | null
   responsavelNome: string
   responsavelCpf: string
   categoryId: string
@@ -228,6 +232,8 @@ export interface PartnerStoreCard {
   active: boolean
   registrationStatus: RegistrationStatus
   rejectionReason: string | null
+  rejectedAt: string | null
+  reapplyAvailableAt: string | null
 }
 
 export interface StoreRegistrationInput {

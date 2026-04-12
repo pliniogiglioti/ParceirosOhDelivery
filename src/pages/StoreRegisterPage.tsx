@@ -15,7 +15,7 @@ import {
 import toast from 'react-hot-toast'
 import { usePartnerAuth } from '@/hooks/usePartnerAuth'
 import { getStoreCategories } from '@/services/profile'
-import { registerStore } from '@/services/partner'
+import { getLatestBlockedRejectedStore, registerStore } from '@/services/partner'
 import { MapPicker } from '@/components/MapPicker'
 import type { StoreCategory, StoreRegistrationInput } from '@/types'
 
@@ -158,6 +158,27 @@ export function StoreRegisterPage() {
   useEffect(() => {
     void getStoreCategories().then(setCategories)
   }, [])
+
+  useEffect(() => {
+    if (!user?.email) {
+      return
+    }
+
+    let isMounted = true
+
+    void getLatestBlockedRejectedStore(user.email).then((blockedStore) => {
+      if (!isMounted || !blockedStore) {
+        return
+      }
+
+      selectStore(blockedStore.id)
+      navigate('/cadastro-rejeitado', { replace: true })
+    })
+
+    return () => {
+      isMounted = false
+    }
+  }, [user?.email, navigate, selectStore])
 
   function setField<K extends keyof StoreRegistrationInput>(key: K, value: StoreRegistrationInput[K]) {
     setForm((current) => ({ ...current, [key]: value }))

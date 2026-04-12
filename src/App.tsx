@@ -23,6 +23,7 @@ import { PartnerNotificationsPage } from '@/pages/app/PartnerNotificationsPage'
 import { PartnerStorePage } from '@/pages/app/PartnerStorePage'
 import { PartnerSupportPage } from '@/pages/app/PartnerSupportPage'
 import { HomePage } from '@/pages/HomePage'
+import { StoreRejectedPage } from '@/pages/StoreRejectedPage'
 import { StoreSelectionPage } from '@/pages/StoreSelectionPage'
 import { StoreRegisterPage } from '@/pages/StoreRegisterPage'
 
@@ -107,6 +108,10 @@ function ProtectedLayoutRoute() {
     return <Navigate to="/lojas" replace />
   }
 
+  if (data.store.registrationStatus === 'rejeitado') {
+    return <Navigate to="/cadastro-rejeitado" replace />
+  }
+
   if (!data.store.contract) {
     return <Navigate to="/contrato" replace />
   }
@@ -129,6 +134,10 @@ function AppIndexRoute() {
 
   if (!data) {
     return <Navigate to="/lojas" replace />
+  }
+
+  if (data.store.registrationStatus === 'rejeitado') {
+    return <Navigate to="/cadastro-rejeitado" replace />
   }
 
   if (!data.store.contract) {
@@ -159,6 +168,10 @@ function ContractRoute() {
     return <Navigate to="/lojas" replace />
   }
 
+  if (data.store.registrationStatus === 'rejeitado') {
+    return <Navigate to="/cadastro-rejeitado" replace />
+  }
+
   if (data.store.contract) {
     return <Navigate to={data.store.firstAccess ? '/app' : '/primeiro-acesso'} replace />
   }
@@ -187,6 +200,10 @@ function FirstAccessRoute() {
     return <Navigate to="/lojas" replace />
   }
 
+  if (data.store.registrationStatus === 'rejeitado') {
+    return <Navigate to="/cadastro-rejeitado" replace />
+  }
+
   if (!data.store.contract) {
     return <Navigate to="/contrato" replace />
   }
@@ -201,6 +218,7 @@ export function App() {
         <Route path="/" element={<LoginRoute />} />
         <Route path="/lojas" element={<StoreSelectionRoute />} />
         <Route path="/cadastro" element={<StoreRegisterRoute />} />
+        <Route path="/cadastro-rejeitado" element={<StoreRejectedPage />} />
         <Route path="/contrato" element={<ContractRoute />} />
         <Route path="/primeiro-acesso" element={<FirstAccessRoute />} />
         <Route path="/app" element={<ProtectedLayoutRoute />}>

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ChevronRight, Clock, LogOut, Plus, Store } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { usePartnerAuth } from '@/hooks/usePartnerAuth'
-import { getStoresByEmail } from '@/services/partner'
+import { getStoresByEmail, isStoreReapplicationBlocked } from '@/services/partner'
 import type { PartnerStoreCard, RegistrationStatus, UserRole } from '@/types'
 
 const STATUS_CONFIG: Record<RegistrationStatus, { label: string; className: string }> = {
@@ -54,6 +54,12 @@ export function StoreSelectionPage() {
             return
           }
           navigate('/app', { replace: true })
+          return
+        }
+
+        if (result.length === 1 && result[0]?.registrationStatus === 'rejeitado') {
+          selectStore(result[0].id)
+          navigate('/cadastro-rejeitado', { replace: true })
         }
       })
       .finally(() => setLoading(false))
@@ -61,6 +67,7 @@ export function StoreSelectionPage() {
 
   const hasNoApprovedStore = !loading && stores.length > 0 && stores.every((s) => s.registrationStatus !== 'aprovado')
   const onlyOnePending = stores.length === 1 && stores[0]?.registrationStatus === 'pendente'
+  const blockedRejectedStore = stores.find((store) => isStoreReapplicationBlocked(store)) ?? null
 
   function handleSelectStore(store: PartnerStoreCard) {
     if (store.registrationStatus === 'pendente') {
@@ -68,7 +75,8 @@ export function StoreSelectionPage() {
       return
     }
     if (store.registrationStatus === 'rejeitado') {
-      toast.error(store.rejectionReason ?? 'Cadastro rejeitado. Entre em contato com o suporte.')
+      selectStore(store.id)
+      navigate('/cadastro-rejeitado')
       return
     }
     selectStore(store.id)
@@ -210,7 +218,15 @@ export function StoreSelectionPage() {
 
             <button
               type="button"
-              onClick={() => navigate('/cadastro')}
+              onClick={() => {
+                if (blockedRejectedStore) {
+                  selectStore(blockedRejectedStore.id)
+                  navigate('/cadastro-rejeitado')
+                  return
+                }
+
+                navigate('/cadastro')
+              }}
               className="flex w-full items-center gap-4 rounded-2xl border-2 border-dashed border-[#d9d9d9] bg-white px-4 py-4 transition hover:border-[#ea1d2c] hover:bg-[#fff5f5] group"
             >
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#f5f5f5] group-hover:bg-[#fff1f2]">
