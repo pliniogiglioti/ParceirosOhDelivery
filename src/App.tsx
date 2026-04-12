@@ -23,6 +23,7 @@ import { PartnerNotificationsPage } from '@/pages/app/PartnerNotificationsPage'
 import { PartnerStorePage } from '@/pages/app/PartnerStorePage'
 import { PartnerSupportPage } from '@/pages/app/PartnerSupportPage'
 import { HomePage } from '@/pages/HomePage'
+import { LandingPage } from '@/pages/LandingPage'
 import { StoreRejectedPage } from '@/pages/StoreRejectedPage'
 import { StoreSelectionPage } from '@/pages/StoreSelectionPage'
 import { StoreRegisterPage } from '@/pages/StoreRegisterPage'
@@ -60,7 +61,7 @@ function StoreSelectionRoute() {
   }
 
   if (!auth.user) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/login" replace />
   }
 
   return <StoreSelectionPage />
@@ -76,7 +77,7 @@ function StoreRegisterRoute() {
   }
 
   if (!auth.user) {
-    return <Navigate to="/" state={{ from: location.pathname }} replace />
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />
   }
 
   return <StoreRegisterPage />
@@ -92,7 +93,7 @@ function ProtectedLayoutRoute() {
   }
 
   if (!auth.user) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/login" replace />
   }
 
   if (!auth.selectedStoreId) {
@@ -152,7 +153,7 @@ function ContractRoute() {
   }
 
   if (!auth.user) {
-    return <Navigate to="/" state={{ from: '/contrato' }} replace />
+    return <Navigate to="/login" state={{ from: '/contrato' }} replace />
   }
 
   if (!auth.selectedStoreId) {
@@ -184,7 +185,7 @@ function FirstAccessRoute() {
   }
 
   if (!auth.user) {
-    return <Navigate to="/" state={{ from: '/primeiro-acesso' }} replace />
+    return <Navigate to="/login" state={{ from: '/primeiro-acesso' }} replace />
   }
 
   if (!auth.selectedStoreId) {
@@ -210,7 +211,8 @@ export function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<LoginRoute />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginRoute />} />
         <Route path="/lojas" element={<StoreSelectionRoute />} />
         <Route path="/cadastro" element={<StoreRegisterRoute />} />
         <Route path="/cadastro-rejeitado" element={<StoreRejectedPage />} />
@@ -235,6 +237,7 @@ export function App() {
           <Route path="configuracoes" element={<PartnerConfiguracoesPage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
+
       </Routes>
     </BrowserRouter>
   )

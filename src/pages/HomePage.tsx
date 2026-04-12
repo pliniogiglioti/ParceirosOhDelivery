@@ -110,7 +110,7 @@ function RegisterLink({ label = 'Cadastre sua loja', to = '/cadastro' }: { label
   function handleClick() {
     if (to === '/cadastro') {
       toast('Entre com o email para cadastrar sua loja.')
-      navigate('/', { state: { from: '/cadastro' } })
+      navigate('/login', { state: { from: '/cadastro' } })
       return
     }
 
@@ -184,7 +184,7 @@ function LoggedInCard({
 
       <div className="border-t border-[#ececec] px-6 py-5 text-center text-[13px] text-[#2f2f2f]">
         Nao e voce?{' '}
-        <RegisterLink label="Usar outra conta" to="/" />
+        <RegisterLink label="Usar outra conta" to="/login" />
       </div>
     </div>
   )
