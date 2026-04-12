@@ -23,92 +23,81 @@ export function LandingPage() {
   const navigate = useNavigate()
 
   return (
-    <div className="min-h-dvh bg-[#111] text-white">
-      {/* Header */}
-      <header className="fixed left-0 right-0 top-0 z-50 flex h-[68px] items-center justify-between px-6 sm:px-10 lg:px-16"
-        style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0) 100%)' }}
-      >
-        <img src="/logo.png" alt="Logo" className="h-8 w-auto object-contain" />
+    <div className="min-h-dvh bg-white text-[#1d1d1d]">
+      {/* Navbar */}
+      <header className="border-b border-[#ececec] bg-white">
+        <div className="mx-auto flex h-[64px] max-w-5xl items-center justify-between px-6">
+          <img src="/logo.png" alt="Logo" className="h-8 w-auto object-contain" />
 
-        <button
-          type="button"
-          onClick={() => navigate('/login')}
-          className="h-[40px] rounded-xl bg-[#ea1d2c] px-6 text-[14px] font-bold text-white transition hover:brightness-95"
-        >
-          Entrar
-        </button>
+          <button
+            type="button"
+            onClick={() => navigate('/login')}
+            className="h-[38px] rounded-xl bg-[#ea1d2c] px-5 text-[14px] font-bold text-white transition hover:brightness-95"
+          >
+            Entrar
+          </button>
+        </div>
       </header>
 
       {/* Hero */}
-      <section className="relative flex min-h-dvh items-center">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage:
-              "linear-gradient(90deg, rgba(0,0,0,0.80) 0%, rgba(0,0,0,0.52) 50%, rgba(0,0,0,0.64) 100%), url('https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&w=1800&q=80')",
-          }}
-        />
+      <section className="mx-auto max-w-5xl px-6 py-20 text-center">
+        <span className="mb-4 inline-block rounded-full bg-[#fff1f2] px-4 py-1 text-[12px] font-bold uppercase tracking-[0.16em] text-[#ea1d2c]">
+          Portal do Parceiro
+        </span>
+        <h1 className="mx-auto max-w-[16ch] text-[2.4rem] font-bold leading-[1.1] tracking-[-0.03em] sm:text-[3.2rem]">
+          Seu negócio merece crescer de verdade.
+        </h1>
+        <p className="mx-auto mt-5 max-w-[48ch] text-[16px] leading-[1.75] text-[#686868]">
+          Gerencie seus pedidos, cardápio e finanças em um painel simples e poderoso. Tudo que você precisa para vender mais.
+        </p>
 
-        <div className="relative px-6 sm:px-10 lg:px-16">
-          <p className="mb-4 text-[13px] font-bold uppercase tracking-[0.18em] text-[#ea1d2c]">
-            Portal do Parceiro
-          </p>
-          <h1 className="max-w-[14ch] text-[2.6rem] font-bold leading-[1.05] tracking-[-0.04em] sm:text-[3.8rem] lg:text-[4.8rem]">
-            Seu negócio merece crescer de verdade.
-          </h1>
-          <p className="mt-6 max-w-[42ch] text-[16px] leading-[1.7] text-white/70">
-            Gerencie seus pedidos, cardápio e finanças em um painel simples e poderoso. Tudo que você precisa para vender mais.
-          </p>
-
-          <div className="mt-10 flex flex-wrap gap-4">
-            <button
-              type="button"
-              onClick={() => navigate('/login')}
-              className="h-[52px] rounded-xl bg-[#ea1d2c] px-8 text-[15px] font-bold text-white transition hover:brightness-95"
-            >
-              Entrar no painel
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate('/cadastro')}
-              className="h-[52px] rounded-xl border border-white/30 px-8 text-[15px] font-semibold text-white transition hover:bg-white/10"
-            >
-              Cadastrar minha loja
-            </button>
-          </div>
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => navigate('/login')}
+            className="h-[48px] rounded-xl bg-[#ea1d2c] px-7 text-[15px] font-bold text-white transition hover:brightness-95"
+          >
+            Entrar no painel
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/cadastro')}
+            className="h-[48px] rounded-xl border border-[#d9d9d9] px-7 text-[15px] font-semibold text-[#303030] transition hover:border-[#ea1d2c] hover:text-[#ea1d2c]"
+          >
+            Cadastrar minha loja
+          </button>
         </div>
       </section>
 
       {/* Features */}
-      <section className="bg-[#0f0f0f] px-6 py-20 sm:px-10 lg:px-16">
-        <p className="mb-3 text-center text-[13px] font-bold uppercase tracking-[0.18em] text-[#ea1d2c]">
-          Por que ser parceiro?
-        </p>
-        <h2 className="mb-14 text-center text-[1.9rem] font-bold tracking-[-0.03em] sm:text-[2.4rem]">
-          Tudo que você precisa, em um só lugar
-        </h2>
+      <section className="border-t border-[#f0f0f0] bg-[#fafafa] py-20">
+        <div className="mx-auto max-w-5xl px-6">
+          <h2 className="mb-12 text-center text-[1.6rem] font-bold tracking-[-0.025em] sm:text-[2rem]">
+            Por que ser parceiro?
+          </h2>
 
-        <div className="mx-auto grid max-w-5xl gap-6 sm:grid-cols-3">
-          {FEATURES.map(({ icon: Icon, title, description }) => (
-            <div
-              key={title}
-              className="rounded-2xl border border-white/10 bg-white/5 p-8 transition hover:border-[#ea1d2c]/40 hover:bg-white/8"
-            >
-              <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-[#ea1d2c]/15 text-[#ea1d2c]">
-                <Icon className="h-5 w-5" />
+          <div className="grid gap-6 sm:grid-cols-3">
+            {FEATURES.map(({ icon: Icon, title, description }) => (
+              <div
+                key={title}
+                className="rounded-2xl border border-[#ececec] bg-white p-7 transition hover:border-[#ea1d2c]/30 hover:shadow-sm"
+              >
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-[#fff1f2] text-[#ea1d2c]">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <h3 className="mb-2 text-[16px] font-bold">{title}</h3>
+                <p className="text-[14px] leading-[1.7] text-[#686868]">{description}</p>
               </div>
-              <h3 className="mb-2 text-[17px] font-bold">{title}</h3>
-              <p className="text-[14px] leading-[1.7] text-white/60">{description}</p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-white/10 bg-[#0a0a0a] px-6 py-8 sm:px-10 lg:px-16">
-        <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-          <img src="/logo.png" alt="Logo" className="h-6 w-auto object-contain opacity-60" />
-          <p className="text-[13px] text-white/40">
+      <footer className="border-t border-[#ececec] bg-white px-6 py-7">
+        <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-3 sm:flex-row">
+          <img src="/logo.png" alt="Logo" className="h-6 w-auto object-contain opacity-50" />
+          <p className="text-[13px] text-[#aaaaaa]">
             © {new Date().getFullYear()} Oh Delivery. Todos os direitos reservados.
           </p>
         </div>
