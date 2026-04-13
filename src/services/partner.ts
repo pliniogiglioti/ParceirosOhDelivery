@@ -456,12 +456,19 @@ export async function saveStorePaymentMethods(
     updated_at: new Date().toISOString(),
   }))
 
-  const { data: methodRows, error: methodError } = await supabase
+  const { error: methodError } = await supabase
     .from('store_payment_methods')
     .upsert(methodPayload, { onConflict: 'store_id,code' })
-    .select('*')
 
   if (methodError) throw methodError
+
+  const { data: methodRows, error: fetchError } = await supabase
+    .from('store_payment_methods')
+    .select('id, code')
+    .eq('store_id', storeId)
+    .in('code', methods.map((m) => m.id))
+
+  if (fetchError) throw fetchError
 
   const methodIdByCode = new Map<string, string>(
     (methodRows ?? []).map((row) => [String(row.code), String(row.id)])
@@ -697,6 +704,15 @@ export async function fetchIndustrializados(): Promise<IndustrializedItem[]> {
   }))
 }
 
+export async function cancelOrder(orderId: string): Promise<void> {
+  if (!supabase) throw new Error('Supabase nao configurado.')
+  const { error } = await supabase
+    .from('orders')
+    .update({ status: 'cancelado', updated_at: new Date().toISOString() })
+    .eq('id', orderId)
+  if (error) throw error
+}
+
 export async function loadPartnerDashboard(storeId: string): Promise<{
   data: PartnerDashboardData
   source: 'supabase'
@@ -738,7 +754,7 @@ export async function loadPartnerDashboard(storeId: string): Promise<{
       .eq('active', true)
       .order('sort_order', { ascending: true }),
     supabase.from('products').select('*').eq('store_id', storeRow.id).order('sort_order', { ascending: true }),
-    supabase.from('orders').select('*').eq('store_id', storeRow.id).order('created_at', { ascending: false }).limit(8),
+    supabase.from('orders').select('*').eq('store_id', storeRow.id).order('created_at', { ascending: false }),
     supabase.from('chat_sessions').select('*').eq('store_id', storeRow.id).order('updated_at', { ascending: false }).limit(20),
     supabase.from('delivery_areas').select('*').eq('store_id', storeRow.id).order('sort_order', { ascending: true }),
     supabase.from('store_reviews').select('*').eq('store_id', storeRow.id).order('created_at', { ascending: false }).limit(50),

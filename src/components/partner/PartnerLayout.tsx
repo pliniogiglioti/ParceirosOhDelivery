@@ -6,6 +6,7 @@ import { LoadingScreen } from '@/components/partner/LoadingScreen'
 import { PartnerSidebar } from '@/components/partner/PartnerSidebar'
 import { PartnerTopbar } from '@/components/partner/PartnerTopbar'
 import { useOrderNotifications } from '@/hooks/useOrderNotifications'
+import { useOrdersRealtime } from '@/hooks/useOrdersRealtime'
 import { usePartnerAuth } from '@/hooks/usePartnerAuth'
 import { usePartnerDashboard } from '@/hooks/usePartnerDashboard'
 import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
@@ -73,6 +74,7 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
   ])
 
   useOrderNotifications(data?.store.id ?? '')
+  useOrdersRealtime(data?.store.id ?? '')
 
   if (loading) {
     return <LoadingScreen />

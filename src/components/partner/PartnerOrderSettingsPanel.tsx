@@ -1,4 +1,4 @@
-import { Info, Play } from 'lucide-react'
+import { Play } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
@@ -44,7 +44,7 @@ function ThemeSwitch({
 
 export function PartnerOrderSettingsPanel() {
   const { data } = usePartnerPageData()
-  const { orderSettingsByStoreId, hydrateOrderSettings, updateOrderSettings, updateStore } = usePartnerDraftStore()
+  const { orderSettingsByStoreId, hydrateOrderSettings, updateOrderSettings } = usePartnerDraftStore()
   const persistedSettings = orderSettingsByStoreId[data.store.id]
 
   function createDefaultSettings(): PartnerOrderSettings {
@@ -62,30 +62,17 @@ export function PartnerOrderSettingsPanel() {
   }
 
   const [draftSettings, setDraftSettings] = useState<PartnerOrderSettings>(createDefaultSettings)
-  const [draftStoreTimes, setDraftStoreTimes] = useState({
-    etaMin: data.store.etaMin,
-    etaMax: data.store.etaMax,
-    pickupEta: data.store.pickupEta,
-  })
 
   useEffect(() => {
     hydrateOrderSettings(data.store.id, createDefaultSettings())
-  }, [data.store.etaMax, data.store.etaMin, data.store.id, hydrateOrderSettings])
+  }, [data.store.id, hydrateOrderSettings])
 
   useEffect(() => {
     setDraftSettings({
       ...createDefaultSettings(),
       ...(persistedSettings ?? {}),
     })
-  }, [persistedSettings, data.store.etaMax, data.store.etaMin, data.store.id])
-
-  useEffect(() => {
-    setDraftStoreTimes({
-      etaMin: data.store.etaMin,
-      etaMax: data.store.etaMax,
-      pickupEta: data.store.pickupEta,
-    })
-  }, [data.store.etaMax, data.store.etaMin, data.store.id, data.store.pickupEta])
+  }, [persistedSettings, data.store.id])
 
   function handleOrderSettingsPatch(patch: Partial<PartnerOrderSettings>) {
     setDraftSettings((current) => ({
@@ -94,15 +81,7 @@ export function PartnerOrderSettingsPanel() {
     }))
   }
 
-  function handleStoreTimesPatch(patch: Partial<typeof draftStoreTimes>) {
-    setDraftStoreTimes((current) => ({
-      ...current,
-      ...patch,
-    }))
-  }
-
   function handleSaveOrderSettings() {
-    updateStore(data.store.id, draftStoreTimes)
     updateOrderSettings(data.store.id, draftSettings)
     toast.success('Configuracoes de pedidos salvas com sucesso.')
   }
@@ -119,70 +98,6 @@ export function PartnerOrderSettingsPanel() {
       </div>
 
       <div className="mt-8 space-y-4">
-        <div className="rounded-3xl border border-ink-100 bg-ink-50 p-4 sm:p-5">
-          <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_220px] md:items-center">
-            <div>
-              <div className="flex items-center gap-2 text-sm font-semibold text-ink-900">
-                <span>Tempo para aceitar pedido</span>
-                <Info className="h-4 w-4 text-coral-500" />
-              </div>
-              <p className="mt-1 text-sm text-ink-500">Define o limite para confirmar novos pedidos.</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <input
-                type="number"
-                min="10"
-                max="99"
-                value={draftSettings.acceptTime}
-                onChange={(event) => handleOrderSettingsPatch({ acceptTime: parseInteger(event.target.value) })}
-                className="h-12 w-24 rounded-2xl border border-ink-100 bg-white px-4 text-sm font-semibold text-ink-900 outline-none transition focus:border-coral-400"
-              />
-              <span className="text-sm font-medium text-ink-500">min</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-ink-100 bg-ink-50 p-4 sm:p-5">
-          <p className="text-sm font-semibold text-ink-900">Prazos da loja</p>
-          <div className="mt-5 grid gap-4 md:grid-cols-3">
-            <label className="block">
-              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Tempo minimo</span>
-              <input
-                type="number"
-                min="0"
-                max="99"
-                value={draftStoreTimes.etaMin}
-                onChange={(event) => handleStoreTimesPatch({ etaMin: parseInteger(event.target.value) })}
-                className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm font-semibold text-ink-900 outline-none transition focus:border-coral-400"
-              />
-            </label>
-
-            <label className="block">
-              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Tempo maximo</span>
-              <input
-                type="number"
-                min="0"
-                max="99"
-                value={draftStoreTimes.etaMax}
-                onChange={(event) => handleStoreTimesPatch({ etaMax: parseInteger(event.target.value) })}
-                className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm font-semibold text-ink-900 outline-none transition focus:border-coral-400"
-              />
-            </label>
-
-            <label className="block">
-              <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Tempo retirada</span>
-              <input
-                type="number"
-                min="0"
-                max="99"
-                value={draftStoreTimes.pickupEta}
-                onChange={(event) => handleStoreTimesPatch({ pickupEta: parseInteger(event.target.value) })}
-                className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm font-semibold text-ink-900 outline-none transition focus:border-coral-400"
-              />
-            </label>
-          </div>
-        </div>
-
         <div className="rounded-3xl border border-ink-100 bg-white p-4 sm:p-5">
           <p className="text-sm font-semibold text-ink-900">Automacoes do fluxo</p>
           <div className="mt-5 space-y-4">

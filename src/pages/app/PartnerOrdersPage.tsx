@@ -1,9 +1,10 @@
 import type { DragEvent, MouseEvent as ReactMouseEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
-import { ArrowRight, ChevronDown, GripVertical, Maximize2, Minimize2, Plus, Search, Settings, X } from 'lucide-react'
+import { ArrowRight, ChevronDown, GripVertical, Info, Maximize2, Minimize2, Plus, Search, Settings, X } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import type { OrderStatus, PartnerOrder, PartnerOrderSettings } from '@/types'
+import { cancelOrder } from '@/services/partner'
 import { AnimatedModal } from '@/components/partner/AnimatedModal'
 import { SectionFrame } from '@/components/partner/PartnerUi'
 import { usePartnerPageData } from '@/hooks/usePartnerPageData'
@@ -13,6 +14,7 @@ import { cn, formatCurrency, formatDateTime } from '@/lib/utils'
 type KanbanColumnId = 'aceitar' | 'preparo' | 'pronto' | 'rota' | 'finalizado'
 const DEFAULT_STAGE_LIMIT_MS = 5 * 60 * 1000
 const DEFAULT_PREPARE_TIME = 5
+const DEFAULT_ACCEPT_TIME = 10
 
 const defaultOrderSettings: PartnerOrderSettings = {
   acceptTime: 10,
@@ -126,6 +128,7 @@ function parseInteger(value: string) {
 }
 
 function getStageLimitMs(status: OrderStatus, settings?: PartnerOrderSettings) {
+  if (status === 'aguardando') return Math.max(settings?.acceptTime ?? DEFAULT_ACCEPT_TIME, 1) * 60 * 1000
   if (status === 'preparo') return Math.max(settings?.prepareTime ?? DEFAULT_PREPARE_TIME, 1) * 60 * 1000
   return DEFAULT_STAGE_LIMIT_MS
 }
@@ -156,6 +159,7 @@ export function PartnerOrdersPage() {
   const scrollbarTrackRef = useRef<HTMLDivElement | null>(null)
   const thumbDragRef = useRef<{ startX: number; startScrollLeft: number } | null>(null)
   const lastSelectedOrderRef = useRef<PartnerOrder | null>(null)
+  const autoCancelledRef = useRef<Set<string>>(new Set())
   const [draggingOrderId, setDraggingOrderId] = useState<string | null>(null)
   const [hoveredColumn, setHoveredColumn] = useState<KanbanColumnId | null>(null)
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null)
@@ -167,6 +171,8 @@ export function PartnerOrdersPage() {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [prepareTimeModalOpen, setPrepareTimeModalOpen] = useState(false)
   const [prepareTimeDraft, setPrepareTimeDraft] = useState(DEFAULT_PREPARE_TIME)
+  const [acceptTimeModalOpen, setAcceptTimeModalOpen] = useState(false)
+  const [acceptTimeDraft, setAcceptTimeDraft] = useState(DEFAULT_ACCEPT_TIME)
   const [scrollMetrics, setScrollMetrics] = useState({
     clientWidth: 0,
     scrollLeft: 0,
@@ -195,6 +201,25 @@ export function PartnerOrdersPage() {
   useEffect(() => {
     setPrepareTimeDraft(orderSettings.prepareTime)
   }, [orderSettings.prepareTime])
+
+  useEffect(() => {
+    setAcceptTimeDraft(orderSettings.acceptTime)
+  }, [orderSettings.acceptTime])
+
+  useEffect(() => {
+    const acceptLimitMs = getStageLimitMs('aguardando', orderSettings)
+    const pending = data.orders.filter((o) => o.status === 'aguardando')
+
+    for (const order of pending) {
+      if (autoCancelledRef.current.has(order.id)) continue
+      if (!isStageExpired('aguardando', order.stageStartedAt, now, acceptLimitMs)) continue
+
+      autoCancelledRef.current.add(order.id)
+      updateOrder(data.store.id, order.id, { status: 'cancelado' })
+      toast.error(`Pedido ${order.code} cancelado por falta de aceite.`)
+      void cancelOrder(order.id).catch(() => undefined)
+    }
+  }, [now, data.orders, data.store.id, orderSettings, updateOrder])
 
   useEffect(() => {
     const container = boardScrollRef.current
@@ -346,6 +371,14 @@ export function PartnerOrdersPage() {
     updateOrderSettings(data.store.id, { prepareTime })
     setPrepareTimeModalOpen(false)
     toast.success(`Tempo de preparo ajustado para ${prepareTime} min.`)
+  }
+
+  function handleSaveAcceptTime() {
+    const acceptTime = Math.max(acceptTimeDraft, 1)
+    updateOrderSettings(data.store.id, { acceptTime })
+    autoCancelledRef.current.clear()
+    setAcceptTimeModalOpen(false)
+    toast.success(`Tempo de aceite ajustado para ${acceptTime} min.`)
   }
 
   function handleSimulateIncomingOrder() {
@@ -520,6 +553,20 @@ export function PartnerOrdersPage() {
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <p className="text-[15px] font-bold leading-5 text-ink-900">{column.label}</p>
+                        {column.id === 'aceitar' ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAcceptTimeDraft(orderSettings.acceptTime)
+                              setAcceptTimeModalOpen(true)
+                            }}
+                            className="inline-flex h-7 w-7 items-center justify-center rounded-xl border border-ink-100 text-ink-400 transition hover:border-coral-200 hover:bg-ink-50 hover:text-coral-600"
+                            aria-label="Configurar tempo de aceite"
+                            title="Configurar tempo de aceite"
+                          >
+                            <Settings className="h-3.5 w-3.5" />
+                          </button>
+                        ) : null}
                         {column.id === 'preparo' ? (
                           <button
                             type="button"
@@ -593,6 +640,14 @@ export function PartnerOrdersPage() {
                                 <div className="flex items-center gap-1.5">
                                   <GripVertical className="h-3.5 w-3.5 text-ink-300" />
                                   <p className="text-[15px] font-bold text-ink-900">{order.code}</p>
+                                  {column.id === 'aceitar' ? (
+                                    <span
+                                      title={`Pedido sera cancelado automaticamente apos ${orderSettings.acceptTime} min sem aceite`}
+                                      className="inline-flex items-center text-ink-300 hover:text-coral-500 transition cursor-default"
+                                    >
+                                      <Info className="h-3.5 w-3.5" />
+                                    </span>
+                                  ) : null}
                                 </div>
                                 <p className="mt-1.5 text-[13px] text-ink-500">{order.customerName}</p>
                               </div>
@@ -880,6 +935,68 @@ export function PartnerOrdersPage() {
             <button
               type="button"
               onClick={handleSavePrepareTime}
+              className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-6 text-sm font-semibold text-white transition hover:bg-coral-600"
+            >
+              Salvar
+            </button>
+          </div>
+        </AnimatedModal>
+
+        <AnimatedModal
+          open={acceptTimeModalOpen}
+          onClose={() => setAcceptTimeModalOpen(false)}
+          panelClassName="panel-card w-full max-w-md p-5 sm:p-6"
+          ariaLabelledby="accept-time-title"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">Aceitar</p>
+              <h4 id="accept-time-title" className="mt-2 text-xl font-bold text-ink-900">
+                Configurar tempo de aceite
+              </h4>
+              <p className="mt-2 text-sm leading-6 text-ink-500">
+                Pedidos nao aceitos dentro deste prazo serao cancelados automaticamente.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setAcceptTimeModalOpen(false)}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-ink-100 bg-ink-50 text-ink-700 transition hover:border-coral-200 hover:text-coral-600"
+              aria-label="Fechar configuracao de aceite"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <label className="mt-6 block">
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">
+              Tempo de aceite
+            </span>
+            <div className="flex items-center gap-3">
+              <input
+                type="number"
+                min="1"
+                max="99"
+                value={acceptTimeDraft}
+                onChange={(event) => setAcceptTimeDraft(parseInteger(event.target.value))}
+                className="h-12 w-28 rounded-2xl border border-ink-100 bg-white px-4 text-sm font-semibold text-ink-900 outline-none transition focus:border-coral-400"
+              />
+              <span className="text-sm font-medium text-ink-500">min</span>
+            </div>
+          </label>
+
+          <div className="mt-6 flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setAcceptTimeModalOpen(false)}
+              className="inline-flex h-11 items-center justify-center rounded-2xl border border-ink-100 px-5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveAcceptTime}
               className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-6 text-sm font-semibold text-white transition hover:bg-coral-600"
             >
               Salvar

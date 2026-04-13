@@ -130,6 +130,8 @@ export const usePartnerDraftStore = create<PartnerDraftStoreState>()(
       addOrder: (storeId, order) => {
         const currentOrders = get().ordersByStoreId[storeId] ?? []
 
+        if (currentOrders.some((o) => o.id === order.id)) return
+
         set((state) => ({
           ordersByStoreId: {
             ...state.ordersByStoreId,
