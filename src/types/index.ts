@@ -28,6 +28,8 @@ export interface PartnerStore {
   id: string
   firstAccess: boolean
   contract: boolean
+  contractSignedAt: string | null
+  repassePercentual: number
   registrationStatus: RegistrationStatus
   rejectionReason: string | null
   rejectedAt: string | null

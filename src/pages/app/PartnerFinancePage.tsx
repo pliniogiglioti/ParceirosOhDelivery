@@ -1,13 +1,13 @@
 import { type ElementType, useEffect, useMemo, useState } from 'react'
-import { ArrowDownLeft, ArrowUpRight, CreditCard, DollarSign, QrCode, TrendingUp, Wallet } from 'lucide-react'
+import { ArrowDownLeft, ArrowUpRight, CreditCard, DollarSign, Percent, QrCode, TrendingUp, Wallet } from 'lucide-react'
 import { SectionFrame } from '@/components/partner/PartnerUi'
 import { usePartnerPageData } from '@/hooks/usePartnerPageData'
 import { cn, formatCurrency } from '@/lib/utils'
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 
 type Period = 'semana' | 'mes' | 'trimestre'
-type TxFilter = 'todas' | 'entradas' | 'saidas'
-type FinanceTxType = 'entrada' | 'saida'
+type TxFilter = 'todas' | 'entradas' | 'saidas' | 'repasses'
+type FinanceTxType = 'entrada' | 'saida' | 'repasse'
 
 type FinanceOrder = {
   id: string
@@ -188,6 +188,8 @@ export function PartnerFinancePage() {
 
   const transactions = useMemo(() => {
     return financeOrders.flatMap((order) => {
+      const repasse = order.total * (repassePercentual / 100)
+
       const txs: FinanceTransaction[] = [
         {
           id: `${order.id}-entrada`,
@@ -210,14 +212,24 @@ export function PartnerFinancePage() {
         })
       }
 
+      txs.push({
+        id: `${order.id}-repasse`,
+        orderId: order.id,
+        label: `Repasse ${repassePercentual}% — ${order.code}`,
+        amount: repasse,
+        type: 'repasse',
+        date: order.createdAt,
+      })
+
       return txs
     })
-  }, [financeOrders])
+  }, [financeOrders, repassePercentual])
 
   const filteredTxs = useMemo(() => {
     return transactions.filter((tx) => {
       if (txFilter === 'entradas') return tx.type === 'entrada'
       if (txFilter === 'saidas') return tx.type === 'saida'
+      if (txFilter === 'repasses') return tx.type === 'repasse'
       return true
     })
   }, [transactions, txFilter])
@@ -254,6 +266,9 @@ export function PartnerFinancePage() {
       }))
       .sort((left, right) => right.total - left.total)
   }, [financeOrders])
+
+  const repassePercentual = data.store.repassePercentual ?? 5
+  const valorRepasse = totalEntradas * (repassePercentual / 100)
 
   const averageTicket = financeOrders.length ? totalEntradas / financeOrders.length : 0
   const latestMovementAt = transactions[0]?.date ?? null
@@ -323,6 +338,21 @@ export function PartnerFinancePage() {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="panel-card border-l-4 border-l-violet-400 p-5">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-400">Repasse</p>
+            <span className="flex h-8 w-8 items-center justify-center rounded-2xl bg-violet-50">
+              <Percent className="h-4 w-4 text-violet-600" />
+            </span>
+          </div>
+          <p className="mt-3 font-display text-3xl font-bold text-violet-600">{formatCurrency(valorRepasse)}</p>
+          <p className="mt-1 text-xs text-ink-400">
+            {repassePercentual}% do faturamento bruto do periodo
+          </p>
+        </div>
+      </div>
+
       <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
         <div className="panel-card overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-ink-100 px-5 py-3.5">
@@ -335,6 +365,7 @@ export function PartnerFinancePage() {
                 { id: 'todas', label: 'Todas' },
                 { id: 'entradas', label: 'Entradas' },
                 { id: 'saidas', label: 'Saidas' },
+                { id: 'repasses', label: 'Repasses' },
               ]}
               value={txFilter}
               onChange={setTxFilter}
@@ -358,11 +389,17 @@ export function PartnerFinancePage() {
                   <span
                     className={cn(
                       'flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl',
-                      tx.type === 'entrada' ? 'bg-green-50' : 'bg-coral-50'
+                      tx.type === 'entrada'
+                        ? 'bg-green-50'
+                        : tx.type === 'repasse'
+                          ? 'bg-violet-50'
+                          : 'bg-coral-50'
                     )}
                   >
                     {tx.type === 'entrada' ? (
                       <ArrowDownLeft className="h-4 w-4 text-green-600" />
+                    ) : tx.type === 'repasse' ? (
+                      <Percent className="h-4 w-4 text-violet-600" />
                     ) : (
                       <ArrowUpRight className="h-4 w-4 text-coral-500" />
                     )}
@@ -371,8 +408,17 @@ export function PartnerFinancePage() {
                     <p className="text-sm font-semibold text-ink-900">{tx.label}</p>
                     <p className="text-xs text-ink-400">{formatShortDate(tx.date)}</p>
                   </div>
-                  <p className={cn('text-sm font-bold', tx.type === 'entrada' ? 'text-green-600' : 'text-coral-500')}>
-                    {tx.type === 'entrada' ? '+' : '-'}
+                  <p
+                    className={cn(
+                      'text-sm font-bold',
+                      tx.type === 'entrada'
+                        ? 'text-green-600'
+                        : tx.type === 'repasse'
+                          ? 'text-violet-600'
+                          : 'text-coral-500'
+                    )}
+                  >
+                    {tx.type === 'saida' ? '-' : '+'}
                     {formatCurrency(Math.abs(tx.amount))}
                   </p>
                 </li>
