@@ -6,6 +6,7 @@ import type {
   DeliveryArea,
   LogisticsSnapshot,
   OrderStatus,
+  OrderStatusEvent,
   PartnerCategory,
   PartnerDashboardData,
   PartnerHour,
@@ -704,6 +705,30 @@ export async function fetchIndustrializados(): Promise<IndustrializedItem[]> {
   }))
 }
 
+function statusEventLabel(status: OrderStatus): string {
+  if (status === 'aguardando') return 'Pedido recebido'
+  if (status === 'preparo') return 'Em preparo'
+  if (status === 'confirmado') return 'Pronto'
+  if (status === 'a_caminho') return 'Saiu para entrega'
+  if (status === 'entregue') return 'Entregue'
+  if (status === 'cancelado') return 'Cancelado'
+  return status
+}
+
+export async function updateOrderStatus(orderId: string, status: OrderStatus): Promise<void> {
+  if (!supabase) throw new Error('Supabase nao configurado.')
+  const { error: orderError } = await supabase
+    .from('orders')
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq('id', orderId)
+  if (orderError) throw orderError
+
+  const { error: eventError } = await supabase
+    .from('order_status_events')
+    .insert({ order_id: orderId, status, label: statusEventLabel(status) })
+  if (eventError) throw eventError
+}
+
 export async function cancelOrder(orderId: string, reason?: string): Promise<void> {
   if (!supabase) throw new Error('Supabase nao configurado.')
   const { error } = await supabase
@@ -715,6 +740,27 @@ export async function cancelOrder(orderId: string, reason?: string): Promise<voi
     })
     .eq('id', orderId)
   if (error) throw error
+
+  await supabase
+    .from('order_status_events')
+    .insert({ order_id: orderId, status: 'cancelado', label: 'Cancelado' })
+}
+
+export async function fetchOrderStatusEvents(orderId: string): Promise<OrderStatusEvent[]> {
+  if (!supabase) return []
+  const { data, error } = await supabase
+    .from('order_status_events')
+    .select('id, order_id, status, label, created_at')
+    .eq('order_id', orderId)
+    .order('created_at', { ascending: true })
+  if (error) throw error
+  return (data ?? []).map((row) => ({
+    id: String(row.id),
+    orderId: String(row.order_id),
+    status: row.status as OrderStatus,
+    label: String(row.label),
+    createdAt: String(row.created_at),
+  }))
 }
 
 export async function loadPartnerDashboard(storeId: string): Promise<{

@@ -3,13 +3,14 @@ import { useEffect, useRef, useState } from 'react'
 import { ArrowRight, ChevronDown, GripVertical, Info, Maximize2, Minimize2, Plus, Search, Settings, X } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
-import type { OrderStatus, PartnerOrder, PartnerOrderSettings } from '@/types'
-import { cancelOrder } from '@/services/partner'
+import type { OrderStatus, OrderStatusEvent, PartnerOrder, PartnerOrderSettings } from '@/types'
+import { cancelOrder, fetchOrderStatusEvents, updateOrderStatus } from '@/services/partner'
 import { AnimatedModal } from '@/components/partner/AnimatedModal'
 import { SectionFrame } from '@/components/partner/PartnerUi'
 import { usePartnerPageData } from '@/hooks/usePartnerPageData'
 import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
 import { cn, formatCurrency, formatDateTime } from '@/lib/utils'
+import { supabase } from '@/lib/supabase'
 
 type KanbanColumnId = 'aceitar' | 'preparo' | 'pronto' | 'rota' | 'finalizado' | 'cancelado'
 const DEFAULT_STAGE_LIMIT_MS = 5 * 60 * 1000
@@ -185,6 +186,8 @@ export function PartnerOrdersPage() {
     scrollWidth: 0,
   })
   const [now, setNow] = useState(() => Date.now())
+  const [statusEvents, setStatusEvents] = useState<OrderStatusEvent[]>([])
+  const [statusEventsLoading, setStatusEventsLoading] = useState(false)
   const orderSettings = {
     ...defaultOrderSettings,
     ...(orderSettingsByStoreId[data.store.id] ?? {}),
@@ -312,9 +315,54 @@ export function PartnerOrdersPage() {
     }
   }, [])
 
+  useEffect(() => {
+    const orderId = selectedOrder?.id
+    if (!orderId || !supabase) {
+      setStatusEvents([])
+      return
+    }
+
+    setStatusEventsLoading(true)
+    fetchOrderStatusEvents(orderId)
+      .then(setStatusEvents)
+      .catch(() => setStatusEvents([]))
+      .finally(() => setStatusEventsLoading(false))
+
+    const channel = supabase
+      .channel(`order_status_events:${orderId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'order_status_events',
+          filter: `order_id=eq.${orderId}`,
+        },
+        (payload) => {
+          const row = payload.new as Record<string, unknown>
+          setStatusEvents((prev) => [
+            ...prev,
+            {
+              id: String(row.id),
+              orderId: String(row.order_id),
+              status: String(row.status) as OrderStatus,
+              label: String(row.label),
+              createdAt: String(row.created_at),
+            },
+          ])
+        }
+      )
+      .subscribe()
+
+    return () => {
+      void supabase!.removeChannel(channel)
+    }
+  }, [selectedOrder?.id])
+
   function closeOrderDetails() {
     setSelectedOrder(null)
     setSearchParams({})
+    setStatusEvents([])
   }
 
   function handleBoardDragOver(event: DragEvent<HTMLDivElement>) {
@@ -364,6 +412,7 @@ export function PartnerOrdersPage() {
       stageStartedAt: new Date().toISOString(),
     })
     toast.success(`Pedido ${order.code} movido com sucesso.`)
+    void updateOrderStatus(order.id, next).catch(() => undefined)
   }
 
   function handleAdvanceOrder(order: PartnerOrder) {
@@ -375,6 +424,7 @@ export function PartnerOrdersPage() {
       stageStartedAt: new Date().toISOString(),
     })
     toast.success(`Pedido ${order.code} movido com sucesso.`)
+    void updateOrderStatus(order.id, next).catch(() => undefined)
   }
 
   function handleSavePrepareTime() {
@@ -886,6 +936,46 @@ export function PartnerOrdersPage() {
                     </span>
                   )}
                 </div>
+              </div>
+
+              <div className="mt-4 rounded-xl border border-ink-100 bg-white p-4">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">
+                  Histórico do pedido
+                </p>
+                {statusEventsLoading ? (
+                  <p className="mt-3 text-sm text-ink-400">Carregando...</p>
+                ) : statusEvents.length === 0 ? (
+                  <p className="mt-3 text-sm text-ink-400">Nenhum evento registrado ainda.</p>
+                ) : (
+                  <ol className="mt-3 space-y-0">
+                    {statusEvents.map((event, index) => {
+                      const isLast = index === statusEvents.length - 1
+                      return (
+                        <li key={event.id} className="flex gap-3">
+                          <div className="flex flex-col items-center">
+                            <span
+                              className={cn(
+                                'mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full border-2',
+                                isLast
+                                  ? 'border-coral-500 bg-coral-500'
+                                  : 'border-ink-300 bg-white'
+                              )}
+                            />
+                            {!isLast && (
+                              <span className="mt-0.5 w-px flex-1 bg-ink-100" style={{ minHeight: '1.25rem' }} />
+                            )}
+                          </div>
+                          <div className="pb-3">
+                            <p className={cn('text-sm font-semibold', isLast ? 'text-ink-900' : 'text-ink-600')}>
+                              {event.label}
+                            </p>
+                            <p className="text-xs text-ink-400">{formatDateTime(event.createdAt)}</p>
+                          </div>
+                        </li>
+                      )
+                    })}
+                  </ol>
+                )}
               </div>
             </>
           ) : null}

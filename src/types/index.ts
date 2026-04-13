@@ -84,6 +84,14 @@ export interface PartnerOrderItem {
   totalPrice: number
 }
 
+export interface OrderStatusEvent {
+  id: string
+  orderId: string
+  status: OrderStatus
+  label: string
+  createdAt: string
+}
+
 export interface PartnerCategory {
   id: string
   name: string
