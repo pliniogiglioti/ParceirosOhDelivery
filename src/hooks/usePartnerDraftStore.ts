@@ -125,6 +125,22 @@ export const usePartnerDraftStore = create<PartnerDraftStoreState>()(
               })),
             },
           }))
+          return
+        }
+
+        // Mescla: adiciona pedidos novos do banco que não existem localmente
+        const localIds = new Set(currentOrders.map((o) => o.id))
+        const incoming = orders
+          .filter((o) => !localIds.has(o.id))
+          .map((o) => ({ ...o, stageStartedAt: o.stageStartedAt ?? o.createdAt }))
+
+        if (incoming.length > 0) {
+          set((state) => ({
+            ordersByStoreId: {
+              ...state.ordersByStoreId,
+              [storeId]: [...incoming, ...currentOrders],
+            },
+          }))
         }
       },
       addOrder: (storeId, order) => {
