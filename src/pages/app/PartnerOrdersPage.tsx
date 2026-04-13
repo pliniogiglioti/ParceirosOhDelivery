@@ -11,7 +11,7 @@ import { usePartnerPageData } from '@/hooks/usePartnerPageData'
 import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
 import { cn, formatCurrency, formatDateTime } from '@/lib/utils'
 
-type KanbanColumnId = 'aceitar' | 'preparo' | 'pronto' | 'rota' | 'finalizado'
+type KanbanColumnId = 'aceitar' | 'preparo' | 'pronto' | 'rota' | 'finalizado' | 'cancelado'
 const DEFAULT_STAGE_LIMIT_MS = 5 * 60 * 1000
 const DEFAULT_PREPARE_TIME = 5
 const DEFAULT_ACCEPT_TIME = 10
@@ -58,6 +58,11 @@ const kanbanColumns: Array<{
     label: 'Finalizado',
     tone: 'bg-mint-100 text-mint-700',
   },
+  {
+    id: 'cancelado',
+    label: 'Cancelado',
+    tone: 'bg-coral-100 text-coral-700',
+  },
 ]
 
 function mapOrderToColumn(order: PartnerOrder): KanbanColumnId {
@@ -65,6 +70,7 @@ function mapOrderToColumn(order: PartnerOrder): KanbanColumnId {
   if (order.status === 'preparo') return 'preparo'
   if (order.status === 'confirmado') return 'pronto'
   if (order.status === 'a_caminho') return 'rota'
+  if (order.status === 'cancelado') return 'cancelado'
   return 'finalizado'
 }
 
@@ -340,6 +346,11 @@ export function PartnerOrdersPage() {
     const targetIndex  = columnIds.indexOf(targetColumn)
 
     if (currentColumn === targetColumn) return
+
+    if (targetColumn === 'cancelado' || currentColumn === 'cancelado') {
+      toast.error('Pedidos cancelados nao podem ser movidos.')
+      return
+    }
 
     if (targetIndex < currentIndex) {
       toast.error('Não é permitido mover um pedido para uma etapa anterior.')
