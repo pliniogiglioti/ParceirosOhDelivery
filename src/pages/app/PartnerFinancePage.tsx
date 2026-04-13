@@ -365,6 +365,13 @@ export function PartnerFinancePage() {
             />
           </div>
 
+          {/* Cabeçalho da tabela */}
+          <div className="grid grid-cols-[1fr_auto_auto] gap-x-6 border-b border-ink-100 px-5 py-2.5">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-ink-400">Venda</p>
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-ink-400">Repasse</p>
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-ink-400">Total</p>
+          </div>
+
           {loading ? (
             <div className="space-y-3 px-5 py-5">
               {[1, 2, 3].map((item) => (
@@ -378,30 +385,34 @@ export function PartnerFinancePage() {
           ) : (
             <ul className="divide-y divide-ink-100">
               {filteredTxs.map((tx) => (
-                <li key={tx.id} className="flex items-center gap-4 px-5 py-3.5">
-                  <span
-                    className={cn(
-                      'flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl',
-                      tx.type === 'entrada' ? 'bg-green-50' : 'bg-coral-50'
-                    )}
-                  >
-                    {tx.type === 'entrada' ? (
-                      <ArrowDownLeft className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <ArrowUpRight className="h-4 w-4 text-coral-500" />
-                    )}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-ink-900">{tx.label}</p>
-                    <p className="text-xs text-ink-400">{formatShortDate(tx.date)}</p>
-                  </div>
-                  {tx.repasse !== null && (
-                    <div className="hidden shrink-0 text-right sm:block">
-                      <p className="text-[10px] font-medium uppercase tracking-wide text-ink-400">Repasse</p>
-                      <p className="text-sm font-bold text-violet-600">+{formatCurrency(tx.repasse)}</p>
+                <li key={tx.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-x-6 px-5 py-3.5">
+                  {/* Venda */}
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span
+                      className={cn(
+                        'flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl',
+                        tx.type === 'entrada' ? 'bg-green-50' : 'bg-coral-50'
+                      )}
+                    >
+                      {tx.type === 'entrada' ? (
+                        <ArrowDownLeft className="h-4 w-4 text-green-600" />
+                      ) : (
+                        <ArrowUpRight className="h-4 w-4 text-coral-500" />
+                      )}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-ink-900">{tx.label}</p>
+                      <p className="text-xs text-ink-400">{formatShortDate(tx.date)}</p>
                     </div>
-                  )}
-                  <p className={cn('shrink-0 text-sm font-bold', tx.type === 'entrada' ? 'text-green-600' : 'text-coral-500')}>
+                  </div>
+
+                  {/* Repasse */}
+                  <p className="text-right text-sm font-bold text-violet-600">
+                    {tx.repasse !== null ? `+${formatCurrency(tx.repasse)}` : '—'}
+                  </p>
+
+                  {/* Total */}
+                  <p className={cn('text-right text-sm font-bold', tx.type === 'entrada' ? 'text-green-600' : 'text-coral-500')}>
                     {tx.type === 'saida' ? '-' : '+'}
                     {formatCurrency(Math.abs(tx.amount))}
                   </p>
