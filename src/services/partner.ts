@@ -704,11 +704,15 @@ export async function fetchIndustrializados(): Promise<IndustrializedItem[]> {
   }))
 }
 
-export async function cancelOrder(orderId: string): Promise<void> {
+export async function cancelOrder(orderId: string, reason?: string): Promise<void> {
   if (!supabase) throw new Error('Supabase nao configurado.')
   const { error } = await supabase
     .from('orders')
-    .update({ status: 'cancelado', updated_at: new Date().toISOString() })
+    .update({
+      status: 'cancelado',
+      cancellation_reason: reason ?? null,
+      updated_at: new Date().toISOString(),
+    })
     .eq('id', orderId)
   if (error) throw error
 }

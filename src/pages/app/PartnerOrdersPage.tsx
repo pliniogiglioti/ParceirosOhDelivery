@@ -217,7 +217,7 @@ export function PartnerOrdersPage() {
       autoCancelledRef.current.add(order.id)
       updateOrder(data.store.id, order.id, { status: 'cancelado' })
       toast.error(`Pedido ${order.code} cancelado por falta de aceite.`)
-      void cancelOrder(order.id).catch(() => undefined)
+      void cancelOrder(order.id, 'Pedido cancelado automaticamente por falta de aceite dentro do prazo.').catch(() => undefined)
     }
   }, [now, data.orders, data.store.id, orderSettings, updateOrder])
 
