@@ -165,6 +165,8 @@ export function PartnerOrdersPage() {
   const boardScrollRef = useRef<HTMLDivElement | null>(null)
   const scrollbarTrackRef = useRef<HTMLDivElement | null>(null)
   const thumbDragRef = useRef<{ startX: number; startScrollLeft: number } | null>(null)
+  const boardPanRef = useRef<{ startX: number; startScrollLeft: number; moved: boolean } | null>(null)
+  const dragPointerXRef = useRef<number | null>(null)
   const lastSelectedOrderRef = useRef<PartnerOrder | null>(null)
   const autoCancelledRef = useRef<Set<string>>(new Set())
   const [draggingOrderId, setDraggingOrderId] = useState<string | null>(null)
@@ -180,6 +182,7 @@ export function PartnerOrdersPage() {
   const [prepareTimeDraft, setPrepareTimeDraft] = useState(DEFAULT_PREPARE_TIME)
   const [acceptTimeModalOpen, setAcceptTimeModalOpen] = useState(false)
   const [acceptTimeDraft, setAcceptTimeDraft] = useState(DEFAULT_ACCEPT_TIME)
+  const [isBoardPanning, setIsBoardPanning] = useState(false)
   const [scrollMetrics, setScrollMetrics] = useState({
     clientWidth: 0,
     scrollLeft: 0,
@@ -267,6 +270,20 @@ export function PartnerOrdersPage() {
       const container = boardScrollRef.current
       const track = scrollbarTrackRef.current
       const dragState = thumbDragRef.current
+      const panState = boardPanRef.current
+
+      if (container && panState) {
+        const deltaX = event.clientX - panState.startX
+        if (!panState.moved && Math.abs(deltaX) > 4) {
+          panState.moved = true
+          setIsBoardPanning(true)
+        }
+
+        if (panState.moved) {
+          container.scrollLeft = panState.startScrollLeft - deltaX
+        }
+      }
+
       if (!container || !track || !dragState) return
 
       const scrollableWidth = container.scrollWidth - container.clientWidth
@@ -279,7 +296,9 @@ export function PartnerOrdersPage() {
     }
 
     function handleMouseUp() {
+      boardPanRef.current = null
       thumbDragRef.current = null
+      setIsBoardPanning(false)
     }
 
     window.addEventListener('mousemove', handleMouseMove)
@@ -290,6 +309,42 @@ export function PartnerOrdersPage() {
       window.removeEventListener('mouseup', handleMouseUp)
     }
   }, [])
+
+  useEffect(() => {
+    if (!draggingOrderId) {
+      dragPointerXRef.current = null
+      return
+    }
+
+    let frameId = 0
+
+    const autoScroll = () => {
+      const container = boardScrollRef.current
+      const pointerX = dragPointerXRef.current
+
+      if (container && pointerX !== null) {
+        const bounds = container.getBoundingClientRect()
+        const edgeThreshold = Math.min(220, bounds.width * 0.28)
+        const maxStep = 28
+
+        if (pointerX <= bounds.left + edgeThreshold) {
+          const intensity = 1 - (pointerX - bounds.left) / edgeThreshold
+          container.scrollLeft -= Math.max(8, intensity * maxStep)
+        } else if (pointerX >= bounds.right - edgeThreshold) {
+          const intensity = 1 - (bounds.right - pointerX) / edgeThreshold
+          container.scrollLeft += Math.max(8, intensity * maxStep)
+        }
+      }
+
+      frameId = window.requestAnimationFrame(autoScroll)
+    }
+
+    frameId = window.requestAnimationFrame(autoScroll)
+
+    return () => {
+      window.cancelAnimationFrame(frameId)
+    }
+  }, [draggingOrderId])
 
   useEffect(() => {
     function handleFullscreenChange() {
@@ -368,6 +423,8 @@ export function PartnerOrdersPage() {
   function handleBoardDragOver(event: DragEvent<HTMLDivElement>) {
     if (!draggingOrderId || !boardScrollRef.current) return
 
+    dragPointerXRef.current = event.clientX
+
     const container = boardScrollRef.current
     const bounds = container.getBoundingClientRect()
     const edgeThreshold = 120
@@ -384,6 +441,7 @@ export function PartnerOrdersPage() {
     if (!draggingOrderId) return
 
     const order = data.orders.find((item) => item.id === draggingOrderId)
+    dragPointerXRef.current = null
     setDraggingOrderId(null)
     setHoveredColumn(null)
     if (!order) return
@@ -494,6 +552,19 @@ export function PartnerOrdersPage() {
     }
   }
 
+  function handleBoardMouseDown(event: ReactMouseEvent<HTMLDivElement>) {
+    const container = boardScrollRef.current
+    const target = event.target as HTMLElement | null
+    if (!container || event.button !== 0 || draggingOrderId) return
+    if (target?.closest('[data-prevent-board-pan="true"]')) return
+
+    boardPanRef.current = {
+      startX: event.clientX,
+      startScrollLeft: container.scrollLeft,
+      moved: false,
+    }
+  }
+
   async function toggleFullscreen() {
     const panel = panelRef.current
     if (!panel) return
@@ -540,7 +611,9 @@ export function PartnerOrdersPage() {
         <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <h3 className="text-lg font-bold text-ink-900">Quadro de pedidos</h3>
-            <p className="mt-1 text-sm text-ink-500">Arraste os cards com o mouse entre as etapas do fluxo.</p>
+            <p className="mt-1 text-sm text-ink-500">
+              Arraste o quadro na horizontal nas areas livres e mova os pedidos arrastando o card inteiro entre etapas.
+            </p>
           </div>
 
           <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
@@ -580,7 +653,11 @@ export function PartnerOrdersPage() {
 
         <div
           ref={boardScrollRef}
-          className="hide-scrollbar h-full flex-1 overflow-x-auto overflow-y-hidden pb-2"
+          className={cn(
+            'hide-scrollbar h-full flex-1 overflow-x-auto overflow-y-hidden pb-2 cursor-grab',
+            isBoardPanning && 'cursor-grabbing select-none'
+          )}
+          onMouseDown={handleBoardMouseDown}
           onDragOver={handleBoardDragOver}
         >
           <div className="flex h-full w-max min-w-[1700px] gap-4 pr-6">
@@ -595,6 +672,7 @@ export function PartnerOrdersPage() {
                   key={column.id}
                   onDragOver={(event) => {
                     event.preventDefault()
+                    dragPointerXRef.current = event.clientX
                     setHoveredColumn(column.id)
                   }}
                   onDragLeave={() => {
@@ -670,6 +748,7 @@ export function PartnerOrdersPage() {
                           <article
                             key={order.id}
                             draggable
+                            data-prevent-board-pan="true"
                             role="button"
                             tabIndex={0}
                             onClick={() => setExpandedOrderId((current) => (current === order.id ? null : order.id))}
@@ -679,12 +758,19 @@ export function PartnerOrdersPage() {
                                 setExpandedOrderId((current) => (current === order.id ? null : order.id))
                               }
                             }}
+                            onDrag={(event) => {
+                              if (event.clientX > 0) {
+                                dragPointerXRef.current = event.clientX
+                              }
+                            }}
                             onDragStart={(event) => {
+                              dragPointerXRef.current = event.clientX
                               setDraggingOrderId(order.id)
                               event.dataTransfer.effectAllowed = 'move'
                               event.dataTransfer.setData('text/plain', order.id)
                             }}
                             onDragEnd={() => {
+                              dragPointerXRef.current = null
                               setDraggingOrderId(null)
                               setHoveredColumn(null)
                             }}
@@ -755,6 +841,7 @@ export function PartnerOrdersPage() {
                                 <div className="mt-3 grid gap-2">
                                   <button
                                     type="button"
+                                    data-prevent-board-pan="true"
                                     onClick={(event) => {
                                       event.stopPropagation()
                                       setSelectedOrder(order)
@@ -770,6 +857,7 @@ export function PartnerOrdersPage() {
                             {nextActionLabel ? (
                               <button
                                 type="button"
+                                data-prevent-board-pan="true"
                                 onClick={(event) => {
                                   event.stopPropagation()
                                   handleAdvanceOrder(order)
