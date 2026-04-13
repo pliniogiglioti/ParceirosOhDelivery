@@ -178,7 +178,7 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
           </div>
 
           {error ? <div className="panel-card px-5 py-4 text-sm text-coral-700">{error}</div> : null}
-          <Outlet context={{ data: displayData, source }} />
+          <Outlet context={{ data: displayData, source, serverData: data }} />
         </div>
       </div>
 
