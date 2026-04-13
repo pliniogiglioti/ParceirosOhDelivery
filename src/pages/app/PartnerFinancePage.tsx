@@ -6,8 +6,8 @@ import { cn, formatCurrency } from '@/lib/utils'
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 
 type Period = 'semana' | 'mes' | 'trimestre'
-type TxFilter = 'todas' | 'entradas' | 'saidas' | 'repasses'
-type FinanceTxType = 'entrada' | 'saida' | 'repasse'
+type TxFilter = 'todas' | 'entradas' | 'saidas'
+type FinanceTxType = 'entrada' | 'saida'
 
 type FinanceOrder = {
   id: string
@@ -25,6 +25,7 @@ type FinanceTransaction = {
   orderId: string
   label: string
   amount: number
+  repasse: number | null
   type: FinanceTxType
   date: string
 }
@@ -190,7 +191,7 @@ export function PartnerFinancePage() {
 
   const transactions = useMemo(() => {
     return financeOrders.flatMap((order) => {
-      const repasse = order.total * (repassePercentual / 100)
+      const repasseValor = order.total * (repassePercentual / 100)
 
       const txs: FinanceTransaction[] = [
         {
@@ -198,6 +199,7 @@ export function PartnerFinancePage() {
           orderId: order.id,
           label: `${order.code}${order.customerName ? ` - ${order.customerName}` : ''}`,
           amount: order.total,
+          repasse: repasseValor,
           type: 'entrada',
           date: order.createdAt,
         },
@@ -209,19 +211,11 @@ export function PartnerFinancePage() {
           orderId: order.id,
           label: `Taxa da plataforma ${order.code}`,
           amount: -order.serviceFee,
+          repasse: null,
           type: 'saida',
           date: order.createdAt,
         })
       }
-
-      txs.push({
-        id: `${order.id}-repasse`,
-        orderId: order.id,
-        label: `Repasse ${repassePercentual}% — ${order.code}`,
-        amount: repasse,
-        type: 'repasse',
-        date: order.createdAt,
-      })
 
       return txs
     })
@@ -231,7 +225,6 @@ export function PartnerFinancePage() {
     return transactions.filter((tx) => {
       if (txFilter === 'entradas') return tx.type === 'entrada'
       if (txFilter === 'saidas') return tx.type === 'saida'
-      if (txFilter === 'repasses') return tx.type === 'repasse'
       return true
     })
   }, [transactions, txFilter])
@@ -366,7 +359,6 @@ export function PartnerFinancePage() {
                 { id: 'todas', label: 'Todas' },
                 { id: 'entradas', label: 'Entradas' },
                 { id: 'saidas', label: 'Saidas' },
-                { id: 'repasses', label: 'Repasses' },
               ]}
               value={txFilter}
               onChange={setTxFilter}
@@ -390,17 +382,11 @@ export function PartnerFinancePage() {
                   <span
                     className={cn(
                       'flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl',
-                      tx.type === 'entrada'
-                        ? 'bg-green-50'
-                        : tx.type === 'repasse'
-                          ? 'bg-violet-50'
-                          : 'bg-coral-50'
+                      tx.type === 'entrada' ? 'bg-green-50' : 'bg-coral-50'
                     )}
                   >
                     {tx.type === 'entrada' ? (
                       <ArrowDownLeft className="h-4 w-4 text-green-600" />
-                    ) : tx.type === 'repasse' ? (
-                      <Percent className="h-4 w-4 text-violet-600" />
                     ) : (
                       <ArrowUpRight className="h-4 w-4 text-coral-500" />
                     )}
@@ -409,16 +395,13 @@ export function PartnerFinancePage() {
                     <p className="text-sm font-semibold text-ink-900">{tx.label}</p>
                     <p className="text-xs text-ink-400">{formatShortDate(tx.date)}</p>
                   </div>
-                  <p
-                    className={cn(
-                      'text-sm font-bold',
-                      tx.type === 'entrada'
-                        ? 'text-green-600'
-                        : tx.type === 'repasse'
-                          ? 'text-violet-600'
-                          : 'text-coral-500'
-                    )}
-                  >
+                  {tx.repasse !== null && (
+                    <div className="hidden shrink-0 text-right sm:block">
+                      <p className="text-[10px] font-medium uppercase tracking-wide text-ink-400">Repasse</p>
+                      <p className="text-sm font-bold text-violet-600">+{formatCurrency(tx.repasse)}</p>
+                    </div>
+                  )}
+                  <p className={cn('shrink-0 text-sm font-bold', tx.type === 'entrada' ? 'text-green-600' : 'text-coral-500')}>
                     {tx.type === 'saida' ? '-' : '+'}
                     {formatCurrency(Math.abs(tx.amount))}
                   </p>
