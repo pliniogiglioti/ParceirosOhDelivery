@@ -1,6 +1,6 @@
 import type { DragEvent, MouseEvent as ReactMouseEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
-import { ArrowRight, ChevronDown, GripVertical, Info, Maximize2, Minimize2, Plus, Search, Settings, X } from 'lucide-react'
+import { ArrowRight, ChevronDown, GripVertical, Info, Maximize2, Minimize2, Search, Settings, X } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import type { OrderStatus, OrderStatusEvent, PartnerOrder, PartnerOrderSettings } from '@/types'
@@ -159,7 +159,7 @@ function isStageExpired(status: OrderStatus, stageStartedAt?: string, now = Date
 
 export function PartnerOrdersPage() {
   const { data } = usePartnerPageData()
-  const { addOrder, hydrateOrderSettings, orderSettingsByStoreId, updateOrder, updateOrderSettings } = usePartnerDraftStore()
+  const { hydrateOrderSettings, orderSettingsByStoreId, updateOrder, updateOrderSettings } = usePartnerDraftStore()
   const [searchParams, setSearchParams] = useSearchParams()
   const panelRef = useRef<HTMLDivElement | null>(null)
   const boardScrollRef = useRef<HTMLDivElement | null>(null)
@@ -500,33 +500,6 @@ export function PartnerOrdersPage() {
     toast.success(`Tempo de aceite ajustado para ${acceptTime} min.`)
   }
 
-  function handleSimulateIncomingOrder() {
-    const nextCodeNumber = Math.max(
-      1042,
-      ...data.orders.map((order) => Number.parseInt(order.code.replace(/\D/g, ''), 10)).filter(Number.isFinite)
-    ) + 1
-    const createdAt = new Date().toISOString()
-    const order: PartnerOrder = {
-      id: `sim-order-${Date.now()}`,
-      code: `#${nextCodeNumber}`,
-      customerName: 'Pedido Teste',
-      status: 'aguardando',
-      total: 58.7,
-      paymentMethod: 'Pix',
-      fulfillmentType: 'delivery',
-      createdAt,
-      stageStartedAt: createdAt,
-      itemsCount: 2,
-      items: [
-        { id: `sim-item-${Date.now()}-1`, name: 'Combo Oh Bacon', quantity: 1, unitPrice: 34.9, totalPrice: 34.9 },
-        { id: `sim-item-${Date.now()}-2`, name: 'Batata da Casa', quantity: 1, unitPrice: 23.8, totalPrice: 23.8 },
-      ],
-    }
-
-    addOrder(data.store.id, order)
-    toast.success(`Pedido teste ${order.code} recebido.`)
-  }
-
   function handleTrackPointerDown(event: ReactMouseEvent<HTMLDivElement>) {
     const container = boardScrollRef.current
     const track = scrollbarTrackRef.current
@@ -617,15 +590,6 @@ export function PartnerOrdersPage() {
           </div>
 
           <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
-            <button
-              type="button"
-              onClick={handleSimulateIncomingOrder}
-              className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-2xl bg-coral-500 px-4 text-sm font-semibold text-white transition hover:bg-coral-600"
-            >
-              <Plus className="h-4 w-4" />
-              Simular pedido
-            </button>
-
             <label className="relative flex min-w-[280px] flex-1 items-center lg:w-[320px]">
               <Search className="pointer-events-none absolute left-3 h-4 w-4 text-ink-400" />
               <input
