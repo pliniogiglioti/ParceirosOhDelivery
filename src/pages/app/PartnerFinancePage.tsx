@@ -186,6 +186,8 @@ export function PartnerFinancePage() {
 
   const financeOrders = useMemo(() => orders.filter(isFinancialOrder), [orders])
 
+  const repassePercentual = data.store.repassePercentual ?? 5
+
   const transactions = useMemo(() => {
     return financeOrders.flatMap((order) => {
       const repasse = order.total * (repassePercentual / 100)
@@ -267,7 +269,6 @@ export function PartnerFinancePage() {
       .sort((left, right) => right.total - left.total)
   }, [financeOrders])
 
-  const repassePercentual = data.store.repassePercentual ?? 5
   const valorRepasse = totalEntradas * (repassePercentual / 100)
 
   const averageTicket = financeOrders.length ? totalEntradas / financeOrders.length : 0
