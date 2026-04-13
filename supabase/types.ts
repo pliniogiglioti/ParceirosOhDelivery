@@ -306,6 +306,7 @@ export type Database = {
           metadata: Json
           notes: string | null
           order_code: string
+          store_order_number: number
           payment_method: string
           payment_status: string
           profile_id: string | null
@@ -332,6 +333,7 @@ export type Database = {
           metadata?: Json
           notes?: string | null
           order_code?: string
+          store_order_number?: number
           payment_method?: string
           payment_status?: string
           profile_id?: string | null
@@ -358,6 +360,7 @@ export type Database = {
           metadata?: Json
           notes?: string | null
           order_code?: string
+          store_order_number?: number
           payment_method?: string
           payment_status?: string
           profile_id?: string | null
@@ -698,6 +701,32 @@ export type Database = {
           },
         ]
       }
+      store_order_counters: {
+        Row: {
+          last_order_number: number
+          store_id: string
+          updated_at: string
+        }
+        Insert: {
+          last_order_number?: number
+          store_id: string
+          updated_at?: string
+        }
+        Update: {
+          last_order_number?: number
+          store_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_order_counters_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: true
+            referencedRelation: "stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stores: {
         Row: {
           accent_color: string
@@ -851,7 +880,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      next_order_code: { Args: never; Returns: string }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never

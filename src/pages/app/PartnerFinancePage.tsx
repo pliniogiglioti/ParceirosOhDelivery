@@ -1,13 +1,13 @@
 import { type ElementType, useEffect, useMemo, useState } from 'react'
-import { ArrowDownLeft, ArrowUpRight, CreditCard, DollarSign, Percent, QrCode, TrendingUp, Wallet } from 'lucide-react'
+import { ArrowDownLeft, Ban, CreditCard, DollarSign, Percent, QrCode, TrendingUp, Wallet } from 'lucide-react'
 import { SectionFrame } from '@/components/partner/PartnerUi'
 import { usePartnerPageData } from '@/hooks/usePartnerPageData'
 import { cn, formatCurrency } from '@/lib/utils'
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 
 type Period = 'semana' | 'mes' | 'trimestre'
-type TxFilter = 'todas' | 'entradas' | 'saidas'
-type FinanceTxType = 'entrada' | 'saida'
+type TxFilter = 'todas' | 'pedidos' | 'cancelados'
+type FinanceTxType = 'pedido' | 'cancelado'
 
 type FinanceOrder = {
   id: string
@@ -113,6 +113,12 @@ function normalizePaymentMethod(value: string) {
   return value
 }
 
+function getOrderRepasse(order: FinanceOrder, repassePercentual: number) {
+  if (order.status === 'cancelado') return 0
+  if (order.serviceFee > 0) return order.serviceFee
+  return order.total * (repassePercentual / 100)
+}
+
 export function PartnerFinancePage() {
   const { data } = usePartnerPageData()
   const [period, setPeriod] = useState<Period>('semana')
@@ -186,60 +192,66 @@ export function PartnerFinancePage() {
   }, [data.store.id, period])
 
   const financeOrders = useMemo(() => orders.filter(isFinancialOrder), [orders])
+  const canceledOrders = useMemo(() => orders.filter((o) => o.status === 'cancelado'), [orders])
 
   const repassePercentual = data.store.repassePercentual ?? 5
 
   const transactions = useMemo(() => {
-    return financeOrders.flatMap((order) => {
-      const repasseValor = order.total * (repassePercentual / 100)
+    const txs: FinanceTransaction[] = []
 
-      const txs: FinanceTransaction[] = [
-        {
-          id: `${order.id}-entrada`,
-          orderId: order.id,
-          label: `${order.code}${order.customerName ? ` - ${order.customerName}` : ''}`,
-          amount: order.total,
-          repasse: repasseValor,
-          type: 'entrada',
-          date: order.createdAt,
-        },
-      ]
+    for (const order of financeOrders) {
+      const repasseValor = getOrderRepasse(order, repassePercentual)
 
-      if (order.serviceFee > 0) {
-        txs.push({
-          id: `${order.id}-taxa`,
-          orderId: order.id,
-          label: `Taxa da plataforma ${order.code}`,
-          amount: -order.serviceFee,
-          repasse: null,
-          type: 'saida',
-          date: order.createdAt,
-        })
-      }
+      txs.push({
+        id: `${order.id}-pedido`,
+        orderId: order.id,
+        label: `${order.code}${order.customerName ? ` - ${order.customerName}` : ''}`,
+        amount: order.total,
+        repasse: repasseValor,
+        type: 'pedido',
+        date: order.createdAt,
+      })
+    }
 
-      return txs
-    })
-  }, [financeOrders, repassePercentual])
+    for (const order of canceledOrders) {
+      txs.push({
+        id: `${order.id}-cancelado`,
+        orderId: order.id,
+        label: `${order.code}${order.customerName ? ` - ${order.customerName}` : ''}`,
+        amount: order.total,
+        repasse: null,
+        type: 'cancelado',
+        date: order.createdAt,
+      })
+    }
+
+    return txs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  }, [financeOrders, canceledOrders, repassePercentual])
 
   const filteredTxs = useMemo(() => {
     return transactions.filter((tx) => {
-      if (txFilter === 'entradas') return tx.type === 'entrada'
-      if (txFilter === 'saidas') return tx.type === 'saida'
+      if (txFilter === 'pedidos') return tx.type === 'pedido'
+      if (txFilter === 'cancelados') return tx.type === 'cancelado'
       return true
     })
   }, [transactions, txFilter])
 
   const totalEntradas = useMemo(
-    () => transactions.filter((tx) => tx.type === 'entrada').reduce((sum, tx) => sum + tx.amount, 0),
-    [transactions]
+    () => financeOrders.reduce((sum, order) => sum + order.total, 0),
+    [financeOrders]
   )
 
-  const totalSaidas = useMemo(
-    () => transactions.filter((tx) => tx.type === 'saida').reduce((sum, tx) => sum + Math.abs(tx.amount), 0),
-    [transactions]
+  const totalRepasse = useMemo(
+    () => financeOrders.reduce((sum, order) => sum + getOrderRepasse(order, repassePercentual), 0),
+    [financeOrders, repassePercentual]
   )
 
-  const saldoLiquido = totalEntradas - totalSaidas
+  const canceledTotal = useMemo(
+    () => canceledOrders.reduce((sum, order) => sum + order.total, 0),
+    [canceledOrders]
+  )
+
+  const saldoLiquido = totalEntradas - totalRepasse
 
   const paymentBreakdown = useMemo(() => {
     const totals = new Map<string, number>()
@@ -262,10 +274,9 @@ export function PartnerFinancePage() {
       .sort((left, right) => right.total - left.total)
   }, [financeOrders])
 
-  const valorRepasse = totalEntradas * (repassePercentual / 100)
-
   const averageTicket = financeOrders.length ? totalEntradas / financeOrders.length : 0
   const latestMovementAt = transactions[0]?.date ?? null
+  const tableGridClass = 'grid grid-cols-[minmax(0,1.6fr)_140px_140px] items-center gap-x-4'
 
   return (
     <SectionFrame eyebrow="Financeiro" title="Saude financeira">
@@ -286,7 +297,7 @@ export function PartnerFinancePage() {
 
       {error ? <div className="panel-card px-5 py-4 text-sm text-coral-700">{error}</div> : null}
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
         <div className="panel-card p-5">
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-400">Faturamento</p>
@@ -322,27 +333,40 @@ export function PartnerFinancePage() {
 
         <div className="panel-card p-5">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-400">Saidas</p>
-            <span className="flex h-8 w-8 items-center justify-center rounded-2xl bg-coral-50">
-              <ArrowUpRight className="h-4 w-4 text-coral-500" />
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-400">Repasse</p>
+            <span className="flex h-8 w-8 items-center justify-center rounded-2xl bg-violet-50">
+              <Percent className="h-4 w-4 text-violet-600" />
             </span>
           </div>
-          <p className="mt-3 font-display text-3xl font-bold text-coral-500">{formatCurrency(totalSaidas)}</p>
-          <p className="mt-1 text-xs text-ink-400">taxas registradas nos pedidos</p>
+          <p className="mt-3 font-display text-3xl font-bold text-violet-600">-{formatCurrency(totalRepasse)}</p>
+          <p className="mt-1 text-xs text-ink-400">{repassePercentual}% descontado do faturamento valido</p>
+        </div>
+
+        <div className="panel-card p-5">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-400">Cancelados</p>
+            <span className="flex h-8 w-8 items-center justify-center rounded-2xl bg-zinc-100">
+              <Ban className="h-4 w-4 text-zinc-500" />
+            </span>
+          </div>
+          <p className="mt-3 font-display text-3xl font-bold text-zinc-500">{canceledOrders.length}</p>
+          <p className="mt-1 text-xs text-ink-400">
+            {canceledOrders.length === 1 ? 'pedido cancelado' : 'pedidos cancelados'} · {formatCurrency(canceledTotal)}
+          </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <div className="panel-card border-l-4 border-l-violet-400 p-5">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-400">Repasse</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-400">Liquido previsto</p>
             <span className="flex h-8 w-8 items-center justify-center rounded-2xl bg-violet-50">
               <Percent className="h-4 w-4 text-violet-600" />
             </span>
           </div>
-          <p className="mt-3 font-display text-3xl font-bold text-violet-600">{formatCurrency(valorRepasse)}</p>
+          <p className="mt-3 font-display text-3xl font-bold text-violet-600">{formatCurrency(saldoLiquido)}</p>
           <p className="mt-1 text-xs text-ink-400">
-            {repassePercentual}% do faturamento bruto do periodo
+            faturamento valido menos o repasse da plataforma
           </p>
         </div>
       </div>
@@ -357,19 +381,18 @@ export function PartnerFinancePage() {
             <Tabs
               options={[
                 { id: 'todas', label: 'Todas' },
-                { id: 'entradas', label: 'Entradas' },
-                { id: 'saidas', label: 'Saidas' },
+                { id: 'pedidos', label: 'Pedidos' },
+                { id: 'cancelados', label: 'Cancelados' },
               ]}
               value={txFilter}
               onChange={setTxFilter}
             />
           </div>
 
-          {/* Cabeçalho da tabela */}
-          <div className="grid grid-cols-[1fr_auto_auto] gap-x-6 border-b border-ink-100 px-5 py-2.5">
+          <div className={cn(tableGridClass, 'border-b border-ink-100 px-5 py-2.5')}>
             <p className="text-[11px] font-semibold uppercase tracking-widest text-ink-400">Venda</p>
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-ink-400">Repasse</p>
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-ink-400">Total</p>
+            <p className="text-right text-[11px] font-semibold uppercase tracking-widest text-ink-400">Repasse</p>
+            <p className="text-right text-[11px] font-semibold uppercase tracking-widest text-ink-400">Total</p>
           </div>
 
           {loading ? (
@@ -385,35 +408,47 @@ export function PartnerFinancePage() {
           ) : (
             <ul className="divide-y divide-ink-100">
               {filteredTxs.map((tx) => (
-                <li key={tx.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-x-6 px-5 py-3.5">
-                  {/* Venda */}
+                <li
+                  key={tx.id}
+                  className={cn(
+                    tableGridClass,
+                    'px-5 py-3.5',
+                    tx.type === 'cancelado' && 'opacity-60'
+                  )}
+                >
                   <div className="flex min-w-0 items-center gap-3">
                     <span
                       className={cn(
                         'flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl',
-                        tx.type === 'entrada' ? 'bg-green-50' : 'bg-coral-50'
+                        tx.type === 'cancelado' ? 'bg-zinc-100' : 'bg-green-50'
                       )}
                     >
-                      {tx.type === 'entrada' ? (
-                        <ArrowDownLeft className="h-4 w-4 text-green-600" />
+                      {tx.type === 'cancelado' ? (
+                        <Ban className="h-4 w-4 text-zinc-500" />
                       ) : (
-                        <ArrowUpRight className="h-4 w-4 text-coral-500" />
+                        <ArrowDownLeft className="h-4 w-4 text-green-600" />
                       )}
                     </span>
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-ink-900">{tx.label}</p>
-                      <p className="text-xs text-ink-400">{formatShortDate(tx.date)}</p>
+                      <p className="text-xs text-ink-400">
+                        {tx.type === 'cancelado' ? 'Cancelado · ' : ''}
+                        {formatShortDate(tx.date)}
+                      </p>
                     </div>
                   </div>
 
-                  {/* Repasse */}
                   <p className="text-right text-sm font-bold text-violet-600">
-                    {tx.repasse !== null ? `+${formatCurrency(tx.repasse)}` : '—'}
+                    {tx.repasse !== null ? `-${formatCurrency(tx.repasse)}` : '—'}
                   </p>
 
-                  {/* Total */}
-                  <p className={cn('text-right text-sm font-bold', tx.type === 'entrada' ? 'text-green-600' : 'text-coral-500')}>
-                    {tx.type === 'saida' ? '-' : '+'}
+                  <p
+                    className={cn(
+                      'text-right text-sm font-bold',
+                      tx.type === 'cancelado' ? 'text-zinc-400 line-through' : 'text-green-600'
+                    )}
+                  >
+                    {tx.type === 'cancelado' ? '' : '+'}
                     {formatCurrency(Math.abs(tx.amount))}
                   </p>
                 </li>
@@ -485,7 +520,7 @@ export function PartnerFinancePage() {
           <div className="panel-card bg-ink-900 p-5 text-white">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/50">Resumo real do periodo</p>
             <p className="mt-3 font-display text-2xl font-bold text-white">{formatCurrency(saldoLiquido)}</p>
-            <p className="mt-1 text-xs text-white/60">saldo liquido calculado com os pedidos salvos no banco</p>
+            <p className="mt-1 text-xs text-white/60">saldo liquido apos desconto do repasse em pedidos validos</p>
             <div className="mt-4 space-y-2 text-xs text-white/70">
               <p>{financeOrders.length} pedidos considerados</p>
               <p>{latestMovementAt ? `Ultima movimentacao em ${formatShortDate(latestMovementAt)}` : 'Sem movimentacoes no periodo'}</p>

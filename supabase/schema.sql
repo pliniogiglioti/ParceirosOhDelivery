@@ -95,9 +95,16 @@ create table if not exists public.products (
   updated_at timestamptz not null default timezone('utc', now())
 );
 
+create table if not exists public.store_order_counters (
+  store_id uuid primary key references public.stores(id) on delete cascade,
+  last_order_number bigint not null default 0,
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
 create table if not exists public.orders (
   id uuid primary key default gen_random_uuid(),
-  order_code text not null unique,
+  order_code text not null,
+  store_order_number bigint not null,
   store_id uuid not null references public.stores(id) on delete restrict,
   store_name text not null,
   store_slug text,
@@ -121,7 +128,9 @@ create table if not exists public.orders (
   notes text,
   metadata jsonb not null default '{}'::jsonb,
   created_at timestamptz not null default timezone('utc', now()),
-  updated_at timestamptz not null default timezone('utc', now())
+  updated_at timestamptz not null default timezone('utc', now()),
+  unique (store_id, store_order_number),
+  unique (store_id, order_code)
 );
 
 create table if not exists public.order_items (
@@ -215,11 +224,53 @@ create table if not exists public.store_reviews (
   created_at timestamptz not null default timezone('utc', now())
 );
 
+create or replace function public.assign_store_order_number()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  next_number bigint;
+begin
+  if new.store_id is null then
+    raise exception 'store_id is required to assign store order number';
+  end if;
+
+  if new.store_order_number is null then
+    insert into public.store_order_counters (store_id, last_order_number)
+    values (new.store_id, 1)
+    on conflict (store_id) do update
+    set last_order_number = public.store_order_counters.last_order_number + 1,
+        updated_at = timezone('utc', now())
+    returning last_order_number into next_number;
+
+    new.store_order_number := next_number;
+  else
+    insert into public.store_order_counters (store_id, last_order_number)
+    values (new.store_id, new.store_order_number)
+    on conflict (store_id) do update
+    set last_order_number = greatest(public.store_order_counters.last_order_number, excluded.last_order_number),
+        updated_at = timezone('utc', now());
+  end if;
+
+  new.order_code := '#' || new.store_order_number::text;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists orders_assign_store_order_number on public.orders;
+create trigger orders_assign_store_order_number
+before insert on public.orders
+for each row execute function public.assign_store_order_number();
+
 create index if not exists idx_stores_active_sort on public.stores(active, sort_order);
 create index if not exists idx_store_hours_store_day on public.store_hours(store_id, week_day);
 create index if not exists idx_products_store_sort on public.products(store_id, sort_order);
 create index if not exists idx_product_categories_store_sort on public.product_categories(store_id, sort_order);
 create index if not exists idx_orders_store_created on public.orders(store_id, created_at desc);
+create index if not exists idx_orders_store_number on public.orders(store_id, store_order_number desc);
 create index if not exists idx_order_items_order on public.order_items(order_id);
 create index if not exists idx_chat_sessions_store_updated on public.chat_sessions(store_id, updated_at desc);
 create index if not exists idx_chat_messages_chat_created on public.chat_messages(chat_id, created_at asc);
