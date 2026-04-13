@@ -3,6 +3,7 @@ import type { PartnerDashboardData } from '@/types'
 
 export interface PartnerPageContext {
   data: PartnerDashboardData
+  serverData: PartnerDashboardData
   source: 'supabase'
 }
 

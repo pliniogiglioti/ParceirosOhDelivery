@@ -3,7 +3,7 @@ import toast from 'react-hot-toast'
 import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
 import { usePartnerPageData } from '@/hooks/usePartnerPageData'
 import { formatTime } from '@/lib/utils'
-import { saveStoreHours } from '@/services/partner'
+import { initializeStoreHours, saveStoreHours } from '@/services/partner'
 import type { PartnerHour } from '@/types'
 import { SectionFrame, weekDays } from '@/components/partner/PartnerUi'
 
@@ -28,14 +28,47 @@ function hasHoursChanges(current: PartnerHour[], initial: PartnerHour[]) {
 }
 
 export function PartnerHoursPage() {
-  const { data } = usePartnerPageData()
-  const { updateStoreHour } = usePartnerDraftStore()
+  const { data, serverData } = usePartnerPageData()
+  const { hydrateStoreHours, updateStoreHour } = usePartnerDraftStore()
   const [draftHours, setDraftHours] = useState<PartnerHour[]>(data.hours)
   const [isSaving, setIsSaving] = useState(false)
+  const [isInitializing, setIsInitializing] = useState(false)
 
   useEffect(() => {
     setDraftHours(data.hours)
   }, [data.hours])
+
+  useEffect(() => {
+    if (serverData.store.id === '' || serverData.hours.length > 0 || draftHours.length > 0 || isInitializing) {
+      return
+    }
+
+    let cancelled = false
+
+    setIsInitializing(true)
+
+    void initializeStoreHours(serverData.store.id)
+      .then((createdHours) => {
+        if (cancelled) return
+
+        hydrateStoreHours(serverData.store.id, createdHours)
+        setDraftHours(createdHours)
+      })
+      .catch(() => {
+        if (!cancelled) {
+          toast.error('Nao foi possivel carregar os horarios da loja.')
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsInitializing(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [draftHours.length, hydrateStoreHours, isInitializing, serverData.hours.length, serverData.store.id])
 
   const hasChanges = hasHoursChanges(draftHours, data.hours)
 
@@ -133,6 +166,12 @@ export function PartnerHoursPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-7">
+          {isInitializing && draftHours.length === 0 ? (
+            <div className="rounded-3xl border border-ink-100 bg-white px-5 py-6 text-sm text-ink-500 md:col-span-2 xl:col-span-7">
+              Preparando a agenda semanal da loja...
+            </div>
+          ) : null}
+
           {draftHours.map((hour) => (
             <article
               key={hour.id}

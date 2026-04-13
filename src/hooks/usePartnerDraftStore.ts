@@ -93,7 +93,14 @@ export const usePartnerDraftStore = create<PartnerDraftStoreState>()(
       hydrateStoreHours: (storeId, hours) => {
         const currentHours = get().storeHoursByStoreId[storeId]
 
-        if (!currentHours) {
+        const shouldHydrate =
+          !currentHours ||
+          currentHours.length === 0 ||
+          (hours.length > 0 &&
+            (currentHours.length !== hours.length ||
+              currentHours.some((hour) => !hours.some((incomingHour) => incomingHour.id === hour.id))))
+
+        if (shouldHydrate) {
           set((state) => ({
             storeHoursByStoreId: {
               ...state.storeHoursByStoreId,
