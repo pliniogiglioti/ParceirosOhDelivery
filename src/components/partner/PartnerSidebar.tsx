@@ -193,7 +193,7 @@ export function PartnerSidebar({
 
   return (
     <>
-      <aside className={cn('panel-card sidebar-content flex h-full w-full flex-col overflow-hidden bg-white', className)}>
+      <aside className={cn('panel-card sidebar-content flex h-full w-full flex-col overflow-visible bg-white', className)}>
         <div className={cn('sidebar-content border-b border-ink-100 pb-4 pt-5', collapsed ? 'px-3' : 'px-4')}>
           <div className={cn('flex items-center', collapsed ? 'justify-center' : 'gap-3')}>
             {!collapsed && (
