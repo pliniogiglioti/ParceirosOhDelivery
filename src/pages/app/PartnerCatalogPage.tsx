@@ -322,6 +322,8 @@ export function PartnerCatalogPage({
   const [newLibItemName, setNewLibItemName] = useState('')
   const [newLibItemDescription, setNewLibItemDescription] = useState('')
   const [newLibItemPrice, setNewLibItemPrice] = useState('')
+  const [newIndItemPrice, setNewIndItemPrice] = useState('')
+  const [selectedIndItem, setSelectedIndItem] = useState<IndustrializedItem | null>(null)
   const [prepImagePickerOpen, setPrepImagePickerOpen] = useState(false)
 
   useEffect(() => {
@@ -908,13 +910,15 @@ const normalizedSearch = search.trim().toLowerCase()
       id: `ind-${ind.id}-${Date.now()}`,
       name: ind.name,
       description: ind.description,
-      price: 0,
+      price: parseCurrencyInput(newIndItemPrice),
       source: 'industrializado',
       imageUrl: ind.image,
     }
     setPrepComplementGroups((groups) =>
       groups.map((g) => g.id === groupId ? { ...g, items: [...g.items, item] } : g)
     )
+    setSelectedIndItem(null)
+    setNewIndItemPrice('')
     setComplementPickerGroupId(null)
   }
 
@@ -1747,6 +1751,13 @@ const normalizedSearch = search.trim().toLowerCase()
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">
                   {selectedProductCreationKindMeta.label}
                 </p>
+                {selectedProductCreationKind === 'preparado' && prepName.trim() ? (
+                  <h3 id="product-kind-title" className="mt-1 text-xl font-bold text-ink-900 truncate max-w-sm">{prepName}</h3>
+                ) : (
+                  <h3 id="product-kind-title" className="mt-1 text-xl font-bold text-ink-400">
+                    {selectedProductCreationKind === 'preparado' ? 'Novo produto preparado' : selectedProductCreationKindMeta.label}
+                  </h3>
+                )}
               </div>
 
               <button
@@ -2372,29 +2383,57 @@ const normalizedSearch = search.trim().toLowerCase()
                                 </div>
                               ) : (
                                 <div className="space-y-2">
-                                  <div className="relative">
-                                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
-                                    <input type="text" value={complementPickerSearch} onChange={(e) => setComplementPickerSearch(e.target.value)} placeholder="Buscar industrializado..."
-                                      className="h-10 w-full rounded-xl border border-ink-100 bg-white pl-9 pr-3 text-sm outline-none focus:border-coral-400" />
-                                  </div>
-                                  <div className="max-h-48 space-y-1 overflow-y-auto">
-                                    {industrializedCatalogItems
-                                      .filter((i) => `${i.name} ${i.brand}`.toLowerCase().includes(complementPickerSearch.toLowerCase()))
-                                      .map((ind) => (
-                                        <button key={ind.id} type="button" onClick={() => handleAddIndustrializedToGroup(group.id, ind)}
-                                          className="flex w-full items-center gap-2 rounded-xl border border-ink-100 bg-white p-2 text-left hover:bg-ink-50">
-                                          {ind.image ? <img src={ind.image} alt={ind.name} className="h-8 w-8 rounded-lg object-cover shrink-0" /> : null}
-                                          <div className="min-w-0">
-                                            <p className="truncate text-sm font-semibold text-ink-900">{ind.name}</p>
-                                            <p className="text-xs text-ink-500">{ind.brand}</p>
-                                          </div>
-                                        </button>
-                                      ))}
-                                  </div>
-                                  <button type="button" onClick={() => setComplementPickerGroupId(null)}
-                                    className="h-9 w-full rounded-xl border border-ink-100 text-sm font-semibold text-ink-600 hover:bg-white">Fechar</button>
+                                  {selectedIndItem ? (
+                                    <>
+                                      <div className="flex items-center gap-2 rounded-xl border border-coral-200 bg-coral-50 p-2">
+                                        {selectedIndItem.image ? <img src={selectedIndItem.image} alt={selectedIndItem.name} className="h-8 w-8 rounded-lg object-cover shrink-0" /> : null}
+                                        <div className="min-w-0 flex-1">
+                                          <p className="truncate text-sm font-semibold text-ink-900">{selectedIndItem.name}</p>
+                                          <p className="text-xs text-ink-500">{selectedIndItem.brand}</p>
+                                        </div>
+                                        <button type="button" onClick={() => { setSelectedIndItem(null); setNewIndItemPrice('') }}
+                                          className="shrink-0 text-ink-400 hover:text-ink-700"><X className="h-4 w-4" /></button>
+                                      </div>
+                                      <div className="relative">
+                                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-ink-400">R$</span>
+                                        <input type="text" inputMode="numeric" value={newIndItemPrice} onChange={(e) => setNewIndItemPrice(formatCurrencyInput(e.target.value))} placeholder="0,00"
+                                          className="h-10 w-full rounded-xl border border-ink-100 bg-white pl-9 pr-3 text-sm outline-none focus:border-coral-400" />
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <button type="button" onClick={() => setComplementPickerGroupId(null)}
+                                          className="h-9 flex-1 rounded-xl border border-ink-100 text-sm font-semibold text-ink-600 hover:bg-white">Cancelar</button>
+                                        <button type="button" onClick={() => handleAddIndustrializedToGroup(group.id, selectedIndItem)}
+                                          className="h-9 flex-1 rounded-xl bg-coral-500 text-sm font-semibold text-white hover:bg-coral-600">Adicionar</button>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <div className="relative">
+                                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
+                                        <input type="text" value={complementPickerSearch} onChange={(e) => setComplementPickerSearch(e.target.value)} placeholder="Buscar industrializado..."
+                                          className="h-10 w-full rounded-xl border border-ink-100 bg-white pl-9 pr-3 text-sm outline-none focus:border-coral-400" />
+                                      </div>
+                                      <div className="max-h-48 space-y-1 overflow-y-auto">
+                                        {industrializedCatalogItems
+                                          .filter((i) => `${i.name} ${i.brand}`.toLowerCase().includes(complementPickerSearch.toLowerCase()))
+                                          .map((ind) => (
+                                            <button key={ind.id} type="button" onClick={() => { setSelectedIndItem(ind); setNewIndItemPrice('') }}
+                                              className="flex w-full items-center gap-2 rounded-xl border border-ink-100 bg-white p-2 text-left hover:bg-ink-50">
+                                              {ind.image ? <img src={ind.image} alt={ind.name} className="h-8 w-8 rounded-lg object-cover shrink-0" /> : null}
+                                              <div className="min-w-0">
+                                                <p className="truncate text-sm font-semibold text-ink-900">{ind.name}</p>
+                                                <p className="text-xs text-ink-500">{ind.brand}</p>
+                                              </div>
+                                            </button>
+                                          ))}
+                                      </div>
+                                      <button type="button" onClick={() => setComplementPickerGroupId(null)}
+                                        className="h-9 w-full rounded-xl border border-ink-100 text-sm font-semibold text-ink-600 hover:bg-white">Fechar</button>
+                                    </>
+                                  )}
                                 </div>
                               )}
+
                             </div>
                           ) : (
                             <button type="button" onClick={() => { setComplementPickerGroupId(group.id); setComplementPickerSource('biblioteca'); setComplementPickerSearch(''); setNewLibItemName(''); setNewLibItemDescription(''); setNewLibItemPrice('') }}
