@@ -922,7 +922,7 @@ const normalizedSearch = search.trim().toLowerCase()
     { id: 'classificacao', label: 'Classificacao' },
     { id: 'revisao', label: 'Revisao' },
   ]
-  const editCurrentStepIndex = editStepTabs.findIndex((t) => t.id === editStepTab)
+  const editCurrentStepIndex = editStepTabs.length - 1 // todas as abas sempre liberadas na edicao
 
   function handleContinueEditFlow() {
     if (editStepTab === 'preco') {
