@@ -26,6 +26,7 @@ import type { PartnerDashboardData } from '@/types'
 import { cn, formatCurrency } from '@/lib/utils'
 import { AnimatedModal } from '@/components/partner/AnimatedModal'
 import { SectionFrame } from '@/components/partner/PartnerUi'
+import { StoreImagePickerModal } from '@/components/partner/StoreImagePickerModal'
 import type { PartnerCategory } from '@/types'
 import { createProduct, createProductCategory, fetchIndustrializados, updateProduct, type IndustrializedItem } from '@/services/partner'
 import type { PartnerProduct } from '@/types'
@@ -319,6 +320,7 @@ export function PartnerCatalogPage({
   const [newLibItemName, setNewLibItemName] = useState('')
   const [newLibItemDescription, setNewLibItemDescription] = useState('')
   const [newLibItemPrice, setNewLibItemPrice] = useState('')
+  const [prepImagePickerOpen, setPrepImagePickerOpen] = useState(false)
 
   useEffect(() => {
     fetchIndustrializados()
@@ -1353,6 +1355,14 @@ const normalizedSearch = search.trim().toLowerCase()
         </SectionFrame>
       )}
 
+      <StoreImagePickerModal
+        open={prepImagePickerOpen}
+        storeId={data.store.id}
+        slot="logo"
+        onSelect={(url) => { setPrepImage(url); setPrepImagePickerOpen(false) }}
+        onClose={() => setPrepImagePickerOpen(false)}
+      />
+
       <AnimatedModal
         open={sortModalOpen}
         onClose={() => setSortModalOpen(false)}
@@ -2110,12 +2120,23 @@ const normalizedSearch = search.trim().toLowerCase()
                         <textarea value={prepDescription} onChange={(e) => setPrepDescription(e.target.value)} rows={3} placeholder="Descreva os ingredientes e diferenciais..."
                           className="w-full rounded-2xl border border-ink-100 bg-white px-4 py-3 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400 resize-none" />
                       </label>
-                      <label className="block">
-                        <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">URL da imagem</span>
-                        <input type="text" value={prepImage} onChange={(e) => setPrepImage(e.target.value)} placeholder="https://..."
-                          className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400" />
-                        {prepImage ? <img src={prepImage} alt="preview" className="mt-3 h-32 w-full rounded-2xl object-cover" /> : null}
-                      </label>
+                      <div>
+                        <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Imagem do produto</span>
+                        {prepImage ? (
+                          <div className="relative">
+                            <img src={prepImage} alt="preview" className="h-40 w-full rounded-2xl object-cover" />
+                            <button type="button" onClick={() => setPrepImagePickerOpen(true)}
+                              className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-1.5 text-xs font-semibold text-ink-700 shadow transition hover:bg-coral-500 hover:text-white">
+                              Trocar imagem
+                            </button>
+                          </div>
+                        ) : (
+                          <button type="button" onClick={() => setPrepImagePickerOpen(true)}
+                            className="flex h-32 w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-ink-200 bg-ink-50 text-sm font-semibold text-ink-500 transition hover:border-coral-400 hover:bg-coral-50 hover:text-coral-600">
+                            <Plus className="h-5 w-5" /> Selecionar imagem
+                          </button>
+                        )}
+                      </div>
                     </div>
                   ) : null}
 
