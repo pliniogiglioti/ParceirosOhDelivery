@@ -921,12 +921,15 @@ const normalizedSearch = search.trim().toLowerCase()
   function handleAddComplementGroup() {
     const name = addingGroupName.trim()
     if (!name) { toast.error('Informe o nome do grupo.'); return }
+    const min = Number(addingGroupMin)
+    const max = Number(addingGroupMax) || 1
+    if (min > max) { toast.error('O minimo nao pode ser maior que o maximo.'); return }
     const group: ComplementGroup = {
       id: `grp-${Date.now()}`,
       name,
       required: Number(addingGroupMin) >= 1,
-      minQty: Number(addingGroupMin),
-      maxQty: Number(addingGroupMax) || 1,
+      minQty: min,
+      maxQty: max,
       items: [],
     }
     setPrepComplementGroups((c) => [...c, group])
@@ -1074,13 +1077,16 @@ const normalizedSearch = search.trim().toLowerCase()
 
   function saveEditingGroup() {
     if (!editingGroupId || !editingGroupName.trim()) return
+    const min = Number(editingGroupMin)
+    const max = Number(editingGroupMax) || 1
+    if (min > max) { toast.error('O minimo nao pode ser maior que o maximo.'); return }
     setPrepComplementGroups((groups) =>
       groups.map((g) => g.id === editingGroupId ? {
         ...g,
         name: editingGroupName.trim(),
         required: Number(editingGroupMin) >= 1,
-        minQty: Number(editingGroupMin),
-        maxQty: Number(editingGroupMax) || 1,
+        minQty: min,
+        maxQty: max,
       } : g)
     )
     setEditingGroupId(null)
