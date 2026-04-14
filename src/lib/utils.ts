@@ -1,3 +1,5 @@
+export const DEFAULT_PRODUCT_IMAGE = '/error.png'
+
 export function formatCurrency(value: number) {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
