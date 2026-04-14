@@ -1678,7 +1678,7 @@ const normalizedSearch = search.trim().toLowerCase()
 
       <AnimatedModal
         open={libModalOpen}
-        onClose={() => { setLibModalOpen(false); setLibModalNewForm(false) }}
+        onClose={() => { if (!libModalImagePickerOpen) { setLibModalOpen(false); setLibModalNewForm(false) } }}
         panelClassName="panel-card flex h-[min(88vh,700px)] w-full max-w-2xl flex-col p-6"
         ariaLabelledby="lib-modal-title"
       >
@@ -2064,7 +2064,7 @@ const normalizedSearch = search.trim().toLowerCase()
 
       <AnimatedModal
         open={Boolean(productKindModalOpen && addItemCategory && selectedProductCreationKindMeta)}
-        onClose={() => { setProductKindModalOpen(false); setEditingProduct(null) }}
+        onClose={() => { if (!prepImagePickerOpen && !libImagePickerOpen) { setProductKindModalOpen(false); setEditingProduct(null) } }}
         panelClassName="panel-card flex h-[min(88vh,860px)] w-full max-w-5xl flex-col p-6"
         ariaLabelledby="product-kind-title"
       >
