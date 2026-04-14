@@ -2197,33 +2197,39 @@ const normalizedSearch = search.trim().toLowerCase()
                 <div className="mt-6 min-h-0 flex-1 overflow-y-auto pr-1">
 
                   {standardItemStepTab === 'detalhes' ? (
-                    <div className="space-y-4">
-                      <label className="block">
-                        <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Nome do produto <span className="text-coral-500">*</span></span>
-                        <input type="text" value={prepName} onChange={(e) => setPrepName(e.target.value)} placeholder="Ex.: X-Burguer Especial"
-                          className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400" />
-                      </label>
-                      <label className="block">
-                        <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Descricao</span>
-                        <textarea value={prepDescription} onChange={(e) => setPrepDescription(e.target.value)} rows={3} placeholder="Descreva os ingredientes e diferenciais..."
-                          className="w-full rounded-2xl border border-ink-100 bg-white px-4 py-3 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400 resize-none" />
-                      </label>
-                      <div>
-                        <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Imagem do produto</span>
+                    <div className="grid gap-5 md:grid-cols-[200px_minmax(0,1fr)]">
+                      {/* Coluna esquerda — imagem */}
+                      <div className="flex flex-col gap-2">
+                        <span className="block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Imagem do produto</span>
                         {prepImage ? (
                           <div className="relative">
-                            <img src={prepImage} alt="preview" className="h-40 w-full rounded-2xl object-cover" />
+                            <img src={prepImage} alt="preview" className="h-48 w-full rounded-2xl object-cover md:h-full md:min-h-[200px]" />
                             <button type="button" onClick={() => setPrepImagePickerOpen(true)}
-                              className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-xl bg-white px-3 py-1.5 text-xs font-semibold text-ink-700 shadow transition hover:bg-coral-500 hover:text-white">
-                              Trocar imagem
+                              className="absolute right-2 top-2 inline-flex items-center gap-1.5 rounded-xl bg-white px-2.5 py-1.5 text-xs font-semibold text-ink-700 shadow transition hover:bg-coral-500 hover:text-white">
+                              Trocar
                             </button>
                           </div>
                         ) : (
                           <button type="button" onClick={() => setPrepImagePickerOpen(true)}
-                            className="flex h-32 w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-ink-200 bg-ink-50 text-sm font-semibold text-ink-500 transition hover:border-coral-400 hover:bg-coral-50 hover:text-coral-600">
-                            <Plus className="h-5 w-5" /> Selecionar imagem
+                            className="flex h-48 w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-ink-200 bg-ink-50 text-sm font-semibold text-ink-500 transition hover:border-coral-400 hover:bg-coral-50 hover:text-coral-600 md:h-full md:min-h-[200px]">
+                            <Plus className="h-6 w-6" />
+                            Selecionar imagem
                           </button>
                         )}
+                      </div>
+
+                      {/* Coluna direita — nome e descrição */}
+                      <div className="flex flex-col gap-4">
+                        <label className="block">
+                          <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Nome do produto <span className="text-coral-500">*</span></span>
+                          <input type="text" value={prepName} onChange={(e) => setPrepName(e.target.value)} placeholder="Ex.: X-Burguer Especial"
+                            className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400" />
+                        </label>
+                        <label className="block flex-1">
+                          <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Descricao</span>
+                          <textarea value={prepDescription} onChange={(e) => setPrepDescription(e.target.value)} rows={5} placeholder="Descreva os ingredientes e diferenciais..."
+                            className="w-full rounded-2xl border border-ink-100 bg-white px-4 py-3 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400 resize-none" />
+                        </label>
                       </div>
                     </div>
                   ) : null}
