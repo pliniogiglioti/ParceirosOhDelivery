@@ -364,7 +364,8 @@ export function PartnerFirstAccessPage() {
       setSavedSteps((current) => ({ ...current, pagamentos: true }))
       toast.success('Formas de pagamento salvas.')
       return true
-    } catch {
+    } catch (err) {
+      console.error('[PartnerFirstAccessPage] Erro ao salvar formas de pagamento:', err)
       toast.error('Nao foi possivel salvar as formas de pagamento.')
       return false
     } finally {

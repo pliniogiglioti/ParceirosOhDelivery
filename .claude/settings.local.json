@@ -7,7 +7,14 @@
       "Bash(git add:*)",
       "Bash(git commit -m ':*)",
       "Bash(git push:*)",
-      "Bash(xargs sed:*)"
+      "Bash(xargs sed:*)",
+      "Bash(npx tsc:*)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(xargs grep:*)",
+      "Bash(cmd /c \"cd /d c:\\\\Users\\\\plini\\\\Documents\\\\repositoriogit\\\\ParceirosOhDelivery && npx tsc --noEmit 2>&1\")",
+      "Bash(cmd /c \"npx tsc --noEmit\")",
+      "Bash(npx --yes tsc --noEmit --project c:/Users/plini/Documents/repositoriogit/ParceirosOhDelivery/tsconfig.json)"
     ]
   }
 }

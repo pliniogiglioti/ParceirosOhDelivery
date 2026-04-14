@@ -44,7 +44,8 @@ export function PartnerPaymentsPage() {
       setSavedMethods(nextMethods)
       updatePaymentMethods(data.store.id, nextMethods)
       toast.success('Formas de pagamento salvas.')
-    } catch {
+    } catch (err) {
+      console.error('[PartnerPaymentsPage] Erro ao salvar formas de pagamento:', err)
       toast.error('Nao foi possivel salvar as formas de pagamento.')
     } finally {
       setSaving(false)

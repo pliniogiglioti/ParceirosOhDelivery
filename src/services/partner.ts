@@ -709,6 +709,64 @@ export async function fetchIndustrializados(): Promise<IndustrializedItem[]> {
   }))
 }
 
+export async function updateProduct(
+  productId: string,
+  storeId: string,
+  input: {
+    name: string
+    description: string
+    price: number
+    compareAtPrice?: number | null
+    imageUrl?: string
+    manageStock?: boolean
+    stockQuantity?: number | null
+    gelada?: boolean
+    active?: boolean
+    featured?: boolean
+    categoryId?: string
+  }
+): Promise<PartnerProduct> {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
+
+  const { data, error } = await supabase
+    .from('products')
+    .update({
+      name: input.name,
+      description: input.description,
+      price: input.price,
+      compare_at_price: input.compareAtPrice ?? null,
+      image_url: input.imageUrl ?? null,
+      manage_stock: input.manageStock ?? false,
+      stock_quantity: input.stockQuantity ?? null,
+      gelada: input.gelada ?? false,
+      active: input.active ?? true,
+      featured: input.featured ?? false,
+      ...(input.categoryId ? { category_id: input.categoryId } : {}),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', productId)
+    .eq('store_id', storeId)
+    .select('*')
+    .single()
+
+  if (error) throw error
+
+  return {
+    id: String(data.id),
+    name: String(data.name),
+    description: String(data.description ?? ''),
+    categoryId: String(data.category_id ?? ''),
+    price: Number(data.price ?? 0),
+    compareAtPrice: data.compare_at_price === null ? null : Number(data.compare_at_price ?? 0),
+    imageUrl: data.image_url ? String(data.image_url) : undefined,
+    stockQuantity: data.stock_quantity === null ? null : Number(data.stock_quantity ?? 0),
+    manageStock: Boolean(data.manage_stock ?? false),
+    gelada: Boolean(data.gelada ?? false),
+    active: Boolean(data.active ?? true),
+    featured: Boolean(data.featured ?? false),
+  }
+}
+
 function statusEventLabel(status: OrderStatus): string {
   if (status === 'aguardando') return 'Pedido recebido'
   if (status === 'preparo') return 'Em preparo'

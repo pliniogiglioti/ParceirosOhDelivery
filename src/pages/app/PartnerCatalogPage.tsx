@@ -27,7 +27,8 @@ import { cn, formatCurrency } from '@/lib/utils'
 import { AnimatedModal } from '@/components/partner/AnimatedModal'
 import { SectionFrame } from '@/components/partner/PartnerUi'
 import type { PartnerCategory } from '@/types'
-import { createProduct, createProductCategory, fetchIndustrializados, type IndustrializedItem } from '@/services/partner'
+import { createProduct, createProductCategory, fetchIndustrializados, updateProduct, type IndustrializedItem } from '@/services/partner'
+import type { PartnerProduct } from '@/types'
 
 function ThemeSwitch({
   checked,
@@ -243,6 +244,19 @@ export function PartnerCatalogPage({
   const [savingIndustrialized, setSavingIndustrialized] = useState(false)
   const [industrializedCatalogItems, setIndustrializedCatalogItems] = useState<IndustrializedCatalogItem[]>([])
 
+  // Edit industrialized product modal
+  const [editProductModalOpen, setEditProductModalOpen] = useState(false)
+  const [editingProduct, setEditingProduct] = useState<PartnerProduct | null>(null)
+  const [editStepTab, setEditStepTab] = useState<'preco' | 'classificacao' | 'revisao'>('preco')
+  const [editPrice, setEditPrice] = useState('')
+  const [editPromotionPrice, setEditPromotionPrice] = useState('')
+  const [editManageStock, setEditManageStock] = useState(false)
+  const [editStockQty, setEditStockQty] = useState('')
+  const [editGelada, setEditGelada] = useState(false)
+  const [editActive, setEditActive] = useState(true)
+  const [editFeatured, setEditFeatured] = useState(false)
+  const [savingEdit, setSavingEdit] = useState(false)
+
   useEffect(() => {
     fetchIndustrializados()
       .then(setIndustrializedCatalogItems)
@@ -413,6 +427,80 @@ const [showMaxFeaturedModal, setShowMaxFeaturedModal] = useState(false)
     }
     setCatalogProducts((current) => [...current, duplicated])
     setMenuOpenProductId(null)
+  }
+
+  function openEditProductModal(product: PartnerProduct) {
+    setEditingProduct(product)
+    setEditStepTab('preco')
+    setEditPrice(
+      product.price > 0
+        ? product.price.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : ''
+    )
+    setEditPromotionPrice(
+      product.compareAtPrice != null && product.compareAtPrice > 0
+        ? product.compareAtPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+        : ''
+    )
+    setEditManageStock(product.manageStock)
+    setEditStockQty(product.stockQuantity != null ? String(product.stockQuantity) : '')
+    setEditGelada(product.gelada)
+    setEditActive(product.active)
+    setEditFeatured(product.featured)
+    setMenuOpenProductId(null)
+    setProductMenuPosition(null)
+    setEditProductModalOpen(true)
+  }
+
+  async function handleSaveEditProduct() {
+    if (!editingProduct || !data) return
+
+    const priceValue = parseCurrencyInput(editPrice)
+    const promotionPriceValue = parseCurrencyInput(editPromotionPrice)
+    const stockQtyValue = Number(editStockQty)
+    const hasValidStockQty =
+      editStockQty.trim().length > 0 && Number.isFinite(stockQtyValue) && stockQtyValue >= 0
+
+    if (!editPrice.trim()) {
+      toast.error('Preencha o preco principal.')
+      return
+    }
+    if (editPromotionPrice.trim() && promotionPriceValue >= priceValue) {
+      toast.error('O preco promocional deve ser menor que o preco normal.')
+      return
+    }
+    if (editManageStock && !hasValidStockQty) {
+      toast.error('Informe a quantidade em estoque.')
+      return
+    }
+
+    setSavingEdit(true)
+    try {
+      const updated = await updateProduct(editingProduct.id, data.store.id, {
+        name: editingProduct.name,
+        description: editingProduct.description,
+        price: priceValue,
+        compareAtPrice: editPromotionPrice.trim() ? promotionPriceValue : null,
+        imageUrl: editingProduct.imageUrl,
+        manageStock: editManageStock,
+        stockQuantity: editManageStock ? stockQtyValue : null,
+        gelada: editGelada,
+        active: editActive,
+        featured: editFeatured,
+        categoryId: editingProduct.categoryId,
+      })
+      setCatalogProducts((current) =>
+        current.map((p) => (p.id === updated.id ? updated : p))
+      )
+      setActiveByProductId((current) => ({ ...current, [updated.id]: updated.active }))
+      setFeaturedByProductId((current) => ({ ...current, [updated.id]: updated.featured }))
+      setEditProductModalOpen(false)
+      toast.success(`${updated.name} atualizado com sucesso.`)
+    } catch {
+      toast.error('Nao foi possivel salvar as alteracoes.')
+    } finally {
+      setSavingEdit(false)
+    }
   }
 
 const normalizedSearch = search.trim().toLowerCase()
@@ -1911,6 +1999,272 @@ const normalizedSearch = search.trim().toLowerCase()
         </div>
       </AnimatedModal>
 
+      <AnimatedModal
+        open={editProductModalOpen && editingProduct !== null}
+        onClose={() => setEditProductModalOpen(false)}
+        panelClassName="panel-card w-full max-w-2xl p-6"
+        ariaLabelledby="edit-product-title"
+      >
+        {editingProduct ? (
+          <>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">Editar produto</p>
+                <h3 id="edit-product-title" className="mt-2 text-xl font-bold text-ink-900">
+                  {editingProduct.name}
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-ink-500">
+                  Atualize preco, estoque e classificacao do produto.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditProductModalOpen(false)}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50"
+                aria-label="Fechar edicao"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mt-6 rounded-2xl border border-ink-100 bg-white px-4 py-3 sm:px-5">
+              <div className="hide-scrollbar flex gap-2 overflow-x-auto">
+                {(['preco', 'classificacao', 'revisao'] as const).map((tab) => {
+                  const labels = { preco: 'Preco', classificacao: 'Classificacao', revisao: 'Revisao' }
+                  return (
+                    <button
+                      key={tab}
+                      type="button"
+                      onClick={() => setEditStepTab(tab)}
+                      className={cn(
+                        'inline-flex shrink-0 items-center rounded-2xl border px-4 py-3 text-sm font-semibold transition',
+                        editStepTab === tab
+                          ? 'border-coral-200 bg-coral-50 text-coral-700'
+                          : 'border-transparent bg-transparent text-ink-500 hover:border-ink-100 hover:bg-ink-50 hover:text-ink-900'
+                      )}
+                    >
+                      {labels[tab]}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            {editStepTab === 'preco' ? (
+              <div className="mt-6 space-y-4">
+                <div className="flex items-center gap-4 rounded-xl border border-ink-100 bg-ink-50 p-4">
+                  {editingProduct.imageUrl ? (
+                    <img src={editingProduct.imageUrl} alt={editingProduct.name} className="h-16 w-16 shrink-0 rounded-xl object-cover" />
+                  ) : null}
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-ink-900">{editingProduct.name}</p>
+                    <p className="mt-1 text-sm text-ink-500 line-clamp-2">{editingProduct.description}</p>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <label className="block">
+                    <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">
+                      Preco de venda <span className="text-coral-500">*</span>
+                    </span>
+                    <div className="relative">
+                      <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-ink-400">R$</span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={editPrice}
+                        onChange={(e) => setEditPrice(formatCurrencyInput(e.target.value))}
+                        placeholder="0,00"
+                        className="h-12 w-full rounded-2xl border border-ink-100 bg-white pl-10 pr-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
+                      />
+                    </div>
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">
+                      Preco promocional
+                    </span>
+                    <div className="relative">
+                      <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-ink-400">R$</span>
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={editPromotionPrice}
+                        onChange={(e) => setEditPromotionPrice(formatCurrencyInput(e.target.value))}
+                        placeholder="0,00"
+                        className="h-12 w-full rounded-2xl border border-ink-100 bg-white pl-10 pr-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
+                      />
+                    </div>
+                  </label>
+                </div>
+
+                <div className="rounded-xl border border-ink-100 bg-white p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-ink-900">Controlar estoque</p>
+                      <p className="mt-1 text-sm text-ink-500">Ative para definir a quantidade disponivel.</p>
+                    </div>
+                    <ThemeSwitch
+                      checked={editManageStock}
+                      onChange={setEditManageStock}
+                      ariaLabel="Controlar estoque"
+                    />
+                  </div>
+                  {editManageStock ? (
+                    <label className="mt-4 block">
+                      <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">
+                        Quantidade em estoque <span className="text-coral-500">*</span>
+                      </span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={editStockQty}
+                        onChange={(e) => setEditStockQty(e.target.value)}
+                        placeholder="0"
+                        className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
+                      />
+                    </label>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            {editStepTab === 'classificacao' ? (
+              <div className="mt-6 space-y-4">
+                <div className="rounded-xl border border-ink-100 bg-white p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-ink-900">Produto gelado</p>
+                      <p className="mt-1 text-sm text-ink-500">Indica que o produto precisa ser mantido refrigerado.</p>
+                    </div>
+                    <ThemeSwitch checked={editGelada} onChange={setEditGelada} ariaLabel="Produto gelado" />
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-ink-100 bg-white p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-ink-900">Produto em destaque</p>
+                      <p className="mt-1 text-sm text-ink-500">Aparece na secao de destaques do cardapio. Maximo 6.</p>
+                    </div>
+                    <ThemeSwitch
+                      checked={editFeatured}
+                      onChange={(next) => {
+                        if (next && !editFeatured && featuredCount >= 6) {
+                          setShowMaxFeaturedModal(true)
+                          return
+                        }
+                        setEditFeatured(next)
+                      }}
+                      ariaLabel="Produto em destaque"
+                    />
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-ink-100 bg-white p-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-ink-900">Produto ativo</p>
+                      <p className="mt-1 text-sm text-ink-500">Produto visivel no cardapio para os clientes.</p>
+                    </div>
+                    <ThemeSwitch checked={editActive} onChange={setEditActive} ariaLabel="Produto ativo" />
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {editStepTab === 'revisao' ? (
+              <div className="mt-6 space-y-3">
+                <div className="rounded-xl border border-ink-100 bg-ink-50 p-4">
+                  <div className="flex items-center gap-4">
+                    {editingProduct.imageUrl ? (
+                      <img src={editingProduct.imageUrl} alt={editingProduct.name} className="h-16 w-16 shrink-0 rounded-xl object-cover" />
+                    ) : null}
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-ink-900">{editingProduct.name}</p>
+                      <p className="mt-1 text-sm text-ink-500 line-clamp-2">{editingProduct.description}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl border border-ink-100 bg-white p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Preco</p>
+                    <p className="mt-1 text-base font-bold text-ink-900">
+                      {editPrice ? `R$ ${editPrice}` : '—'}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-ink-100 bg-white p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Preco promocional</p>
+                    <p className="mt-1 text-base font-bold text-ink-900">
+                      {editPromotionPrice ? `R$ ${editPromotionPrice}` : '—'}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-ink-100 bg-white p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Estoque</p>
+                    <p className="mt-1 text-base font-bold text-ink-900">
+                      {editManageStock ? (editStockQty || '0') : 'Sem controle'}
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-ink-100 bg-white p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Status</p>
+                    <div className="mt-1 flex flex-wrap gap-2">
+                      {editActive ? (
+                        <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">Ativo</span>
+                      ) : (
+                        <span className="rounded-full bg-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-600">Inativo</span>
+                      )}
+                      {editFeatured ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-coral-100 px-2.5 py-1 text-xs font-semibold text-coral-700">
+                          <Sparkles className="h-3 w-3" /> Destaque
+                        </span>
+                      ) : null}
+                      {editGelada ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-700">
+                          <Snowflake className="h-3 w-3" /> Gelado
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setEditProductModalOpen(false)}
+                className="inline-flex h-11 items-center justify-center rounded-2xl border border-ink-100 px-5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
+              >
+                Cancelar
+              </button>
+              {editStepTab !== 'revisao' ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (editStepTab === 'preco') setEditStepTab('classificacao')
+                    else setEditStepTab('revisao')
+                  }}
+                  className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
+                >
+                  Continuar
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void handleSaveEditProduct()}
+                  disabled={savingEdit}
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600 disabled:opacity-60"
+                >
+                  {savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  Salvar alteracoes
+                </button>
+              )}
+            </div>
+          </>
+        ) : null}
+      </AnimatedModal>
+
       {menuOpenCategoryId !== null && categoryMenuPosition !== null &&
         createPortal(
           <div
@@ -1967,8 +2321,7 @@ const normalizedSearch = search.trim().toLowerCase()
                   <button
                     type="button"
                     onClick={() => {
-                      toast.success(`Edicao do produto ${product.name} em preparacao.`)
-                      setMenuOpenProductId(null)
+                      openEditProductModal(product)
                     }}
                     className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-ink-700 transition hover:bg-ink-50"
                   >
