@@ -28,7 +28,7 @@ import { AnimatedModal } from '@/components/partner/AnimatedModal'
 import { SectionFrame } from '@/components/partner/PartnerUi'
 import { StoreImagePickerModal } from '@/components/partner/StoreImagePickerModal'
 import type { PartnerCategory } from '@/types'
-import { createProduct, createProductCategory, fetchIndustrializados, updateProduct, saveProductComplements, fetchProductComplements, type IndustrializedItem } from '@/services/partner'
+import { createProduct, createProductCategory, fetchIndustrializados, updateProduct, saveProductComplements, fetchProductComplements, fetchComplementLibrary, createComplementLibraryItem, type IndustrializedItem } from '@/services/partner'
 import type { PartnerProduct } from '@/types'
 
 function ThemeSwitch({
@@ -323,8 +323,13 @@ export function PartnerCatalogPage({
   const [newLibItemName, setNewLibItemName] = useState('')
   const [newLibItemDescription, setNewLibItemDescription] = useState('')
   const [newLibItemPrice, setNewLibItemPrice] = useState('')
+  const [newLibItemImage, setNewLibItemImage] = useState('')
+  const [libImagePickerOpen, setLibImagePickerOpen] = useState(false)
+  const [libItems, setLibItems] = useState<import('@/services/partner').ComplementLibraryItem[]>([])
+  const [libItemsLoaded, setLibItemsLoaded] = useState(false)
+  const [showNewLibForm, setShowNewLibForm] = useState(false)
   const [newIndItemPrice, setNewIndItemPrice] = useState('')
-  const [selectedIndItem, setSelectedIndItem] = useState<IndustrializedItem | null>(null)
+  const [selectedIndItem, setSelectedIndItem] = useState<IndustrializedCatalogItem | null>(null)
   const [prepImagePickerOpen, setPrepImagePickerOpen] = useState(false)
 
   useEffect(() => {
@@ -747,7 +752,23 @@ const normalizedSearch = search.trim().toLowerCase()
     setProductKindModalOpen(true)
   }
 
-  // ── Preparado helpers ──────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!complementPickerGroupId || !data || libItemsLoaded) return
+    fetchComplementLibrary(data.store.id)
+      .then((items) => { setLibItems(items); setLibItemsLoaded(true) })
+      .catch(() => {})
+  }, [complementPickerGroupId, data, libItemsLoaded])
+
+  // Reset lib loaded when picker closes
+  useEffect(() => {
+    if (!complementPickerGroupId) {
+      setShowNewLibForm(false)
+      setNewLibItemName('')
+      setNewLibItemDescription('')
+      setNewLibItemPrice('')
+      setNewLibItemImage('')
+    }
+  }, [complementPickerGroupId])
   const prepPriceValue = parseCurrencyInput(prepPrice)
   const prepPromotionPriceValue = parseCurrencyInput(prepPromotionPrice)
   const prepStockQtyValue = Number(prepStockQty)
@@ -896,6 +917,7 @@ const normalizedSearch = search.trim().toLowerCase()
       description: newLibItemDescription.trim(),
       price: parseCurrencyInput(newLibItemPrice),
       source: 'biblioteca',
+      imageUrl: newLibItemImage || undefined,
     }
     setPrepComplementGroups((groups) =>
       groups.map((g) => g.id === groupId ? { ...g, items: [...g.items, item] } : g)
@@ -903,7 +925,25 @@ const normalizedSearch = search.trim().toLowerCase()
     setNewLibItemName('')
     setNewLibItemDescription('')
     setNewLibItemPrice('')
-    setComplementPickerGroupId(null)
+    setNewLibItemImage('')
+    setShowNewLibForm(false)
+    // Salva na biblioteca em background para reutilização futura
+    if (data) {
+      createComplementLibraryItem(data.store.id, {
+        name: item.name,
+        description: item.description,
+        price: item.price,
+      }).then((saved) => {
+        setLibItems((prev) => [saved, ...prev])
+        // Atualiza o sourceId do item recém adicionado
+        setPrepComplementGroups((groups) =>
+          groups.map((g) => ({
+            ...g,
+            items: g.items.map((i) => i.id === item.id ? { ...i, sourceId: saved.id } : i),
+          }))
+        )
+      }).catch(() => {})
+    }
   }
 
   function handleAddIndustrializedToGroup(groupId: string, ind: IndustrializedCatalogItem) {
@@ -928,6 +968,21 @@ const normalizedSearch = search.trim().toLowerCase()
     setPrepComplementGroups((groups) =>
       groups.map((g) => g.id === groupId ? { ...g, items: g.items.filter((i) => i.id !== itemId) } : g)
     )
+  }
+
+  function handleSelectLibItem(groupId: string, libItem: import('@/services/partner').ComplementLibraryItem) {
+    const item: ComplementItem = {
+      id: `lib-${Date.now()}`,
+      name: libItem.name,
+      description: libItem.description,
+      price: libItem.price,
+      source: 'biblioteca',
+      sourceId: libItem.id,
+    }
+    setPrepComplementGroups((groups) =>
+      groups.map((g) => g.id === groupId ? { ...g, items: [...g.items, item] } : g)
+    )
+    setComplementPickerGroupId(null)
   }
 
   function removeComplementGroup(groupId: string) {
@@ -1474,6 +1529,15 @@ const normalizedSearch = search.trim().toLowerCase()
         overlayClassName="z-[200]"
         onSelect={(url) => { setPrepImage(url); setPrepImagePickerOpen(false) }}
         onClose={() => setPrepImagePickerOpen(false)}
+      />
+
+      <StoreImagePickerModal
+        open={libImagePickerOpen}
+        storeId={data.store.id}
+        slot="logo"
+        overlayClassName="z-[200]"
+        onSelect={(url) => { setNewLibItemImage(url); setLibImagePickerOpen(false) }}
+        onClose={() => setLibImagePickerOpen(false)}
       />
 
       <AnimatedModal
@@ -2367,22 +2431,68 @@ const normalizedSearch = search.trim().toLowerCase()
                               </div>
                               {complementPickerSource === 'biblioteca' ? (
                                 <div className="space-y-2">
-                                  <input type="text" value={newLibItemName} onChange={(e) => setNewLibItemName(e.target.value)} placeholder="Nome do item *"
-                                    className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
-                                  <input type="text" value={newLibItemDescription} onChange={(e) => setNewLibItemDescription(e.target.value)} placeholder="Descricao (opcional)"
-                                    className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
-                                  <div className="relative">
-                                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-ink-400">R$</span>
-                                    <input type="text" inputMode="numeric" value={newLibItemPrice} onChange={(e) => setNewLibItemPrice(formatCurrencyInput(e.target.value))} placeholder="0,00"
-                                      className="h-10 w-full rounded-xl border border-ink-100 bg-white pl-9 pr-3 text-sm outline-none focus:border-coral-400" />
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <button type="button" onClick={() => setComplementPickerGroupId(null)}
-                                      className="h-9 flex-1 rounded-xl border border-ink-100 text-sm font-semibold text-ink-600 hover:bg-white">Cancelar</button>
-                                    <button type="button" onClick={() => handleAddLibItemToGroup(group.id)}
-                                      className="h-9 flex-1 rounded-xl bg-coral-500 text-sm font-semibold text-white hover:bg-coral-600">Adicionar</button>
-                                  </div>
+                                  {showNewLibForm ? (
+                                    <>
+                                      <p className="text-xs font-semibold text-ink-700">Novo item na biblioteca</p>
+                                      <input type="text" value={newLibItemName} onChange={(e) => setNewLibItemName(e.target.value)} placeholder="Nome do item *"
+                                        className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
+                                      <input type="text" value={newLibItemDescription} onChange={(e) => setNewLibItemDescription(e.target.value)} placeholder="Descricao (opcional)"
+                                        className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
+                                      <div className="relative">
+                                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-ink-400">R$</span>
+                                        <input type="text" inputMode="numeric" value={newLibItemPrice} onChange={(e) => setNewLibItemPrice(formatCurrencyInput(e.target.value))} placeholder="0,00"
+                                          className="h-10 w-full rounded-xl border border-ink-100 bg-white pl-9 pr-3 text-sm outline-none focus:border-coral-400" />
+                                      </div>
+                                      <div>
+                                        {newLibItemImage ? (
+                                          <div className="relative">
+                                            <img src={newLibItemImage} alt="preview" className="h-20 w-full rounded-xl object-cover" />
+                                            <button type="button" onClick={() => setLibImagePickerOpen(true)}
+                                              className="absolute right-2 top-2 rounded-lg bg-white px-2 py-1 text-xs font-semibold text-ink-700 shadow hover:bg-coral-500 hover:text-white">Trocar</button>
+                                          </div>
+                                        ) : (
+                                          <button type="button" onClick={() => setLibImagePickerOpen(true)}
+                                            className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-dashed border-ink-200 bg-white text-xs font-semibold text-ink-500 hover:border-coral-400 hover:text-coral-600">
+                                            <Plus className="h-4 w-4" /> Adicionar imagem
+                                          </button>
+                                        )}
+                                      </div>
+                                      <div className="flex gap-2">
+                                        <button type="button" onClick={() => setShowNewLibForm(false)}
+                                          className="h-9 flex-1 rounded-xl border border-ink-100 text-sm font-semibold text-ink-600 hover:bg-white">Voltar</button>
+                                        <button type="button" onClick={() => handleAddLibItemToGroup(group.id)}
+                                          className="h-9 flex-1 rounded-xl bg-coral-500 text-sm font-semibold text-white hover:bg-coral-600">Adicionar</button>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <>
+                                      {libItems.length > 0 ? (
+                                        <div className="max-h-48 space-y-1 overflow-y-auto">
+                                          {libItems.map((libItem) => (
+                                            <button key={libItem.id} type="button" onClick={() => handleSelectLibItem(group.id, libItem)}
+                                              className="flex w-full items-center gap-2 rounded-xl border border-ink-100 bg-white p-2 text-left hover:bg-ink-50">
+                                              <div className="min-w-0 flex-1">
+                                                <p className="truncate text-sm font-semibold text-ink-900">{libItem.name}</p>
+                                                <p className="text-xs text-ink-500">{libItem.price > 0 ? formatCurrency(libItem.price) : 'Gratis'}{libItem.description ? ` · ${libItem.description}` : ''}</p>
+                                              </div>
+                                            </button>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <p className="rounded-xl border border-dashed border-ink-200 bg-white px-3 py-4 text-center text-xs text-ink-400">
+                                          Nenhum item na biblioteca ainda.
+                                        </p>
+                                      )}
+                                      <div className="flex gap-2">
+                                        <button type="button" onClick={() => setComplementPickerGroupId(null)}
+                                          className="h-9 flex-1 rounded-xl border border-ink-100 text-sm font-semibold text-ink-600 hover:bg-white">Fechar</button>
+                                        <button type="button" onClick={() => { setShowNewLibForm(true); setNewLibItemName(''); setNewLibItemDescription(''); setNewLibItemPrice(''); setNewLibItemImage('') }}
+                                          className="h-9 flex-1 rounded-xl bg-coral-500 text-sm font-semibold text-white hover:bg-coral-600">+ Novo item</button>
+                                      </div>
+                                    </>
+                                  )}
                                 </div>
+
                               ) : (
                                 <div className="space-y-2">
                                   {selectedIndItem ? (
