@@ -679,7 +679,6 @@ export async function createProduct(
     active: Boolean(data.active ?? true),
     featured: Boolean(data.featured ?? false),
     kind: (data.kind === 'preparado' ? 'preparado' : 'industrializado') as 'industrializado' | 'preparado',
-    kind: (data.kind === 'preparado' ? 'preparado' : 'industrializado') as 'industrializado' | 'preparado',
   }
 }
 
