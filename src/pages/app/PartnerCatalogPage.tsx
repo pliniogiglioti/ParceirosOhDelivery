@@ -1221,7 +1221,7 @@ const normalizedSearch = search.trim().toLowerCase()
                                         <img
                                           src={
                                             product.imageUrl ??
-                                            'https://images.unsplash.com/photo-1543253539-6b8d4c3b7a56?auto=format&fit=crop&w=300&q=80'
+                                            'https://storage.googleapis.com/flutterflow-io-6f20.appspot.com/projects/painel-vkbwb8/assets/dykp0g9ghdjn/error.png'
                                           }
                                           alt={product.name}
                                           className="h-16 w-16 rounded-xl object-cover"
@@ -1990,7 +1990,7 @@ const normalizedSearch = search.trim().toLowerCase()
                           <img
                             src={
                               industrializedImage ||
-                              'https://images.unsplash.com/photo-1543253539-6b8d4c3b7a56?auto=format&fit=crop&w=900&q=80'
+                              'https://storage.googleapis.com/flutterflow-io-6f20.appspot.com/projects/painel-vkbwb8/assets/dykp0g9ghdjn/error.png'
                             }
                             alt={industrializedName || 'Produto'}
                             className="h-[260px] w-full object-cover"
@@ -2407,7 +2407,7 @@ const normalizedSearch = search.trim().toLowerCase()
                         <p className="text-sm font-semibold text-ink-900">Previa no front-end</p>
                         <div className="mt-4 overflow-hidden rounded-[26px] border border-[#ececec] bg-white">
                           <div className="relative bg-white">
-                            <img src={prepImage || 'https://images.unsplash.com/photo-1543253539-6b8d4c3b7a56?auto=format&fit=crop&w=900&q=80'} alt={prepName || 'Produto'} className="h-[220px] w-full object-cover" />
+                            <img src={prepImage || 'https://storage.googleapis.com/flutterflow-io-6f20.appspot.com/projects/painel-vkbwb8/assets/dykp0g9ghdjn/error.png'} alt={prepName || 'Produto'} className="h-[220px] w-full object-cover" />
                             <div className="absolute inset-x-0 top-0 flex items-start justify-between p-4">
                               <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#202020]">
                                 <ChevronDown className="h-4 w-4 rotate-90" />
@@ -2672,7 +2672,7 @@ const normalizedSearch = search.trim().toLowerCase()
                       <div className="mt-4 overflow-hidden rounded-[26px] border border-[#ececec] bg-white">
                         <div className="relative bg-white">
                           <img
-                            src={editingProduct.imageUrl || 'https://images.unsplash.com/photo-1543253539-6b8d4c3b7a56?auto=format&fit=crop&w=900&q=80'}
+                            src={editingProduct.imageUrl || 'https://storage.googleapis.com/flutterflow-io-6f20.appspot.com/projects/painel-vkbwb8/assets/dykp0g9ghdjn/error.png'}
                             alt={editingProduct.name}
                             className="h-[260px] w-full object-cover"
                           />
