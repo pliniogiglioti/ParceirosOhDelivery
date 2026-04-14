@@ -1233,21 +1233,23 @@ const normalizedSearch = search.trim().toLowerCase()
                 Ordenar categorias
               </button>
 
-              <button
-                type="button"
-                onClick={openCreateCategoryModal}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
-              >
-                <Plus className="h-4 w-4" />
-                Adicionar categoria
-              </button>
-              <button
-                type="button"
-                onClick={() => { setLibModalOpen(true); setLibModalSearch('') }}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-coral-200 bg-white px-4 text-sm font-semibold text-coral-600 transition hover:bg-coral-50"
-              >
-                Biblioteca de Complementos
-              </button>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <button
+                  type="button"
+                  onClick={() => { setLibModalOpen(true); setLibModalSearch('') }}
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-coral-200 bg-white px-4 text-sm font-semibold text-coral-600 transition hover:bg-coral-50"
+                >
+                  Biblioteca de Complementos
+                </button>
+                <button
+                  type="button"
+                  onClick={openCreateCategoryModal}
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
+                >
+                  <Plus className="h-4 w-4" />
+                  Adicionar categoria
+                </button>
+              </div>
             </div>
           </div>
 
