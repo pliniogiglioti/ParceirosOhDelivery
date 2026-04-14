@@ -259,7 +259,7 @@ export function PartnerCatalogPage({
   const [productKindModalOpen, setProductKindModalOpen] = useState(false)
   const [addItemCategoryId, setAddItemCategoryId] = useState<string | null>(null)
   const [selectedProductCreationKind, setSelectedProductCreationKind] = useState<ProductCreationKind | null>(null)
-  const [standardItemStepTab, setStandardItemStepTab] = useState<StandardItemStepTab>('dados')
+  const [standardItemStepTab, setStandardItemStepTab] = useState<StandardItemStepTab>('detalhes')
   const [industrializedStepTab, setIndustrializedStepTab] = useState<IndustrializedStepTab>('banco')
   const [industrializedSearch, setIndustrializedSearch] = useState('')
   const [imageBankSearch, setImageBankSearch] = useState('')
