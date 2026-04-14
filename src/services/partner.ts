@@ -910,7 +910,7 @@ export async function saveProductComplements(
           group_id: groupId,
           store_id: storeId,
           source: item.source,
-          library_item_id: item.libraryItemId || null,
+          library_item_id: (item.libraryItemId && !item.libraryItemId.startsWith('lib-')) ? item.libraryItemId : null,
           industrialized_id: item.industrializedId ? Number(item.industrializedId) : null,
           name: item.name,
           description: item.description || null,
