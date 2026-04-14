@@ -924,7 +924,7 @@ const normalizedSearch = search.trim().toLowerCase()
     const group: ComplementGroup = {
       id: `grp-${Date.now()}`,
       name,
-      required: addingGroupRequired,
+      required: addingGroupRequired || Number(addingGroupMin) >= 1,
       minQty: Number(addingGroupMin) || 1,
       maxQty: Number(addingGroupMax) || 1,
       items: [],
@@ -1078,7 +1078,7 @@ const normalizedSearch = search.trim().toLowerCase()
       groups.map((g) => g.id === editingGroupId ? {
         ...g,
         name: editingGroupName.trim(),
-        required: editingGroupRequired,
+        required: editingGroupRequired || Number(editingGroupMin) >= 1,
         minQty: Number(editingGroupMin) || 0,
         maxQty: Number(editingGroupMax) || 1,
       } : g)
@@ -2645,7 +2645,10 @@ const normalizedSearch = search.trim().toLowerCase()
                               <div className="grid grid-cols-2 gap-2">
                                 <label className="block">
                                   <span className="mb-1 block text-xs font-semibold text-ink-500">Min</span>
-                                  <input type="number" min={0} value={editingGroupMin} onChange={(e) => setEditingGroupMin(e.target.value)}
+                                  <input type="number" min={0} value={editingGroupMin} onChange={(e) => {
+                                    setEditingGroupMin(e.target.value)
+                                    if (Number(e.target.value) >= 1) setEditingGroupRequired(true)
+                                  }}
                                     className="h-9 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
                                 </label>
                                 <label className="block">
@@ -2906,7 +2909,10 @@ const normalizedSearch = search.trim().toLowerCase()
                           <div className="grid grid-cols-2 gap-3">
                             <label className="block">
                               <span className="mb-1 block text-xs font-semibold text-ink-500">Min</span>
-                              <input type="number" min={0} value={addingGroupMin} onChange={(e) => setAddingGroupMin(e.target.value)}
+                              <input type="number" min={0} value={addingGroupMin} onChange={(e) => {
+                                setAddingGroupMin(e.target.value)
+                                if (Number(e.target.value) >= 1) setAddingGroupRequired(true)
+                              }}
                                 className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
                             </label>
                             <label className="block">
