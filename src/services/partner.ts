@@ -989,7 +989,7 @@ export async function fetchComplementLibrary(storeId: string): Promise<Complemen
 
   const { data, error } = await supabase
     .from('complement_library')
-    .select('id, name, description, price')
+    .select('id, name, description, price, image_url')
     .eq('store_id', storeId)
     .eq('active', true)
     .order('name')

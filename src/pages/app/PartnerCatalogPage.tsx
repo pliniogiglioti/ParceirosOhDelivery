@@ -329,6 +329,17 @@ export function PartnerCatalogPage({
   const [libItemsLoaded, setLibItemsLoaded] = useState(false)
   const [showNewLibForm, setShowNewLibForm] = useState(false)
   const [libSearch, setLibSearch] = useState('')
+  // Biblioteca modal (standalone)
+  const [libModalOpen, setLibModalOpen] = useState(false)
+  const [libModalSearch, setLibModalSearch] = useState('')
+  const [libModalEditingId, setLibModalEditingId] = useState<string | null>(null)
+  const [libModalEditName, setLibModalEditName] = useState('')
+  const [libModalEditDescription, setLibModalEditDescription] = useState('')
+  const [libModalEditPrice, setLibModalEditPrice] = useState('')
+  const [libModalEditImage, setLibModalEditImage] = useState('')
+  const [libModalImagePickerOpen, setLibModalImagePickerOpen] = useState(false)
+  const [libModalNewForm, setLibModalNewForm] = useState(false)
+  const [libModalSaving, setLibModalSaving] = useState(false)
   const [newIndItemPrice, setNewIndItemPrice] = useState('')
   const [selectedIndItem, setSelectedIndItem] = useState<IndustrializedCatalogItem | null>(null)
   const [prepImagePickerOpen, setPrepImagePickerOpen] = useState(false)
@@ -760,6 +771,14 @@ const normalizedSearch = search.trim().toLowerCase()
       .catch(() => {})
   }, [complementPickerGroupId, data, libItemsLoaded])
 
+  useEffect(() => {
+    if (libModalOpen && data && !libItemsLoaded) {
+      fetchComplementLibrary(data.store.id)
+        .then((items) => { setLibItems(items); setLibItemsLoaded(true) })
+        .catch(() => {})
+    }
+  }, [libModalOpen, data, libItemsLoaded])
+
   // Reset lib loaded when picker closes
   useEffect(() => {
     if (!complementPickerGroupId) {
@@ -981,11 +1000,39 @@ const normalizedSearch = search.trim().toLowerCase()
       price: libItem.price,
       source: 'biblioteca',
       sourceId: libItem.id,
+      imageUrl: libItem.imageUrl,
     }
     setPrepComplementGroups((groups) =>
       groups.map((g) => g.id === groupId ? { ...g, items: [...g.items, item] } : g)
     )
     setComplementPickerGroupId(null)
+  }
+
+  async function handleLibModalSave() {
+    if (!data) return
+    const name = libModalEditName.trim()
+    if (!name) { toast.error('Informe o nome do item.'); return }
+    setLibModalSaving(true)
+    try {
+      const saved = await createComplementLibraryItem(data.store.id, {
+        name,
+        description: libModalEditDescription.trim(),
+        price: parseCurrencyInput(libModalEditPrice),
+        imageUrl: libModalEditImage || undefined,
+      })
+      setLibItems((prev) => [saved, ...prev])
+      setLibItemsLoaded(true)
+      setLibModalNewForm(false)
+      setLibModalEditName('')
+      setLibModalEditDescription('')
+      setLibModalEditPrice('')
+      setLibModalEditImage('')
+      toast.success(`${name} adicionado a biblioteca.`)
+    } catch {
+      toast.error('Nao foi possivel salvar.')
+    } finally {
+      setLibModalSaving(false)
+    }
   }
 
   function removeComplementGroup(groupId: string) {
@@ -1193,6 +1240,13 @@ const normalizedSearch = search.trim().toLowerCase()
               >
                 <Plus className="h-4 w-4" />
                 Adicionar categoria
+              </button>
+              <button
+                type="button"
+                onClick={() => { setLibModalOpen(true); setLibModalSearch('') }}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-coral-200 bg-white px-4 text-sm font-semibold text-coral-600 transition hover:bg-coral-50"
+              >
+                Biblioteca de Complementos
               </button>
             </div>
           </div>
@@ -1542,6 +1596,132 @@ const normalizedSearch = search.trim().toLowerCase()
         onSelect={(url) => { setNewLibItemImage(url); setLibImagePickerOpen(false) }}
         onClose={() => setLibImagePickerOpen(false)}
       />
+
+      <StoreImagePickerModal
+        open={libModalImagePickerOpen}
+        storeId={data.store.id}
+        slot="logo"
+        overlayClassName="z-[200]"
+        onSelect={(url) => { setLibModalEditImage(url); setLibModalImagePickerOpen(false) }}
+        onClose={() => setLibModalImagePickerOpen(false)}
+      />
+
+      <AnimatedModal
+        open={libModalOpen}
+        onClose={() => { setLibModalOpen(false); setLibModalNewForm(false) }}
+        panelClassName="panel-card flex h-[min(88vh,700px)] w-full max-w-2xl flex-col p-6"
+        ariaLabelledby="lib-modal-title"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">Cardapio</p>
+            <h3 id="lib-modal-title" className="mt-1 text-xl font-bold text-ink-900">Biblioteca de Complementos</h3>
+            <p className="mt-1 text-sm text-ink-500">Itens reutilizaveis em grupos de complementos de qualquer produto.</p>
+          </div>
+          <button type="button" onClick={() => { setLibModalOpen(false); setLibModalNewForm(false) }}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {libModalNewForm ? (
+          <div className="mt-6 flex min-h-0 flex-1 flex-col">
+            <p className="text-sm font-semibold text-ink-900">Novo item</p>
+            <div className="mt-4 grid grid-cols-[88px_minmax(0,1fr)] gap-4">
+              <div>
+                {libModalEditImage ? (
+                  <div className="relative">
+                    <img src={libModalEditImage} alt="preview" className="h-[88px] w-full rounded-2xl object-cover" />
+                    <button type="button" onClick={() => setLibModalImagePickerOpen(true)}
+                      className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/30 text-xs font-bold text-white opacity-0 hover:opacity-100 transition">Trocar</button>
+                  </div>
+                ) : (
+                  <button type="button" onClick={() => setLibModalImagePickerOpen(true)}
+                    className="flex h-[88px] w-full flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-ink-200 bg-ink-50 text-xs font-semibold text-ink-400 hover:border-coral-400 hover:text-coral-600">
+                    <Plus className="h-5 w-5" />
+                    Foto
+                  </button>
+                )}
+              </div>
+              <div className="flex flex-col gap-2">
+                <input type="text" value={libModalEditName} onChange={(e) => setLibModalEditName(e.target.value)} placeholder="Nome do item *"
+                  className="h-10 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm outline-none focus:border-coral-400" />
+                <input type="text" value={libModalEditDescription} onChange={(e) => setLibModalEditDescription(e.target.value)} placeholder="Descricao (opcional)"
+                  className="h-10 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm outline-none focus:border-coral-400" />
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-ink-400">R$</span>
+                  <input type="text" inputMode="numeric" value={libModalEditPrice} onChange={(e) => setLibModalEditPrice(formatCurrencyInput(e.target.value))} placeholder="0,00"
+                    className="h-10 w-full rounded-2xl border border-ink-100 bg-white pl-10 pr-4 text-sm outline-none focus:border-coral-400" />
+                </div>
+              </div>
+            </div>
+            <div className="mt-auto flex justify-end gap-3 pt-6">
+              <button type="button" onClick={() => setLibModalNewForm(false)}
+                className="inline-flex h-11 items-center justify-center rounded-2xl border border-ink-100 px-5 text-sm font-semibold text-ink-700 hover:bg-ink-50">Cancelar</button>
+              <button type="button" onClick={() => void handleLibModalSave()} disabled={libModalSaving}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white hover:bg-coral-600 disabled:opacity-60">
+                {libModalSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Salvar
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-6 flex min-h-0 flex-1 flex-col gap-3">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
+              <input type="text" value={libModalSearch} onChange={(e) => setLibModalSearch(e.target.value)} placeholder="Buscar na biblioteca..."
+                className="h-12 w-full rounded-2xl border border-ink-100 bg-white pl-11 pr-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400" />
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto space-y-2 pr-1">
+              {libItems.filter((i) => `${i.name} ${i.description ?? ''}`.toLowerCase().includes(libModalSearch.toLowerCase())).length > 0 ? (
+                libItems
+                  .filter((i) => `${i.name} ${i.description ?? ''}`.toLowerCase().includes(libModalSearch.toLowerCase()))
+                  .map((item) => (
+                    <div key={item.id} className="flex items-center gap-3 rounded-2xl border border-ink-100 bg-white p-3">
+                      {item.imageUrl ? (
+                        <img src={item.imageUrl} alt={item.name} className="h-12 w-12 shrink-0 rounded-xl object-cover" />
+                      ) : (
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-ink-100 text-sm font-bold text-ink-500">
+                          {item.name.slice(0, 1).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold text-ink-900">{item.name}</p>
+                        <p className="text-xs text-ink-500">{item.price > 0 ? formatCurrency(item.price) : 'Gratis'}{item.description ? ` · ${item.description}` : ''}</p>
+                      </div>
+                      <button type="button"
+                        onClick={() => {
+                          setLibModalEditingId(item.id)
+                          setLibModalEditName(item.name)
+                          setLibModalEditDescription(item.description)
+                          setLibModalEditPrice(item.price > 0 ? item.price.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '')
+                          setLibModalEditImage(item.imageUrl ?? '')
+                          setLibModalNewForm(true)
+                        }}
+                        className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-ink-100 text-ink-500 hover:bg-ink-50">
+                        <PencilLine className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))
+              ) : (
+                <div className="rounded-2xl border border-dashed border-ink-200 bg-ink-50 px-5 py-10 text-center">
+                  <p className="text-sm font-semibold text-ink-700">{libModalSearch ? 'Nenhum resultado.' : 'Nenhum item na biblioteca ainda.'}</p>
+                  <p className="mt-1 text-sm text-ink-500">Clique em "+ Novo item" para comecar.</p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button type="button"
+                onClick={() => { setLibModalNewForm(true); setLibModalEditingId(null); setLibModalEditName(''); setLibModalEditDescription(''); setLibModalEditPrice(''); setLibModalEditImage('') }}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white hover:bg-coral-600">
+                <Plus className="h-4 w-4" /> Novo item
+              </button>
+            </div>
+          </div>
+        )}
+      </AnimatedModal>
 
       <AnimatedModal
         open={sortModalOpen}
