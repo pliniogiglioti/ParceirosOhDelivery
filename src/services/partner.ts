@@ -866,13 +866,20 @@ export async function saveProductComplements(
   }>
 ): Promise<void> {
   if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
+  if (groups.length === 0) return
 
   // Remove grupos antigos do produto (cascade apaga os itens)
-  await supabase
+  const { error: deleteError } = await supabase
     .from('product_complement_groups')
     .delete()
     .eq('product_id', productId)
     .eq('store_id', storeId)
+
+  if (deleteError) {
+    // Tabela ainda nao existe no banco (migration pendente) — ignora silenciosamente
+    console.warn('[saveProductComplements] tabela nao encontrada, migration pendente:', deleteError.message)
+    return
+  }
 
   for (let i = 0; i < groups.length; i++) {
     const group = groups[i]
