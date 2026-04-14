@@ -903,7 +903,7 @@ const normalizedSearch = search.trim().toLowerCase()
             description: item.description,
             price: item.price,
             imageUrl: item.imageUrl,
-            libraryItemId: item.source === 'biblioteca' ? item.sourceId ?? item.id : undefined,
+            libraryItemId: item.source === 'biblioteca' && item.sourceId && !item.sourceId.startsWith('lib-') ? item.sourceId : undefined,
             industrializedId: item.source === 'industrializado' ? item.sourceId : undefined,
           })),
         })))
