@@ -1439,6 +1439,7 @@ const normalizedSearch = search.trim().toLowerCase()
         open={prepImagePickerOpen}
         storeId={data.store.id}
         slot="logo"
+        overlayClassName="z-[200]"
         onSelect={(url) => { setPrepImage(url); setPrepImagePickerOpen(false) }}
         onClose={() => setPrepImagePickerOpen(false)}
       />

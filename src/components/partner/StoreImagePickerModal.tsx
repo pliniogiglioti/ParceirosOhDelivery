@@ -38,6 +38,7 @@ type Props = {
   slot: 'logo' | 'cover'
   onSelect: (publicUrl: string) => void
   onClose: () => void
+  overlayClassName?: string
 }
 
 const SLOT_LABEL: Record<Props['slot'], string> = {
@@ -45,7 +46,7 @@ const SLOT_LABEL: Record<Props['slot'], string> = {
   cover: 'capa da loja',
 }
 
-export function StoreImagePickerModal({ open, storeId, slot, onSelect, onClose }: Props) {
+export function StoreImagePickerModal({ open, storeId, slot, onSelect, onClose, overlayClassName }: Props) {
   const uploadInputRef = useRef<HTMLInputElement | null>(null)
   const [images, setImages] = useState<StoreImageItem[]>([])
   const [loading, setLoading] = useState(false)
@@ -98,6 +99,7 @@ export function StoreImagePickerModal({ open, storeId, slot, onSelect, onClose }
     <AnimatedModal
       open={open}
       onClose={onClose}
+      overlayClassName={overlayClassName}
       panelClassName="w-full max-w-2xl max-h-[90vh] flex flex-col rounded-3xl bg-white shadow-xl overflow-hidden"
     >
       {/* Header */}
