@@ -925,7 +925,7 @@ const normalizedSearch = search.trim().toLowerCase()
       id: `grp-${Date.now()}`,
       name,
       required: addingGroupRequired || Number(addingGroupMin) >= 1,
-      minQty: Number(addingGroupMin) || 1,
+      minQty: Number(addingGroupMin),
       maxQty: Number(addingGroupMax) || 1,
       items: [],
     }
@@ -1079,7 +1079,7 @@ const normalizedSearch = search.trim().toLowerCase()
         ...g,
         name: editingGroupName.trim(),
         required: editingGroupRequired || Number(editingGroupMin) >= 1,
-        minQty: Number(editingGroupMin) || 0,
+        minQty: Number(editingGroupMin),
         maxQty: Number(editingGroupMax) || 1,
       } : g)
     )
