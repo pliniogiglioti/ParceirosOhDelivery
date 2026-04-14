@@ -122,6 +122,7 @@ interface ComplementItem {
   price: number
   source: ComplementSource
   imageUrl?: string
+  sourceId?: string // ID original do item na fonte (biblioteca ou industrializado)
 }
 
 interface ComplementGroup {
@@ -852,8 +853,8 @@ const normalizedSearch = search.trim().toLowerCase()
             description: item.description,
             price: item.price,
             imageUrl: item.imageUrl,
-            libraryItemId: item.source === 'biblioteca' ? item.id : undefined,
-            industrializedId: item.source === 'industrializado' ? item.id.replace(/^ind-[^-]+-\d+$/, '').split('-').slice(1, -1).join('-') : undefined,
+            libraryItemId: item.source === 'biblioteca' ? item.sourceId ?? item.id : undefined,
+            industrializedId: item.source === 'industrializado' ? item.sourceId : undefined,
           })),
         })))
       }
@@ -913,6 +914,7 @@ const normalizedSearch = search.trim().toLowerCase()
       price: parseCurrencyInput(newIndItemPrice),
       source: 'industrializado',
       imageUrl: ind.image,
+      sourceId: String(ind.id),
     }
     setPrepComplementGroups((groups) =>
       groups.map((g) => g.id === groupId ? { ...g, items: [...g.items, item] } : g)
