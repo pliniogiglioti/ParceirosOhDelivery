@@ -836,6 +836,7 @@ export interface ComplementLibraryItem {
   name: string
   description: string
   price: number
+  imageUrl?: string
 }
 
 export interface SavedComplementGroup {
@@ -1000,6 +1001,7 @@ export async function fetchComplementLibrary(storeId: string): Promise<Complemen
     name: String(row.name),
     description: String(row.description ?? ''),
     price: Number(row.price ?? 0),
+    imageUrl: row.image_url ? String(row.image_url) : undefined,
   }))
 }
 
