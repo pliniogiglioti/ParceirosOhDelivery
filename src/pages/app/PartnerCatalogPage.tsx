@@ -262,6 +262,8 @@ export function PartnerCatalogPage({
   const [selectedProductCreationKind, setSelectedProductCreationKind] = useState<ProductCreationKind | null>(null)
   const [standardItemStepTab, setStandardItemStepTab] = useState<StandardItemStepTab>('detalhes')
   const [industrializedStepTab, setIndustrializedStepTab] = useState<IndustrializedStepTab>('banco')
+  const [industrializedMaxStepIndex, setIndustrializedMaxStepIndex] = useState(0)
+  const [prepMaxStepIndex, setPrepMaxStepIndex] = useState(0)
   const [industrializedSearch, setIndustrializedSearch] = useState('')
   const [imageBankSearch, setImageBankSearch] = useState('')
   const [selectedIndustrializedItemId, setSelectedIndustrializedItemId] = useState<string | null>(null)
@@ -502,6 +504,7 @@ const [showMaxFeaturedModal, setShowMaxFeaturedModal] = useState(false)
       setAddItemCategoryId(product.categoryId)
       setSelectedProductCreationKind('preparado')
       setStandardItemStepTab('detalhes')
+      setPrepMaxStepIndex(4) // todas as abas liberadas na edição
       setPrepName(product.name)
       setPrepDescription(product.description)
       setPrepImage(product.imageUrl ?? '')
@@ -683,6 +686,7 @@ const normalizedSearch = search.trim().toLowerCase()
 
     if (kind === 'industrializado') {
       setIndustrializedStepTab('banco')
+      setIndustrializedMaxStepIndex(0)
       setIndustrializedSearch('')
       setImageBankSearch('')
       setSelectedIndustrializedItemId(null)
@@ -704,6 +708,7 @@ const normalizedSearch = search.trim().toLowerCase()
 
     // preparado
     setStandardItemStepTab('detalhes')
+    setPrepMaxStepIndex(0)
     setPrepName('')
     setPrepDescription('')
     setPrepImage('')
@@ -729,12 +734,13 @@ const normalizedSearch = search.trim().toLowerCase()
     prepStockQty.trim().length > 0 && Number.isFinite(prepStockQtyValue) && prepStockQtyValue >= 0
 
   const prepStepTabs = standardItemStepTabs
-  const prepCurrentStepIndex = prepStepTabs.findIndex((t) => t.id === standardItemStepTab)
+  const prepCurrentStepIndex = prepMaxStepIndex
 
   function handleContinuePrepFlow() {
     if (standardItemStepTab === 'detalhes') {
       if (!prepName.trim()) { toast.error('Informe o nome do produto.'); return }
       setStandardItemStepTab('preco')
+      setPrepMaxStepIndex((m) => Math.max(m, 1))
       return
     }
     if (standardItemStepTab === 'preco') {
@@ -744,14 +750,17 @@ const normalizedSearch = search.trim().toLowerCase()
       }
       if (prepManageStock && !prepHasValidStockQty) { toast.error('Informe a quantidade em estoque.'); return }
       setStandardItemStepTab('complementos')
+      setPrepMaxStepIndex((m) => Math.max(m, 2))
       return
     }
     if (standardItemStepTab === 'complementos') {
       setStandardItemStepTab('classificacao')
+      setPrepMaxStepIndex((m) => Math.max(m, 3))
       return
     }
     if (standardItemStepTab === 'classificacao') {
       setStandardItemStepTab('analisar')
+      setPrepMaxStepIndex((m) => Math.max(m, 4))
       return
     }
     void handleSavePrepProduct()
@@ -1038,8 +1047,8 @@ const normalizedSearch = search.trim().toLowerCase()
         toast.error('Selecione um produto do banco para continuar.')
         return
       }
-
       setIndustrializedStepTab('preco')
+      setIndustrializedMaxStepIndex((m) => Math.max(m, 1))
       return
     }
 
@@ -1048,23 +1057,22 @@ const normalizedSearch = search.trim().toLowerCase()
         toast.error('Preencha o preco principal do cadastro.')
         return
       }
-
       if (industrializedPromotionPrice.trim() && industrializedPromotionPriceValue >= industrializedPriceValue) {
         toast.error('O preco promocional deve ser menor que o preco normal.')
         return
       }
-
       if (industrializedManageStock && !industrializedHasValidStockQty) {
         toast.error('Informe a quantidade em estoque para continuar.')
         return
       }
-
       setIndustrializedStepTab('classificacao')
+      setIndustrializedMaxStepIndex((m) => Math.max(m, 2))
       return
     }
 
     if (industrializedStepTab === 'classificacao') {
       setIndustrializedStepTab('revisao')
+      setIndustrializedMaxStepIndex((m) => Math.max(m, 3))
       return
     }
 
@@ -1081,7 +1089,7 @@ const normalizedSearch = search.trim().toLowerCase()
             (!industrializedPromotionPrice.trim() || industrializedPromotionPriceValue < industrializedPriceValue) &&
             (!industrializedManageStock || industrializedHasValidStockQty)
           : true
-  const industrializedCurrentStepIndex = industrializedStepTabs.findIndex((tab) => tab.id === industrializedStepTab)
+  const industrializedCurrentStepIndex = industrializedMaxStepIndex
 
   const catalogCard = (
     <div className={embedded ? 'rounded-2xl bg-white shadow-sm overflow-hidden' : 'panel-card overflow-hidden'}>
@@ -1738,29 +1746,28 @@ const normalizedSearch = search.trim().toLowerCase()
               <>
                 <div className="rounded-2xl border border-ink-100 bg-white px-4 py-3 sm:px-5">
                   <div className="hide-scrollbar flex gap-2 overflow-x-auto">
-                    {industrializedStepTabs.map((tab) => (
-                      <button
-                        key={tab.id}
-                        type="button"
-                        onClick={() => {
-                          const tabIndex = industrializedStepTabs.findIndex((item) => item.id === tab.id)
-                          if (tabIndex <= industrializedCurrentStepIndex) {
-                            setIndustrializedStepTab(tab.id)
-                          }
-                        }}
-                        disabled={industrializedStepTabs.findIndex((item) => item.id === tab.id) > industrializedCurrentStepIndex}
-                        className={cn(
-                          'inline-flex shrink-0 items-center rounded-2xl border px-4 py-3 text-sm font-semibold transition',
-                          industrializedStepTab === tab.id
-                            ? 'border-coral-200 bg-coral-50 text-coral-700'
-                            : industrializedStepTabs.findIndex((item) => item.id === tab.id) < industrializedCurrentStepIndex
-                              ? 'border-transparent bg-transparent text-ink-500 hover:border-ink-100 hover:bg-ink-50 hover:text-ink-900'
-                              : 'border-transparent bg-transparent text-ink-400 opacity-60'
-                        )}
-                      >
-                        {tab.label}
-                      </button>
-                    ))}
+                    {industrializedStepTabs.map((tab) => {
+                      const tabIndex = industrializedStepTabs.findIndex((item) => item.id === tab.id)
+                      const isVisited = tabIndex <= industrializedCurrentStepIndex
+                      return (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => { if (isVisited) setIndustrializedStepTab(tab.id) }}
+                          disabled={!isVisited}
+                          className={cn(
+                            'inline-flex shrink-0 items-center rounded-2xl border px-4 py-3 text-sm font-semibold transition',
+                            industrializedStepTab === tab.id
+                              ? 'border-coral-200 bg-coral-50 text-coral-700'
+                              : isVisited
+                                ? 'border-transparent bg-transparent text-ink-500 hover:border-ink-100 hover:bg-ink-50 hover:text-ink-900'
+                                : 'border-transparent bg-transparent text-ink-400 opacity-60'
+                          )}
+                        >
+                          {tab.label}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
 
