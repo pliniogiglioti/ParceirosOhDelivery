@@ -28,7 +28,7 @@ import { AnimatedModal } from '@/components/partner/AnimatedModal'
 import { SectionFrame } from '@/components/partner/PartnerUi'
 import { StoreImagePickerModal } from '@/components/partner/StoreImagePickerModal'
 import type { PartnerCategory } from '@/types'
-import { createProduct, createProductCategory, fetchIndustrializados, updateProduct, type IndustrializedItem } from '@/services/partner'
+import { createProduct, createProductCategory, fetchIndustrializados, updateProduct, saveProductComplements, type IndustrializedItem } from '@/services/partner'
 import type { PartnerProduct } from '@/types'
 
 function ThemeSwitch({
@@ -747,6 +747,26 @@ const normalizedSearch = search.trim().toLowerCase()
         active: prepActive,
         featured: prepFeatured,
       })
+
+      // Salva grupos de complementos se houver
+      if (prepComplementGroups.length > 0) {
+        await saveProductComplements(data.store.id, saved.id, prepComplementGroups.map((g) => ({
+          name: g.name,
+          required: g.required,
+          minQty: g.minQty,
+          maxQty: g.maxQty,
+          items: g.items.map((item) => ({
+            source: item.source,
+            name: item.name,
+            description: item.description,
+            price: item.price,
+            imageUrl: item.imageUrl,
+            libraryItemId: item.source === 'biblioteca' ? item.id : undefined,
+            industrializedId: item.source === 'industrializado' ? item.id.replace(/^ind-[^-]+-\d+$/, '').split('-').slice(1, -1).join('-') : undefined,
+          })),
+        })))
+      }
+
       draftAddProduct(data.store.id, saved)
       setCatalogProducts((current) => [...current, saved])
       setProductKindModalOpen(false)

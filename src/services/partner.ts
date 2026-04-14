@@ -825,6 +825,140 @@ export async function fetchOrderStatusEvents(orderId: string): Promise<OrderStat
   }))
 }
 
+// ── Complement Groups & Items ─────────────────────────────────────────────────
+
+export interface ComplementLibraryItem {
+  id: string
+  name: string
+  description: string
+  price: number
+}
+
+export interface SavedComplementGroup {
+  id: string
+  name: string
+  required: boolean
+  minQty: number
+  maxQty: number
+}
+
+export async function saveProductComplements(
+  storeId: string,
+  productId: string,
+  groups: Array<{
+    name: string
+    required: boolean
+    minQty: number
+    maxQty: number
+    items: Array<{
+      source: 'biblioteca' | 'industrializado'
+      name: string
+      description: string
+      price: number
+      imageUrl?: string
+      libraryItemId?: string
+      industrializedId?: string
+    }>
+  }>
+): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
+
+  // Remove grupos antigos do produto (cascade apaga os itens)
+  await supabase
+    .from('product_complement_groups')
+    .delete()
+    .eq('product_id', productId)
+    .eq('store_id', storeId)
+
+  for (let i = 0; i < groups.length; i++) {
+    const group = groups[i]
+
+    const { data: groupRow, error: groupError } = await supabase
+      .from('product_complement_groups')
+      .insert({
+        product_id: productId,
+        store_id: storeId,
+        name: group.name,
+        required: group.required,
+        min_qty: group.minQty,
+        max_qty: group.maxQty,
+        sort_order: i,
+      })
+      .select('id')
+      .single()
+
+    if (groupError) throw groupError
+
+    const groupId = String(groupRow.id)
+
+    for (let j = 0; j < group.items.length; j++) {
+      const item = group.items[j]
+      const { error: itemError } = await supabase
+        .from('product_complement_items')
+        .insert({
+          group_id: groupId,
+          store_id: storeId,
+          source: item.source,
+          library_item_id: item.libraryItemId ?? null,
+          industrialized_id: item.industrializedId ?? null,
+          name: item.name,
+          description: item.description || null,
+          price: item.price,
+          image_url: item.imageUrl ?? null,
+          sort_order: j,
+        })
+      if (itemError) throw itemError
+    }
+  }
+}
+
+export async function fetchComplementLibrary(storeId: string): Promise<ComplementLibraryItem[]> {
+  if (!isSupabaseConfigured || !supabase) return []
+
+  const { data, error } = await supabase
+    .from('complement_library')
+    .select('id, name, description, price')
+    .eq('store_id', storeId)
+    .eq('active', true)
+    .order('name')
+
+  if (error) throw error
+
+  return (data ?? []).map((row) => ({
+    id: String(row.id),
+    name: String(row.name),
+    description: String(row.description ?? ''),
+    price: Number(row.price ?? 0),
+  }))
+}
+
+export async function createComplementLibraryItem(
+  storeId: string,
+  input: { name: string; description?: string; price: number }
+): Promise<ComplementLibraryItem> {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
+
+  const { data, error } = await supabase
+    .from('complement_library')
+    .insert({
+      store_id: storeId,
+      name: input.name,
+      description: input.description ?? null,
+      price: input.price,
+    })
+    .select('id, name, description, price')
+    .single()
+
+  if (error) throw error
+
+  return {
+    id: String(data.id),
+    name: String(data.name),
+    description: String(data.description ?? ''),
+    price: Number(data.price ?? 0),
+  }
+}
+
 export async function loadPartnerDashboard(storeId: string): Promise<{
   data: PartnerDashboardData
   source: 'supabase'
