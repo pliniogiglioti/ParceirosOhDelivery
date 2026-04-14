@@ -933,6 +933,7 @@ const normalizedSearch = search.trim().toLowerCase()
         name: item.name,
         description: item.description,
         price: item.price,
+        imageUrl: item.imageUrl,
       }).then((saved) => {
         setLibItems((prev) => [saved, ...prev])
         // Atualiza o sourceId do item recém adicionado

@@ -1005,7 +1005,7 @@ export async function fetchComplementLibrary(storeId: string): Promise<Complemen
 
 export async function createComplementLibraryItem(
   storeId: string,
-  input: { name: string; description?: string; price: number }
+  input: { name: string; description?: string; price: number; imageUrl?: string }
 ): Promise<ComplementLibraryItem> {
   if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
 
@@ -1016,6 +1016,7 @@ export async function createComplementLibraryItem(
       name: input.name,
       description: input.description ?? null,
       price: input.price,
+      image_url: input.imageUrl ?? null,
     })
     .select('id, name, description, price')
     .single()
