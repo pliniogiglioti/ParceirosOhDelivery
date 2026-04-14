@@ -1,4 +1,4 @@
-import {
+﻿import {
   ArrowUpDown,
   ChevronDown,
   ChefHat,
@@ -103,7 +103,7 @@ function parseCurrencyInput(value: string) {
 
 type CategoryTemplate = 'padrao' | 'pizza'
 type ProductCreationKind = 'industrializado' | 'preparado'
-type StandardItemStepTab = 'dados' | 'detalhes' | 'revisao'
+type StandardItemStepTab = 'detalhes' | 'preco' | 'complementos' | 'classificacao' | 'analisar'
 type IndustrializedStepTab = 'banco' | 'preco' | 'classificacao' | 'revisao'
 type IndustrializedCatalogItem = IndustrializedItem
 type ImageBankItem = {
@@ -111,6 +111,39 @@ type ImageBankItem = {
   label: string
   image: string
 }
+
+type ComplementSource = 'biblioteca' | 'industrializado'
+
+interface ComplementItem {
+  id: string
+  name: string
+  description: string
+  price: number
+  source: ComplementSource
+  imageUrl?: string
+}
+
+interface ComplementGroup {
+  id: string
+  name: string
+  required: boolean
+  minQty: number
+  maxQty: number
+  items: ComplementItem[]
+}
+
+type DietaryTag = 'organico' | 'vegano' | 'sem_acucar' | 'zero_lactose' | 'vegetariano' | 'gelado'
+
+const dietaryTags: Array<{ id: DietaryTag; label: string; description: string; emoji: string }> = [
+  { id: 'organico', label: 'Organico', description: 'Produzido sem agrotoxicos ou fertilizantes quimicos.', emoji: '🌿' },
+  { id: 'vegano', label: 'Vegano', description: 'Nenhum ingrediente de origem animal.', emoji: '🌱' },
+  { id: 'sem_acucar', label: 'Sem acucar', description: 'Sem adicao de acucares. Perfeito para diabeticos.', emoji: '🚫' },
+  { id: 'zero_lactose', label: 'Zero lactose', description: 'Livre de lactose. Indicado para intolerantes ou alergicos a lactose.', emoji: '🥛' },
+  { id: 'vegetariano', label: 'Vegetariano', description: 'Nao contem carne, mas pode conter derivados de leite e ovos.', emoji: '🥗' },
+  { id: 'gelado', label: 'Gelado', description: 'Do freezer direto para seu cliente.', emoji: '❄️' },
+]
+
+type ServesOption = 'nao_aplica' | '1' | '2' | '3' | '4'
 
 const categoryTemplates: Array<{
   id: CategoryTemplate
@@ -156,9 +189,11 @@ const productCreationKinds: Array<{
 ]
 
 const standardItemStepTabs: Array<{ id: StandardItemStepTab; label: string }> = [
-  { id: 'dados', label: 'Dados do produto' },
   { id: 'detalhes', label: 'Detalhes' },
-  { id: 'revisao', label: 'Revisao' },
+  { id: 'preco', label: 'Preco e Estoque' },
+  { id: 'complementos', label: 'Complementos' },
+  { id: 'classificacao', label: 'Classificacao' },
+  { id: 'analisar', label: 'Analisar e Salvar' },
 ]
 
 const industrializedStepTabs: Array<{ id: IndustrializedStepTab; label: string }> = [
@@ -244,7 +279,7 @@ export function PartnerCatalogPage({
   const [savingIndustrialized, setSavingIndustrialized] = useState(false)
   const [industrializedCatalogItems, setIndustrializedCatalogItems] = useState<IndustrializedCatalogItem[]>([])
 
-  // Edit industrialized product modal
+  // Edit product modal (same flow as industrialized: preco → classificacao → revisao)
   const [editProductModalOpen, setEditProductModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<PartnerProduct | null>(null)
   const [editStepTab, setEditStepTab] = useState<'preco' | 'classificacao' | 'revisao'>('preco')
@@ -256,6 +291,34 @@ export function PartnerCatalogPage({
   const [editActive, setEditActive] = useState(true)
   const [editFeatured, setEditFeatured] = useState(false)
   const [savingEdit, setSavingEdit] = useState(false)
+
+  // Preparado product modal
+  const [prepName, setPrepName] = useState('')
+  const [prepDescription, setPrepDescription] = useState('')
+  const [prepImage, setPrepImage] = useState('')
+  const [prepPrice, setPrepPrice] = useState('')
+  const [prepPromotionPrice, setPrepPromotionPrice] = useState('')
+  const [prepManageStock, setPrepManageStock] = useState(false)
+  const [prepStockQty, setPrepStockQty] = useState('')
+  const [prepActive, setPrepActive] = useState(true)
+  const [prepFeatured, setPrepFeatured] = useState(false)
+  const [prepGelada, setPrepGelada] = useState(false)
+  const [prepComplementGroups, setPrepComplementGroups] = useState<ComplementGroup[]>([])
+  const [prepDietaryTags, setPrepDietaryTags] = useState<DietaryTag[]>([])
+  const [savingPrep, setSavingPrep] = useState(false)
+  // complement group creation
+  const [addingGroupName, setAddingGroupName] = useState('')
+  const [addingGroupRequired, setAddingGroupRequired] = useState(false)
+  const [addingGroupMin, setAddingGroupMin] = useState('1')
+  const [addingGroupMax, setAddingGroupMax] = useState('1')
+  const [showAddGroupForm, setShowAddGroupForm] = useState(false)
+  // complement item picker per group
+  const [complementPickerGroupId, setComplementPickerGroupId] = useState<string | null>(null)
+  const [complementPickerSource, setComplementPickerSource] = useState<ComplementSource>('biblioteca')
+  const [complementPickerSearch, setComplementPickerSearch] = useState('')
+  const [newLibItemName, setNewLibItemName] = useState('')
+  const [newLibItemDescription, setNewLibItemDescription] = useState('')
+  const [newLibItemPrice, setNewLibItemPrice] = useState('')
 
   useEffect(() => {
     fetchIndustrializados()
@@ -455,21 +518,15 @@ const [showMaxFeaturedModal, setShowMaxFeaturedModal] = useState(false)
   async function handleSaveEditProduct() {
     if (!editingProduct || !data) return
 
-    const priceValue = parseCurrencyInput(editPrice)
-    const promotionPriceValue = parseCurrencyInput(editPromotionPrice)
-    const stockQtyValue = Number(editStockQty)
-    const hasValidStockQty =
-      editStockQty.trim().length > 0 && Number.isFinite(stockQtyValue) && stockQtyValue >= 0
-
     if (!editPrice.trim()) {
       toast.error('Preencha o preco principal.')
       return
     }
-    if (editPromotionPrice.trim() && promotionPriceValue >= priceValue) {
+    if (editPromotionPrice.trim() && editPromotionPriceValue >= editPriceValue) {
       toast.error('O preco promocional deve ser menor que o preco normal.')
       return
     }
-    if (editManageStock && !hasValidStockQty) {
+    if (editManageStock && !editHasValidStockQty) {
       toast.error('Informe a quantidade em estoque.')
       return
     }
@@ -479,11 +536,11 @@ const [showMaxFeaturedModal, setShowMaxFeaturedModal] = useState(false)
       const updated = await updateProduct(editingProduct.id, data.store.id, {
         name: editingProduct.name,
         description: editingProduct.description,
-        price: priceValue,
-        compareAtPrice: editPromotionPrice.trim() ? promotionPriceValue : null,
+        price: editPriceValue,
+        compareAtPrice: editPromotionPrice.trim() ? editPromotionPriceValue : null,
         imageUrl: editingProduct.imageUrl,
         manageStock: editManageStock,
-        stockQuantity: editManageStock ? stockQtyValue : null,
+        stockQuantity: editManageStock ? editStockQtyValue : null,
         gelada: editGelada,
         active: editActive,
         featured: editFeatured,
@@ -578,7 +635,7 @@ const normalizedSearch = search.trim().toLowerCase()
 
     setAddItemCategoryId(category.id)
     setSelectedProductCreationKind(null)
-    setStandardItemStepTab('dados')
+    setStandardItemStepTab('detalhes')
     setAddItemTypeModalOpen(true)
     setMenuOpenCategoryId(null)
   }
@@ -608,23 +665,197 @@ const normalizedSearch = search.trim().toLowerCase()
       return
     }
 
-    setStandardItemStepsModalOpen(true)
+    // preparado
+    setStandardItemStepTab('detalhes')
+    setPrepName('')
+    setPrepDescription('')
+    setPrepImage('')
+    setPrepPrice('')
+    setPrepPromotionPrice('')
+    setPrepManageStock(false)
+    setPrepStockQty('')
+    setPrepActive(true)
+    setPrepFeatured(false)
+    setPrepGelada(false)
+    setPrepComplementGroups([])
+    setPrepDietaryTags([])
+    setShowAddGroupForm(false)
+    setComplementPickerGroupId(null)
+    setProductKindModalOpen(true)
   }
 
-  function handleContinueStandardItemFlow() {
-    if (standardItemStepTab === 'dados') {
-      setStandardItemStepTab('detalhes')
-      return
-    }
+  // ── Preparado helpers ──────────────────────────────────────────────────────
+  const prepPriceValue = parseCurrencyInput(prepPrice)
+  const prepPromotionPriceValue = parseCurrencyInput(prepPromotionPrice)
+  const prepStockQtyValue = Number(prepStockQty)
+  const prepHasValidStockQty =
+    prepStockQty.trim().length > 0 && Number.isFinite(prepStockQtyValue) && prepStockQtyValue >= 0
 
+  const prepStepTabs = standardItemStepTabs
+  const prepCurrentStepIndex = prepStepTabs.findIndex((t) => t.id === standardItemStepTab)
+
+  function handleContinuePrepFlow() {
     if (standardItemStepTab === 'detalhes') {
-      setStandardItemStepTab('revisao')
+      if (!prepName.trim()) { toast.error('Informe o nome do produto.'); return }
+      setStandardItemStepTab('preco')
       return
     }
-
-    setStandardItemStepsModalOpen(false)
-    toast.success(`Fluxo de item preparado iniciado para ${addItemCategory?.name ?? 'a categoria'}.`)
+    if (standardItemStepTab === 'preco') {
+      if (!prepPrice.trim()) { toast.error('Preencha o preco principal.'); return }
+      if (prepPromotionPrice.trim() && prepPromotionPriceValue >= prepPriceValue) {
+        toast.error('O preco promocional deve ser menor que o preco normal.'); return
+      }
+      if (prepManageStock && !prepHasValidStockQty) { toast.error('Informe a quantidade em estoque.'); return }
+      setStandardItemStepTab('complementos')
+      return
+    }
+    if (standardItemStepTab === 'complementos') {
+      setStandardItemStepTab('classificacao')
+      return
+    }
+    if (standardItemStepTab === 'classificacao') {
+      setStandardItemStepTab('analisar')
+      return
+    }
+    void handleSavePrepProduct()
   }
+
+  const canContinuePrepFlow =
+    standardItemStepTab === 'detalhes' ? Boolean(prepName.trim()) :
+    standardItemStepTab === 'preco' ?
+      Boolean(prepPrice.trim()) &&
+      (!prepPromotionPrice.trim() || prepPromotionPriceValue < prepPriceValue) &&
+      (!prepManageStock || prepHasValidStockQty) :
+    true
+
+  async function handleSavePrepProduct() {
+    if (!addItemCategoryId || !data) return
+    setSavingPrep(true)
+    try {
+      const saved = await createProduct(data.store.id, {
+        categoryId: addItemCategoryId,
+        name: prepName.trim(),
+        description: prepDescription.trim(),
+        price: prepPriceValue,
+        compareAtPrice: prepPromotionPrice.trim() ? prepPromotionPriceValue : null,
+        imageUrl: prepImage || undefined,
+        manageStock: prepManageStock,
+        stockQuantity: prepManageStock ? prepStockQtyValue : null,
+        gelada: prepGelada,
+        active: prepActive,
+        featured: prepFeatured,
+      })
+      draftAddProduct(data.store.id, saved)
+      setCatalogProducts((current) => [...current, saved])
+      setProductKindModalOpen(false)
+      toast.success(`${prepName.trim()} adicionado ao cardapio.`)
+    } catch {
+      toast.error('Nao foi possivel salvar o produto.')
+    } finally {
+      setSavingPrep(false)
+    }
+  }
+
+  function handleAddComplementGroup() {
+    const name = addingGroupName.trim()
+    if (!name) { toast.error('Informe o nome do grupo.'); return }
+    const group: ComplementGroup = {
+      id: `grp-${Date.now()}`,
+      name,
+      required: addingGroupRequired,
+      minQty: Number(addingGroupMin) || 1,
+      maxQty: Number(addingGroupMax) || 1,
+      items: [],
+    }
+    setPrepComplementGroups((c) => [...c, group])
+    setAddingGroupName('')
+    setAddingGroupRequired(false)
+    setAddingGroupMin('1')
+    setAddingGroupMax('1')
+    setShowAddGroupForm(false)
+  }
+
+  function handleAddLibItemToGroup(groupId: string) {
+    const name = newLibItemName.trim()
+    if (!name) { toast.error('Informe o nome do item.'); return }
+    const item: ComplementItem = {
+      id: `lib-${Date.now()}`,
+      name,
+      description: newLibItemDescription.trim(),
+      price: parseCurrencyInput(newLibItemPrice),
+      source: 'biblioteca',
+    }
+    setPrepComplementGroups((groups) =>
+      groups.map((g) => g.id === groupId ? { ...g, items: [...g.items, item] } : g)
+    )
+    setNewLibItemName('')
+    setNewLibItemDescription('')
+    setNewLibItemPrice('')
+    setComplementPickerGroupId(null)
+  }
+
+  function handleAddIndustrializedToGroup(groupId: string, ind: IndustrializedCatalogItem) {
+    const item: ComplementItem = {
+      id: `ind-${ind.id}-${Date.now()}`,
+      name: ind.name,
+      description: ind.description,
+      price: 0,
+      source: 'industrializado',
+      imageUrl: ind.image,
+    }
+    setPrepComplementGroups((groups) =>
+      groups.map((g) => g.id === groupId ? { ...g, items: [...g.items, item] } : g)
+    )
+    setComplementPickerGroupId(null)
+  }
+
+  function removeComplementItem(groupId: string, itemId: string) {
+    setPrepComplementGroups((groups) =>
+      groups.map((g) => g.id === groupId ? { ...g, items: g.items.filter((i) => i.id !== itemId) } : g)
+    )
+  }
+
+  function removeComplementGroup(groupId: string) {
+    setPrepComplementGroups((groups) => groups.filter((g) => g.id !== groupId))
+  }
+
+  // ── Edit helpers ────────────────────────────────────────────────────────────
+  const editPriceValue = parseCurrencyInput(editPrice)
+  const editPromotionPriceValue = parseCurrencyInput(editPromotionPrice)
+  const editStockQtyValue = Number(editStockQty)
+  const editHasValidStockQty =
+    editStockQty.trim().length > 0 && Number.isFinite(editStockQtyValue) && editStockQtyValue >= 0
+
+  const editStepTabs: Array<{ id: 'preco' | 'classificacao' | 'revisao'; label: string }> = [
+    { id: 'preco', label: 'Preco' },
+    { id: 'classificacao', label: 'Classificacao' },
+    { id: 'revisao', label: 'Revisao' },
+  ]
+  const editCurrentStepIndex = editStepTabs.findIndex((t) => t.id === editStepTab)
+
+  function handleContinueEditFlow() {
+    if (editStepTab === 'preco') {
+      if (!editPrice.trim()) { toast.error('Preencha o preco principal.'); return }
+      if (editPromotionPrice.trim() && editPromotionPriceValue >= editPriceValue) {
+        toast.error('O preco promocional deve ser menor que o preco normal.'); return
+      }
+      if (editManageStock && !editHasValidStockQty) { toast.error('Informe a quantidade em estoque.'); return }
+      setEditStepTab('classificacao')
+      return
+    }
+    if (editStepTab === 'classificacao') {
+      setEditStepTab('revisao')
+      return
+    }
+    void handleSaveEditProduct()
+  }
+
+  const canContinueEditFlow =
+    editStepTab === 'preco'
+      ? Boolean(editPrice.trim()) &&
+        (!editPromotionPrice.trim() || editPromotionPriceValue < editPriceValue) &&
+        (!editManageStock || editHasValidStockQty)
+      : true
 
   const addItemCategory =
     addItemCategoryId ? catalogCategories.find((category) => category.id === addItemCategoryId) ?? null : null
@@ -1387,108 +1618,6 @@ const normalizedSearch = search.trim().toLowerCase()
       </AnimatedModal>
 
       <AnimatedModal
-        open={Boolean(standardItemStepsModalOpen && addItemCategory)}
-        onClose={() => setStandardItemStepsModalOpen(false)}
-        panelClassName="panel-card w-full max-w-3xl p-6"
-        ariaLabelledby="standard-item-steps-title"
-      >
-        {addItemCategory ? (
-          <>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">Adicionar item Preparado</p>
-                <h3 id="standard-item-steps-title" className="mt-2 text-xl font-bold text-ink-900">
-                  Cadastro em etapas
-                </h3>
-                <p className="mt-2 text-sm leading-6 text-ink-500">
-                  Categoria {addItemCategory.name}. O fluxo segue o modelo Preparado com abas por etapa.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setStandardItemStepsModalOpen(false)}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50"
-                aria-label="Fechar etapas do item"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="mt-6 rounded-2xl border border-ink-100 bg-white px-4 py-3 sm:px-5">
-              <div className="hide-scrollbar flex gap-2 overflow-x-auto">
-                {standardItemStepTabs.map((tab) => (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setStandardItemStepTab(tab.id)}
-                    className={cn(
-                      'inline-flex shrink-0 items-center rounded-2xl border px-4 py-3 text-sm font-semibold transition',
-                      standardItemStepTab === tab.id
-                        ? 'border-coral-200 bg-coral-50 text-coral-700'
-                        : 'border-transparent bg-transparent text-ink-500 hover:border-ink-100 hover:bg-ink-50 hover:text-ink-900'
-                    )}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {standardItemStepTab === 'dados' ? (
-              <div className="mt-6">
-                <div className="rounded-xl border border-ink-100 bg-ink-50 px-5 py-5">
-                  <p className="text-sm font-semibold text-ink-800">Dados do produto preparado</p>
-                  <p className="mt-2 text-sm leading-6 text-ink-500">
-                    Aqui entram os campos principais do item, como nome, descricao e foto, dentro do fluxo em abas.
-                  </p>
-                </div>
-              </div>
-            ) : null}
-
-            {standardItemStepTab === 'detalhes' ? (
-              <div className="mt-6">
-                <div className="rounded-xl border border-ink-100 bg-ink-50 px-5 py-5">
-                  <p className="text-sm font-semibold text-ink-800">Detalhes do item</p>
-                  <p className="mt-2 text-sm leading-6 text-ink-500">
-                    Nesta etapa entram preco, disponibilidade, destaque e demais configuracoes do produto preparado.
-                  </p>
-                </div>
-              </div>
-            ) : null}
-
-            {standardItemStepTab === 'revisao' ? (
-              <div className="mt-6">
-                <div className="rounded-xl border border-ink-100 bg-ink-50 px-5 py-5">
-                  <p className="text-sm font-semibold text-ink-800">Revisao final</p>
-                  <p className="mt-2 text-sm leading-6 text-ink-500">
-                    Aqui fica a conferencia final antes de salvar o item preparado no cardapio.
-                  </p>
-                </div>
-              </div>
-            ) : null}
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setStandardItemStepsModalOpen(false)}
-                className="inline-flex h-11 items-center justify-center rounded-2xl border border-ink-100 px-5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleContinueStandardItemFlow}
-                className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
-              >
-                {standardItemStepTab === 'revisao' ? 'Concluir' : 'Continuar'}
-              </button>
-            </div>
-          </>
-        ) : null}
-      </AnimatedModal>
-
-      <AnimatedModal
         open={Boolean(productKindModalOpen && addItemCategory && selectedProductCreationKindMeta)}
         onClose={() => setProductKindModalOpen(false)}
         panelClassName="panel-card flex h-[min(88vh,860px)] w-full max-w-5xl flex-col p-6"
@@ -1940,24 +2069,353 @@ const normalizedSearch = search.trim().toLowerCase()
               </>
             ) : (
               <>
-                <div className="mt-6 rounded-xl border border-ink-100 bg-ink-50 px-5 py-5">
-                  <p className="text-sm font-semibold text-ink-800">Fluxo iniciado</p>
-                  <p className="mt-2 text-sm leading-6 text-ink-500">
-                    Aqui entra a proxima etapa do cadastro de item {selectedProductCreationKindMeta.label.toLowerCase()}.
-                  </p>
+                {/* PREPARADO FLOW */}
+                <div className="rounded-2xl border border-ink-100 bg-white px-4 py-3 sm:px-5">
+                  <div className="hide-scrollbar flex gap-2 overflow-x-auto">
+                    {prepStepTabs.map((tab) => {
+                      const tabIdx = prepStepTabs.findIndex((t) => t.id === tab.id)
+                      return (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => { if (tabIdx <= prepCurrentStepIndex) setStandardItemStepTab(tab.id) }}
+                          disabled={tabIdx > prepCurrentStepIndex}
+                          className={cn(
+                            'inline-flex shrink-0 items-center rounded-2xl border px-4 py-3 text-sm font-semibold transition',
+                            standardItemStepTab === tab.id
+                              ? 'border-coral-200 bg-coral-50 text-coral-700'
+                              : tabIdx < prepCurrentStepIndex
+                                ? 'border-transparent text-ink-500 hover:border-ink-100 hover:bg-ink-50 hover:text-ink-900'
+                                : 'border-transparent text-ink-400 opacity-60'
+                          )}
+                        >
+                          {tab.label}
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
 
-                <div className="mt-6 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setProductKindModalOpen(false)}
-                    className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
-                  >
-                    Fechar
+                <div className="mt-6 min-h-0 flex-1 overflow-y-auto pr-1">
+
+                  {standardItemStepTab === 'detalhes' ? (
+                    <div className="space-y-4">
+                      <label className="block">
+                        <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Nome do produto <span className="text-coral-500">*</span></span>
+                        <input type="text" value={prepName} onChange={(e) => setPrepName(e.target.value)} placeholder="Ex.: X-Burguer Especial"
+                          className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400" />
+                      </label>
+                      <label className="block">
+                        <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Descricao</span>
+                        <textarea value={prepDescription} onChange={(e) => setPrepDescription(e.target.value)} rows={3} placeholder="Descreva os ingredientes e diferenciais..."
+                          className="w-full rounded-2xl border border-ink-100 bg-white px-4 py-3 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400 resize-none" />
+                      </label>
+                      <label className="block">
+                        <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">URL da imagem</span>
+                        <input type="text" value={prepImage} onChange={(e) => setPrepImage(e.target.value)} placeholder="https://..."
+                          className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400" />
+                        {prepImage ? <img src={prepImage} alt="preview" className="mt-3 h-32 w-full rounded-2xl object-cover" /> : null}
+                      </label>
+                    </div>
+                  ) : null}
+
+                  {standardItemStepTab === 'preco' ? (
+                    <div className="space-y-4">
+                      <div className="rounded-xl border border-ink-100 bg-white p-4">
+                        <p className="text-sm font-semibold text-ink-900">Preco do item</p>
+                        <p className="mt-1 text-sm text-ink-500">Defina o valor normal e, se quiser, um preco promocional.</p>
+                        <div className="mt-4 grid gap-4 md:grid-cols-2">
+                          <label className="block">
+                            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Preco de venda <span className="text-coral-500">*</span></span>
+                            <div className="relative">
+                              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-ink-500">R$</span>
+                              <input type="text" inputMode="numeric" value={prepPrice} onChange={(e) => setPrepPrice(formatCurrencyInput(e.target.value))} placeholder="0,00"
+                                className="h-12 w-full rounded-2xl border border-ink-100 bg-white pl-11 pr-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400" />
+                            </div>
+                          </label>
+                          <label className="block">
+                            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Preco promocional</span>
+                            <div className="relative">
+                              <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-ink-500">R$</span>
+                              <input type="text" inputMode="numeric" value={prepPromotionPrice} onChange={(e) => setPrepPromotionPrice(formatCurrencyInput(e.target.value))} placeholder="0,00"
+                                className="h-12 w-full rounded-2xl border border-ink-100 bg-white pl-11 pr-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400" />
+                            </div>
+                          </label>
+                        </div>
+                      </div>
+                      <div className="grid gap-3 md:grid-cols-2">
+                        <div className="flex items-center justify-between rounded-2xl border border-ink-100 bg-ink-50 px-4 py-3">
+                          <div><p className="text-sm font-semibold text-ink-900">Ativo</p><p className="mt-1 text-sm text-ink-500">Disponivel para venda.</p></div>
+                          <ThemeSwitch checked={prepActive} onChange={setPrepActive} ariaLabel="Ativo" />
+                        </div>
+                        <div className="flex items-center justify-between rounded-2xl border border-ink-100 bg-ink-50 px-4 py-3">
+                          <div><p className="text-sm font-semibold text-ink-900">Destaque</p><p className="mt-1 text-sm text-ink-500">Item em evidencia.</p></div>
+                          <ThemeSwitch checked={prepFeatured} onChange={(v) => { if (v && featuredCount >= 6) { setShowMaxFeaturedModal(true); return } setPrepFeatured(v) }} ariaLabel="Destaque" />
+                        </div>
+                        <div className="flex items-center justify-between rounded-2xl border border-ink-100 bg-ink-50 px-4 py-3">
+                          <div><p className="text-sm font-semibold text-ink-900">Controlar estoque?</p><p className="mt-1 text-sm text-ink-500">{prepManageStock ? 'Sim, com quantidade.' : 'Nao.'}</p></div>
+                          <ThemeSwitch checked={prepManageStock} onChange={setPrepManageStock} ariaLabel="Controlar estoque" />
+                        </div>
+                      </div>
+                      {prepManageStock ? (
+                        <label className="block">
+                          <span className="mb-2 block text-sm font-semibold text-ink-700">Quantidade em estoque</span>
+                          <input type="number" min={0} value={prepStockQty} onChange={(e) => setPrepStockQty(e.target.value)}
+                            className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400" placeholder="Ex: 12" />
+                        </label>
+                      ) : null}
+                    </div>
+                  ) : null}
+
+                  {standardItemStepTab === 'complementos' ? (
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-sm font-semibold text-ink-900">Grupos de complementos</p>
+                        <p className="mt-1 text-sm text-ink-500">Crie grupos e adicione itens da biblioteca ou do banco de industrializados.</p>
+                      </div>
+
+                      {prepComplementGroups.map((group) => (
+                        <div key={group.id} className="rounded-xl border border-ink-100 bg-white p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <p className="text-sm font-bold text-ink-900">{group.name}</p>
+                              <p className="mt-0.5 text-xs text-ink-500">{group.required ? 'Obrigatorio' : 'Opcional'} · min {group.minQty} / max {group.maxQty}</p>
+                            </div>
+                            <button type="button" onClick={() => removeComplementGroup(group.id)}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-ink-100 text-ink-500 hover:bg-ink-50">
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+
+                          {group.items.length > 0 ? (
+                            <div className="mt-3 space-y-2">
+                              {group.items.map((item) => (
+                                <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-ink-100 bg-ink-50 px-3 py-2">
+                                  <div className="flex min-w-0 items-center gap-2">
+                                    {item.imageUrl ? <img src={item.imageUrl} alt={item.name} className="h-8 w-8 rounded-lg object-cover shrink-0" /> : null}
+                                    <div className="min-w-0">
+                                      <p className="truncate text-sm font-semibold text-ink-900">{item.name}</p>
+                                      <p className="text-xs text-ink-500">{item.price > 0 ? `+ ${formatCurrency(item.price)}` : 'Gratis'} · {item.source === 'biblioteca' ? 'Biblioteca' : 'Industrializado'}</p>
+                                    </div>
+                                  </div>
+                                  <button type="button" onClick={() => removeComplementItem(group.id, item.id)}
+                                    className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-lg border border-ink-100 text-ink-400 hover:bg-ink-100">
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          ) : null}
+
+                          {complementPickerGroupId === group.id ? (
+                            <div className="mt-3 rounded-xl border border-coral-200 bg-coral-50 p-3">
+                              <div className="flex gap-2 mb-3">
+                                <button type="button" onClick={() => setComplementPickerSource('biblioteca')}
+                                  className={cn('rounded-xl border px-3 py-1.5 text-xs font-semibold transition', complementPickerSource === 'biblioteca' ? 'border-coral-300 bg-white text-coral-700' : 'border-transparent text-ink-500 hover:bg-white')}>
+                                  Biblioteca
+                                </button>
+                                <button type="button" onClick={() => setComplementPickerSource('industrializado')}
+                                  className={cn('rounded-xl border px-3 py-1.5 text-xs font-semibold transition', complementPickerSource === 'industrializado' ? 'border-coral-300 bg-white text-coral-700' : 'border-transparent text-ink-500 hover:bg-white')}>
+                                  Industrializado
+                                </button>
+                              </div>
+                              {complementPickerSource === 'biblioteca' ? (
+                                <div className="space-y-2">
+                                  <input type="text" value={newLibItemName} onChange={(e) => setNewLibItemName(e.target.value)} placeholder="Nome do item *"
+                                    className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
+                                  <input type="text" value={newLibItemDescription} onChange={(e) => setNewLibItemDescription(e.target.value)} placeholder="Descricao (opcional)"
+                                    className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
+                                  <div className="relative">
+                                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-ink-400">R$</span>
+                                    <input type="text" inputMode="numeric" value={newLibItemPrice} onChange={(e) => setNewLibItemPrice(formatCurrencyInput(e.target.value))} placeholder="0,00"
+                                      className="h-10 w-full rounded-xl border border-ink-100 bg-white pl-9 pr-3 text-sm outline-none focus:border-coral-400" />
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <button type="button" onClick={() => setComplementPickerGroupId(null)}
+                                      className="h-9 flex-1 rounded-xl border border-ink-100 text-sm font-semibold text-ink-600 hover:bg-white">Cancelar</button>
+                                    <button type="button" onClick={() => handleAddLibItemToGroup(group.id)}
+                                      className="h-9 flex-1 rounded-xl bg-coral-500 text-sm font-semibold text-white hover:bg-coral-600">Adicionar</button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="space-y-2">
+                                  <div className="relative">
+                                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
+                                    <input type="text" value={complementPickerSearch} onChange={(e) => setComplementPickerSearch(e.target.value)} placeholder="Buscar industrializado..."
+                                      className="h-10 w-full rounded-xl border border-ink-100 bg-white pl-9 pr-3 text-sm outline-none focus:border-coral-400" />
+                                  </div>
+                                  <div className="max-h-48 space-y-1 overflow-y-auto">
+                                    {industrializedCatalogItems
+                                      .filter((i) => `${i.name} ${i.brand}`.toLowerCase().includes(complementPickerSearch.toLowerCase()))
+                                      .map((ind) => (
+                                        <button key={ind.id} type="button" onClick={() => handleAddIndustrializedToGroup(group.id, ind)}
+                                          className="flex w-full items-center gap-2 rounded-xl border border-ink-100 bg-white p-2 text-left hover:bg-ink-50">
+                                          {ind.image ? <img src={ind.image} alt={ind.name} className="h-8 w-8 rounded-lg object-cover shrink-0" /> : null}
+                                          <div className="min-w-0">
+                                            <p className="truncate text-sm font-semibold text-ink-900">{ind.name}</p>
+                                            <p className="text-xs text-ink-500">{ind.brand}</p>
+                                          </div>
+                                        </button>
+                                      ))}
+                                  </div>
+                                  <button type="button" onClick={() => setComplementPickerGroupId(null)}
+                                    className="h-9 w-full rounded-xl border border-ink-100 text-sm font-semibold text-ink-600 hover:bg-white">Fechar</button>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <button type="button" onClick={() => { setComplementPickerGroupId(group.id); setComplementPickerSource('biblioteca'); setComplementPickerSearch(''); setNewLibItemName(''); setNewLibItemDescription(''); setNewLibItemPrice('') }}
+                              className="mt-3 inline-flex h-9 items-center gap-2 rounded-xl border border-dashed border-coral-300 px-3 text-sm font-semibold text-coral-600 hover:bg-coral-50">
+                              <Plus className="h-4 w-4" /> Adicionar item
+                            </button>
+                          )}
+                        </div>
+                      ))}
+
+                      {showAddGroupForm ? (
+                        <div className="rounded-xl border border-coral-200 bg-coral-50 p-4 space-y-3">
+                          <p className="text-sm font-bold text-ink-900">Novo grupo</p>
+                          <input type="text" value={addingGroupName} onChange={(e) => setAddingGroupName(e.target.value)} placeholder="Nome do grupo *"
+                            className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
+                          <div className="grid grid-cols-2 gap-3">
+                            <label className="block">
+                              <span className="mb-1 block text-xs font-semibold text-ink-500">Min</span>
+                              <input type="number" min={0} value={addingGroupMin} onChange={(e) => setAddingGroupMin(e.target.value)}
+                                className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
+                            </label>
+                            <label className="block">
+                              <span className="mb-1 block text-xs font-semibold text-ink-500">Max</span>
+                              <input type="number" min={1} value={addingGroupMax} onChange={(e) => setAddingGroupMax(e.target.value)}
+                                className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
+                            </label>
+                          </div>
+                          <div className="flex items-center justify-between rounded-xl border border-ink-100 bg-white px-3 py-2">
+                            <p className="text-sm font-semibold text-ink-900">Obrigatorio</p>
+                            <ThemeSwitch checked={addingGroupRequired} onChange={setAddingGroupRequired} ariaLabel="Obrigatorio" />
+                          </div>
+                          <div className="flex gap-2">
+                            <button type="button" onClick={() => setShowAddGroupForm(false)}
+                              className="h-9 flex-1 rounded-xl border border-ink-100 text-sm font-semibold text-ink-600 hover:bg-white">Cancelar</button>
+                            <button type="button" onClick={handleAddComplementGroup}
+                              className="h-9 flex-1 rounded-xl bg-coral-500 text-sm font-semibold text-white hover:bg-coral-600">Criar grupo</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button type="button" onClick={() => setShowAddGroupForm(true)}
+                          className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-coral-300 text-sm font-semibold text-coral-600 hover:bg-coral-50">
+                          <Plus className="h-4 w-4" /> Adicionar grupo de complementos
+                        </button>
+                      )}
+                    </div>
+                  ) : null}
+
+                  {standardItemStepTab === 'classificacao' ? (
+                    <div className="space-y-3">
+                      <p className="text-sm font-semibold text-ink-900">Restricao alimentar</p>
+                      <p className="text-sm text-ink-500">Indique se seu item e adequado a restricoes alimentares diversas.</p>
+                      {dietaryTags.map((tag) => {
+                        const isSelected = prepDietaryTags.includes(tag.id)
+                        return (
+                          <button key={tag.id} type="button"
+                            onClick={() => setPrepDietaryTags((prev) => isSelected ? prev.filter((t) => t !== tag.id) : [...prev, tag.id])}
+                            className={cn('flex w-full items-center gap-4 rounded-2xl border-2 px-5 py-4 text-left transition',
+                              isSelected ? 'border-coral-400 bg-coral-50' : 'border-ink-100 bg-white hover:border-ink-200')}>
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-ink-50 text-xl">{tag.emoji}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-ink-900">{tag.label}</p>
+                              <p className="mt-0.5 text-sm text-ink-500">{tag.description}</p>
+                            </div>
+                            <span className={cn('flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2',
+                              isSelected ? 'border-coral-500 bg-coral-500' : 'border-ink-300 bg-white')}>
+                              {isSelected && <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                            </span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  ) : null}
+
+                  {standardItemStepTab === 'analisar' ? (
+                    <div className="grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
+                      <div className="rounded-xl border border-ink-100 bg-white p-5">
+                        <p className="text-sm font-semibold text-ink-900">Revisao final</p>
+                        <div className="mt-4 grid gap-3">
+                          {([
+                            { label: 'Nome', value: prepName || 'Nao informado' },
+                            { label: 'Preco', value: prepPrice ? formatCurrency(prepPriceValue) : 'Nao informado' },
+                            { label: 'Preco promocional', value: prepPromotionPrice ? formatCurrency(prepPromotionPriceValue) : 'Sem promocao' },
+                            { label: 'Estoque', value: prepManageStock ? String(prepHasValidStockQty ? prepStockQtyValue : 0) + ' unidades' : 'Sem controle' },
+                            { label: 'Grupos de complementos', value: String(prepComplementGroups.length) + ' grupo(s)' },
+                            { label: 'Classificacoes', value: prepDietaryTags.length > 0 ? prepDietaryTags.map((t) => dietaryTags.find((d) => d.id === t)?.label ?? t).join(', ') : 'Nenhuma' },
+                          ] as Array<{label: string; value: string}>).map(({ label, value }) => (
+                            <div key={label} className="rounded-xl border border-ink-100 bg-ink-50 px-4 py-3">
+                              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">{label}</p>
+                              <p className="mt-1 text-sm font-bold text-ink-900">{value}</p>
+                            </div>
+                          ))}
+                          {prepDescription ? (
+                            <div className="rounded-xl border border-ink-100 bg-ink-50 px-4 py-3">
+                              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Descricao</p>
+                              <p className="mt-1 text-sm leading-6 text-ink-700">{prepDescription}</p>
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      <div className="rounded-[28px] border border-ink-100 bg-[#f6f7fb] p-4">
+                        <p className="text-sm font-semibold text-ink-900">Previa no front-end</p>
+                        <div className="mt-4 overflow-hidden rounded-[26px] border border-[#ececec] bg-white">
+                          <div className="relative bg-white">
+                            <img src={prepImage || 'https://images.unsplash.com/photo-1543253539-6b8d4c3b7a56?auto=format&fit=crop&w=900&q=80'} alt={prepName || 'Produto'} className="h-[220px] w-full object-cover" />
+                            <div className="absolute inset-x-0 top-0 flex items-start justify-between p-4">
+                              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#202020]">
+                                <ChevronDown className="h-4 w-4 rotate-90" />
+                              </span>
+                              {prepFeatured ? <span className="rounded-full bg-white px-2 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-coral-700">Destaque</span> : null}
+                            </div>
+                          </div>
+                          <div className="space-y-3 p-5">
+                            <p className="text-xs font-bold uppercase tracking-[0.18em] text-coral-600">{data.store.name}</p>
+                            <div>
+                              <h3 className="text-[24px] font-bold tracking-[-0.04em] text-[#202020]">{prepName || 'Nome do produto'}</h3>
+                              <p className="mt-2 text-sm leading-6 text-[#666]">{prepDescription || 'Descricao do produto.'}</p>
+                            </div>
+                            <div className="flex items-baseline gap-2">
+                              <span className="font-bold text-[#202020]">
+                                {prepPromotionPrice ? formatCurrency(prepPromotionPriceValue) : prepPrice ? formatCurrency(prepPriceValue) : 'R$ 0,00'}
+                              </span>
+                              {prepPromotionPrice && prepPrice ? <span className="font-bold text-[#9a9a9a] line-through">{formatCurrency(prepPriceValue)}</span> : null}
+                            </div>
+                            {prepDietaryTags.length > 0 ? (
+                              <div className="flex flex-wrap gap-2">
+                                {prepDietaryTags.map((t) => {
+                                  const tag = dietaryTags.find((d) => d.id === t)
+                                  return tag ? <span key={t} className="rounded-full bg-ink-100 px-2.5 py-1 text-xs font-semibold text-ink-700">{tag.emoji} {tag.label}</span> : null
+                                })}
+                              </div>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
+
+                </div>
+
+                <div className="sticky bottom-0 mt-6 flex justify-end gap-3 border-t border-ink-100 bg-white pt-4">
+                  <button type="button" onClick={() => setProductKindModalOpen(false)}
+                    className="inline-flex h-11 items-center justify-center rounded-2xl border border-ink-100 px-5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50">
+                    Cancelar
+                  </button>
+                  <button type="button" onClick={handleContinuePrepFlow} disabled={!canContinuePrepFlow || savingPrep}
+                    className={cn('inline-flex h-11 items-center justify-center gap-2 rounded-2xl px-5 text-sm font-semibold text-white transition',
+                      canContinuePrepFlow && !savingPrep ? 'bg-coral-500 hover:bg-coral-600' : 'bg-ink-300 text-white/80')}>
+                    {savingPrep ? <><Loader2 className="h-4 w-4 animate-spin" /> Salvando...</> : standardItemStepTab === 'analisar' ? 'Salvar cadastro' : 'Continuar'}
                   </button>
                 </div>
               </>
             )}
+
             </div>
           </>
         ) : null}
@@ -2002,7 +2460,7 @@ const normalizedSearch = search.trim().toLowerCase()
       <AnimatedModal
         open={editProductModalOpen && editingProduct !== null}
         onClose={() => setEditProductModalOpen(false)}
-        panelClassName="panel-card w-full max-w-2xl p-6"
+        panelClassName="panel-card flex h-[min(88vh,860px)] w-full max-w-5xl flex-col p-6"
         ariaLabelledby="edit-product-title"
       >
         {editingProduct ? (
@@ -2010,12 +2468,6 @@ const normalizedSearch = search.trim().toLowerCase()
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">Editar produto</p>
-                <h3 id="edit-product-title" className="mt-2 text-xl font-bold text-ink-900">
-                  {editingProduct.name}
-                </h3>
-                <p className="mt-2 text-sm leading-6 text-ink-500">
-                  Atualize preco, estoque e classificacao do produto.
-                </p>
               </div>
               <button
                 type="button"
@@ -2027,243 +2479,222 @@ const normalizedSearch = search.trim().toLowerCase()
               </button>
             </div>
 
-            <div className="mt-6 rounded-2xl border border-ink-100 bg-white px-4 py-3 sm:px-5">
-              <div className="hide-scrollbar flex gap-2 overflow-x-auto">
-                {(['preco', 'classificacao', 'revisao'] as const).map((tab) => {
-                  const labels = { preco: 'Preco', classificacao: 'Classificacao', revisao: 'Revisao' }
-                  return (
-                    <button
-                      key={tab}
-                      type="button"
-                      onClick={() => setEditStepTab(tab)}
-                      className={cn(
-                        'inline-flex shrink-0 items-center rounded-2xl border px-4 py-3 text-sm font-semibold transition',
-                        editStepTab === tab
-                          ? 'border-coral-200 bg-coral-50 text-coral-700'
-                          : 'border-transparent bg-transparent text-ink-500 hover:border-ink-100 hover:bg-ink-50 hover:text-ink-900'
-                      )}
-                    >
-                      {labels[tab]}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            {editStepTab === 'preco' ? (
-              <div className="mt-6 space-y-4">
-                <div className="flex items-center gap-4 rounded-xl border border-ink-100 bg-ink-50 p-4">
-                  {editingProduct.imageUrl ? (
-                    <img src={editingProduct.imageUrl} alt={editingProduct.name} className="h-16 w-16 shrink-0 rounded-xl object-cover" />
-                  ) : null}
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-ink-900">{editingProduct.name}</p>
-                    <p className="mt-1 text-sm text-ink-500 line-clamp-2">{editingProduct.description}</p>
-                  </div>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <label className="block">
-                    <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">
-                      Preco de venda <span className="text-coral-500">*</span>
-                    </span>
-                    <div className="relative">
-                      <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-ink-400">R$</span>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        value={editPrice}
-                        onChange={(e) => setEditPrice(formatCurrencyInput(e.target.value))}
-                        placeholder="0,00"
-                        className="h-12 w-full rounded-2xl border border-ink-100 bg-white pl-10 pr-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
-                      />
-                    </div>
-                  </label>
-
-                  <label className="block">
-                    <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">
-                      Preco promocional
-                    </span>
-                    <div className="relative">
-                      <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-ink-400">R$</span>
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        value={editPromotionPrice}
-                        onChange={(e) => setEditPromotionPrice(formatCurrencyInput(e.target.value))}
-                        placeholder="0,00"
-                        className="h-12 w-full rounded-2xl border border-ink-100 bg-white pl-10 pr-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
-                      />
-                    </div>
-                  </label>
-                </div>
-
-                <div className="rounded-xl border border-ink-100 bg-white p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-ink-900">Controlar estoque</p>
-                      <p className="mt-1 text-sm text-ink-500">Ative para definir a quantidade disponivel.</p>
-                    </div>
-                    <ThemeSwitch
-                      checked={editManageStock}
-                      onChange={setEditManageStock}
-                      ariaLabel="Controlar estoque"
-                    />
-                  </div>
-                  {editManageStock ? (
-                    <label className="mt-4 block">
-                      <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">
-                        Quantidade em estoque <span className="text-coral-500">*</span>
-                      </span>
-                      <input
-                        type="number"
-                        min="0"
-                        value={editStockQty}
-                        onChange={(e) => setEditStockQty(e.target.value)}
-                        placeholder="0"
-                        className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
-                      />
-                    </label>
-                  ) : null}
+            <div className="mt-6 flex min-h-0 flex-1 flex-col">
+              <div className="rounded-2xl border border-ink-100 bg-white px-4 py-3 sm:px-5">
+                <div className="hide-scrollbar flex gap-2 overflow-x-auto">
+                  {editStepTabs.map((tab) => {
+                    const tabIdx = editStepTabs.findIndex((t) => t.id === tab.id)
+                    return (
+                      <button
+                        key={tab.id}
+                        type="button"
+                        onClick={() => { if (tabIdx <= editCurrentStepIndex) setEditStepTab(tab.id) }}
+                        disabled={tabIdx > editCurrentStepIndex}
+                        className={cn(
+                          'inline-flex shrink-0 items-center rounded-2xl border px-4 py-3 text-sm font-semibold transition',
+                          editStepTab === tab.id
+                            ? 'border-coral-200 bg-coral-50 text-coral-700'
+                            : tabIdx < editCurrentStepIndex
+                              ? 'border-transparent text-ink-500 hover:border-ink-100 hover:bg-ink-50 hover:text-ink-900'
+                              : 'border-transparent text-ink-400 opacity-60'
+                        )}
+                      >
+                        {tab.label}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
-            ) : null}
 
-            {editStepTab === 'classificacao' ? (
-              <div className="mt-6 space-y-4">
-                <div className="rounded-xl border border-ink-100 bg-white p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-ink-900">Produto gelado</p>
-                      <p className="mt-1 text-sm text-ink-500">Indica que o produto precisa ser mantido refrigerado.</p>
+              <div className="mt-6 min-h-0 flex-1 overflow-y-auto pr-1">
+
+                {editStepTab === 'preco' ? (
+                  <div className="rounded-xl border border-ink-100 bg-white p-4">
+                    <p className="text-sm font-semibold text-ink-900">Preco do item</p>
+                    <p className="mt-2 text-sm leading-6 text-ink-500">
+                      Defina o valor normal e, se quiser, um preco promocional para aparecer riscado no produto.
+                    </p>
+
+                    <div className="mt-5 grid gap-4 md:grid-cols-2">
+                      <label className="block">
+                        <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Preco de venda</span>
+                        <div className="relative">
+                          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-ink-500">R$</span>
+                          <input type="text" inputMode="numeric" value={editPrice} onChange={(e) => setEditPrice(formatCurrencyInput(e.target.value))} placeholder="0,00"
+                            className="h-12 w-full rounded-2xl border border-ink-100 bg-white pl-11 pr-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400" />
+                        </div>
+                      </label>
+                      <label className="block">
+                        <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Preco promocional</span>
+                        <div className="relative">
+                          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-ink-500">R$</span>
+                          <input type="text" inputMode="numeric" value={editPromotionPrice} onChange={(e) => setEditPromotionPrice(formatCurrencyInput(e.target.value))} placeholder="0,00"
+                            className="h-12 w-full rounded-2xl border border-ink-100 bg-white pl-11 pr-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400" />
+                        </div>
+                      </label>
                     </div>
-                    <ThemeSwitch checked={editGelada} onChange={setEditGelada} ariaLabel="Produto gelado" />
-                  </div>
-                </div>
 
-                <div className="rounded-xl border border-ink-100 bg-white p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-ink-900">Produto em destaque</p>
-                      <p className="mt-1 text-sm text-ink-500">Aparece na secao de destaques do cardapio. Maximo 6.</p>
+                    <div className="mt-5 grid gap-3 md:grid-cols-2">
+                      <div className="flex items-center justify-between rounded-2xl border border-ink-100 bg-ink-50 px-4 py-3">
+                        <div><p className="text-sm font-semibold text-ink-900">Ativo</p><p className="mt-1 text-sm text-ink-500">Disponivel para venda no cardapio.</p></div>
+                        <ThemeSwitch checked={editActive} onChange={setEditActive} ariaLabel="Alternar ativo" />
+                      </div>
+                      <div className="flex items-center justify-between rounded-2xl border border-ink-100 bg-ink-50 px-4 py-3">
+                        <div><p className="text-sm font-semibold text-ink-900">Destaque</p><p className="mt-1 text-sm text-ink-500">Marcar como item em evidencia.</p></div>
+                        <ThemeSwitch checked={editFeatured} onChange={(v) => { if (v && !editFeatured && featuredCount >= 6) { setShowMaxFeaturedModal(true); return } setEditFeatured(v) }} ariaLabel="Alternar destaque" />
+                      </div>
+                      <div className="flex items-center justify-between rounded-2xl border border-ink-100 bg-ink-50 px-4 py-3">
+                        <div>
+                          <p className="text-sm font-semibold text-ink-900">Controlar estoque?</p>
+                          <p className="mt-1 text-sm text-ink-500">{editManageStock ? 'Sim. Vamos salvar a quantidade disponivel para venda.' : 'Nao. O produto sera cadastrado sem controle de estoque.'}</p>
+                        </div>
+                        <ThemeSwitch checked={editManageStock} onChange={setEditManageStock} ariaLabel="Alternar controle de estoque" />
+                      </div>
                     </div>
-                    <ThemeSwitch
-                      checked={editFeatured}
-                      onChange={(next) => {
-                        if (next && !editFeatured && featuredCount >= 6) {
-                          setShowMaxFeaturedModal(true)
-                          return
-                        }
-                        setEditFeatured(next)
-                      }}
-                      ariaLabel="Produto em destaque"
-                    />
-                  </div>
-                </div>
 
-                <div className="rounded-xl border border-ink-100 bg-white p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-ink-900">Produto ativo</p>
-                      <p className="mt-1 text-sm text-ink-500">Produto visivel no cardapio para os clientes.</p>
-                    </div>
-                    <ThemeSwitch checked={editActive} onChange={setEditActive} ariaLabel="Produto ativo" />
-                  </div>
-                </div>
-              </div>
-            ) : null}
-
-            {editStepTab === 'revisao' ? (
-              <div className="mt-6 space-y-3">
-                <div className="rounded-xl border border-ink-100 bg-ink-50 p-4">
-                  <div className="flex items-center gap-4">
-                    {editingProduct.imageUrl ? (
-                      <img src={editingProduct.imageUrl} alt={editingProduct.name} className="h-16 w-16 shrink-0 rounded-xl object-cover" />
+                    {editManageStock ? (
+                      <div className="mt-3">
+                        <label className="block">
+                          <span className="mb-2 block text-sm font-semibold text-ink-700">Quantidade em estoque</span>
+                          <input type="number" min={0} value={editStockQty} onChange={(e) => setEditStockQty(e.target.value)}
+                            className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400" placeholder="Ex: 12" />
+                        </label>
+                      </div>
                     ) : null}
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold text-ink-900">{editingProduct.name}</p>
-                      <p className="mt-1 text-sm text-ink-500 line-clamp-2">{editingProduct.description}</p>
-                    </div>
                   </div>
-                </div>
+                ) : null}
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl border border-ink-100 bg-white p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Preco</p>
-                    <p className="mt-1 text-base font-bold text-ink-900">
-                      {editPrice ? `R$ ${editPrice}` : '—'}
-                    </p>
+                {editStepTab === 'classificacao' ? (
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-sm font-semibold text-ink-900">Classificacao do produto</p>
+                      <p className="mt-1 text-sm text-ink-500">Informe as caracteristicas adicionais deste produto.</p>
+                    </div>
+                    <button type="button" onClick={() => setEditGelada((v) => !v)}
+                      className={`flex w-full items-center gap-4 rounded-2xl border-2 px-5 py-4 text-left transition ${editGelada ? 'border-coral-400 bg-coral-50' : 'border-ink-100 bg-ink-50 hover:border-ink-200'}`}>
+                      <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-coral-500">
+                        <Snowflake className="h-5 w-5" />
+                      </span>
+                      <div className="flex-1">
+                        <p className="text-sm font-semibold text-ink-900">Bebida Gelada</p>
+                        <p className="mt-0.5 text-sm text-ink-500">Produto servido gelado (refrigerante, cerveja, suco gelado etc.)</p>
+                      </div>
+                      <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${editGelada ? 'border-coral-500 bg-coral-500' : 'border-ink-300 bg-white'}`}>
+                        {editGelada && <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+                      </span>
+                    </button>
+                    {!editGelada && (
+                      <p className="rounded-2xl border border-ink-100 bg-white px-5 py-4 text-sm text-ink-400">
+                        Nenhuma classificacao especial selecionada. Produto sera cadastrado como item comum.
+                      </p>
+                    )}
                   </div>
-                  <div className="rounded-xl border border-ink-100 bg-white p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Preco promocional</p>
-                    <p className="mt-1 text-base font-bold text-ink-900">
-                      {editPromotionPrice ? `R$ ${editPromotionPrice}` : '—'}
-                    </p>
-                  </div>
-                  <div className="rounded-xl border border-ink-100 bg-white p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Estoque</p>
-                    <p className="mt-1 text-base font-bold text-ink-900">
-                      {editManageStock ? (editStockQty || '0') : 'Sem controle'}
-                    </p>
-                  </div>
-                  <div className="rounded-xl border border-ink-100 bg-white p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Status</p>
-                    <div className="mt-1 flex flex-wrap gap-2">
-                      {editActive ? (
-                        <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-700">Ativo</span>
-                      ) : (
-                        <span className="rounded-full bg-ink-200 px-2.5 py-1 text-xs font-semibold text-ink-600">Inativo</span>
-                      )}
-                      {editFeatured ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-coral-100 px-2.5 py-1 text-xs font-semibold text-coral-700">
-                          <Sparkles className="h-3 w-3" /> Destaque
-                        </span>
-                      ) : null}
-                      {editGelada ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-700">
-                          <Snowflake className="h-3 w-3" /> Gelado
-                        </span>
+                ) : null}
+
+                {editStepTab === 'revisao' ? (
+                  <div className="grid gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
+                    <div className="rounded-xl border border-ink-100 bg-white p-5">
+                      <p className="text-sm font-semibold text-ink-900">Revisao final do cadastro</p>
+                      <div className="mt-4 grid gap-3">
+                        <div className="rounded-xl border border-ink-100 bg-ink-50 px-4 py-3">
+                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Produto</p>
+                          <p className="mt-2 text-sm font-bold text-ink-900">{editingProduct.name}</p>
+                        </div>
+                        <div className="rounded-xl border border-ink-100 bg-ink-50 px-4 py-3">
+                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Preco</p>
+                          <p className="mt-2 text-sm font-bold text-ink-900">{editPrice ? formatCurrency(editPriceValue) : 'Nao informado'}</p>
+                        </div>
+                        <div className="rounded-xl border border-ink-100 bg-ink-50 px-4 py-3">
+                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Preco promocional</p>
+                          <p className="mt-2 text-sm font-bold text-ink-900">{editPromotionPrice ? formatCurrency(editPromotionPriceValue) : 'Sem promocao'}</p>
+                        </div>
+                        <div className="rounded-xl border border-ink-100 bg-ink-50 px-4 py-3">
+                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Estoque</p>
+                          <p className="mt-2 text-sm font-bold text-ink-900">{editManageStock ? `${editHasValidStockQty ? editStockQtyValue : 0} unidades` : 'Sem controle de estoque'}</p>
+                        </div>
+                        <div className="rounded-xl border border-ink-100 bg-ink-50 px-4 py-3">
+                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Classificacao</p>
+                          <p className="mt-2 text-sm font-bold text-ink-900">{editGelada ? 'Bebida gelada' : 'Item comum'}</p>
+                        </div>
+                      </div>
+                      {editingProduct.description ? (
+                        <div className="mt-3 rounded-xl border border-ink-100 bg-ink-50 px-4 py-3">
+                          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Descricao</p>
+                          <p className="mt-2 text-sm leading-6 text-ink-700">{editingProduct.description}</p>
+                        </div>
                       ) : null}
                     </div>
+
+                    <div className="rounded-[28px] border border-ink-100 bg-[#f6f7fb] p-4">
+                      <p className="text-sm font-semibold text-ink-900">Previa no front-end</p>
+                      <p className="mt-2 text-sm leading-6 text-ink-500">Simulacao de como o produto aparece no app.</p>
+                      <div className="mt-4 overflow-hidden rounded-[26px] border border-[#ececec] bg-white">
+                        <div className="relative bg-white">
+                          <img
+                            src={editingProduct.imageUrl || 'https://images.unsplash.com/photo-1543253539-6b8d4c3b7a56?auto=format&fit=crop&w=900&q=80'}
+                            alt={editingProduct.name}
+                            className="h-[260px] w-full object-cover"
+                          />
+                          <div className="absolute inset-x-0 top-0 flex items-start justify-between p-4">
+                            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#202020]">
+                              <ChevronDown className="h-4 w-4 rotate-90" />
+                            </span>
+                            {editFeatured ? <span className="rounded-full bg-white px-2 py-1 text-[9px] font-bold uppercase tracking-[0.14em] text-coral-700">Destaque</span> : null}
+                          </div>
+                          <div className="absolute inset-x-0 bottom-0 flex justify-end p-4">
+                            <div className="inline-flex max-w-[190px] items-center gap-2 rounded-[16px] bg-white px-2 py-1.5">
+                              <img src={data.store.logoImageUrl ?? data.store.coverImageUrl ?? 'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&w=300&q=80'} alt={data.store.name} className="h-9 w-9 rounded-[12px] object-cover" />
+                              <div className="min-w-0 text-left">
+                                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-coral-600">Loja</p>
+                                <p className="line-clamp-1 text-sm font-bold text-[#202020]">{data.store.name}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="space-y-3 p-5">
+                          <p className="text-xs font-bold uppercase tracking-[0.18em] text-coral-600">{data.store.name}</p>
+                          <div>
+                            <h3 id="edit-product-title" className="text-[28px] font-bold tracking-[-0.04em] text-[#202020]">{editingProduct.name}</h3>
+                            <p className="mt-2 text-sm leading-6 text-[#666]">{editingProduct.description || 'Sem descricao.'}</p>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-[#666]">
+                            <div className="flex items-baseline gap-2">
+                              <span className="font-bold text-[#202020]">
+                                {editPromotionPrice ? formatCurrency(editPromotionPriceValue) : editPrice ? formatCurrency(editPriceValue) : 'R$ 0,00'}
+                              </span>
+                              {editPromotionPrice && editPrice ? <span className="font-bold text-[#9a9a9a] line-through">{formatCurrency(editPriceValue)}</span> : null}
+                            </div>
+                            <span className="flex items-center gap-1"><Clock3 size={15} className="text-coral-500" /> 15-20 min</span>
+                          </div>
+                          {editGelada ? (
+                            <div className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-700">
+                              <Snowflake className="h-3 w-3" /> Gelado
+                            </div>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ) : null}
+
               </div>
-            ) : null}
 
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setEditProductModalOpen(false)}
-                className="inline-flex h-11 items-center justify-center rounded-2xl border border-ink-100 px-5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
-              >
-                Cancelar
-              </button>
-              {editStepTab !== 'revisao' ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (editStepTab === 'preco') setEditStepTab('classificacao')
-                    else setEditStepTab('revisao')
-                  }}
-                  className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
-                >
-                  Continuar
+              <div className="sticky bottom-0 mt-6 flex justify-end gap-3 border-t border-ink-100 bg-white pt-4">
+                <button type="button" onClick={() => setEditProductModalOpen(false)}
+                  className="inline-flex h-11 items-center justify-center rounded-2xl border border-ink-100 px-5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50">
+                  Cancelar
                 </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => void handleSaveEditProduct()}
-                  disabled={savingEdit}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600 disabled:opacity-60"
-                >
-                  {savingEdit ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                  Salvar alteracoes
+                <button type="button" onClick={handleContinueEditFlow} disabled={!canContinueEditFlow || savingEdit}
+                  className={cn('inline-flex h-11 items-center justify-center gap-2 rounded-2xl px-5 text-sm font-semibold text-white transition',
+                    canContinueEditFlow && !savingEdit ? 'bg-coral-500 hover:bg-coral-600' : 'bg-ink-300 text-white/80')}>
+                  {savingEdit ? <><Loader2 className="h-4 w-4 animate-spin" /> Salvando...</> : editStepTab === 'revisao' ? 'Salvar alteracoes' : 'Continuar'}
                 </button>
-              )}
+              </div>
             </div>
           </>
         ) : null}
       </AnimatedModal>
+
 
       {menuOpenCategoryId !== null && categoryMenuPosition !== null &&
         createPortal(
