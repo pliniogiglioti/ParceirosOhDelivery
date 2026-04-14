@@ -28,7 +28,7 @@ import { AnimatedModal } from '@/components/partner/AnimatedModal'
 import { SectionFrame } from '@/components/partner/PartnerUi'
 import { StoreImagePickerModal } from '@/components/partner/StoreImagePickerModal'
 import type { PartnerCategory } from '@/types'
-import { createProduct, createProductCategory, fetchIndustrializados, updateProduct, saveProductComplements, type IndustrializedItem } from '@/services/partner'
+import { createProduct, createProductCategory, fetchIndustrializados, updateProduct, saveProductComplements, fetchProductComplements, type IndustrializedItem } from '@/services/partner'
 import type { PartnerProduct } from '@/types'
 
 function ThemeSwitch({
@@ -504,7 +504,7 @@ const [showMaxFeaturedModal, setShowMaxFeaturedModal] = useState(false)
       setAddItemCategoryId(product.categoryId)
       setSelectedProductCreationKind('preparado')
       setStandardItemStepTab('detalhes')
-      setPrepMaxStepIndex(4) // todas as abas liberadas na edição
+      setPrepMaxStepIndex(4)
       setPrepName(product.name)
       setPrepDescription(product.description)
       setPrepImage(product.imageUrl ?? '')
@@ -530,6 +530,24 @@ const [showMaxFeaturedModal, setShowMaxFeaturedModal] = useState(false)
       setMenuOpenProductId(null)
       setProductMenuPosition(null)
       setProductKindModalOpen(true)
+      // Carrega complementos do banco em background
+      fetchProductComplements(product.id).then((groups) => {
+        setPrepComplementGroups(groups.map((g) => ({
+          id: g.id,
+          name: g.name,
+          required: g.required,
+          minQty: g.minQty,
+          maxQty: g.maxQty,
+          items: g.items.map((item) => ({
+            id: item.id,
+            name: item.name,
+            description: item.description,
+            price: item.price,
+            source: item.source,
+            imageUrl: item.imageUrl,
+          })),
+        })))
+      }).catch(() => {})
       return
     }
 
@@ -820,7 +838,7 @@ const normalizedSearch = search.trim().toLowerCase()
         toast.success(`${prepName.trim()} adicionado ao cardapio.`)
       }
 
-      if (prepComplementGroups.length > 0) {
+      if (prepComplementGroups.length > 0 || editingProduct?.kind === 'preparado') {
         await saveProductComplements(data.store.id, saved.id, prepComplementGroups.map((g) => ({
           name: g.name,
           required: g.required,

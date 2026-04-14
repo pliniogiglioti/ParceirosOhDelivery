@@ -41,7 +41,7 @@ create table if not exists public.product_complement_items (
   source            text not null default 'biblioteca'
                       check (source in ('biblioteca', 'industrializado')),
   library_item_id   uuid references public.complement_library(id) on delete set null,
-  industrialized_id uuid references public.industrializados(id) on delete set null,
+  industrialized_id bigint references public.industrializados(id) on delete set null,
   -- dados desnormalizados
   name              text not null,
   description       text,

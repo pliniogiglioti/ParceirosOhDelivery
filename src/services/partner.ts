@@ -923,6 +923,66 @@ export async function saveProductComplements(
   }
 }
 
+export async function fetchProductComplements(productId: string): Promise<Array<{
+  id: string
+  name: string
+  required: boolean
+  minQty: number
+  maxQty: number
+  items: Array<{
+    id: string
+    name: string
+    description: string
+    price: number
+    source: 'biblioteca' | 'industrializado'
+    imageUrl?: string
+  }>
+}>> {
+  if (!isSupabaseConfigured || !supabase) return []
+
+  const { data: groups, error: groupsError } = await supabase
+    .from('product_complement_groups')
+    .select('id, name, required, min_qty, max_qty, sort_order')
+    .eq('product_id', productId)
+    .order('sort_order', { ascending: true })
+
+  if (groupsError) {
+    console.warn('[fetchProductComplements]', groupsError.message)
+    return []
+  }
+  if (!groups || groups.length === 0) return []
+
+  const groupIds = groups.map((g) => String(g.id))
+
+  const { data: items, error: itemsError } = await supabase
+    .from('product_complement_items')
+    .select('id, group_id, name, description, price, source, image_url, sort_order')
+    .in('group_id', groupIds)
+    .order('sort_order', { ascending: true })
+
+  if (itemsError) {
+    console.warn('[fetchProductComplements items]', itemsError.message)
+  }
+
+  return groups.map((g) => ({
+    id: String(g.id),
+    name: String(g.name),
+    required: Boolean(g.required),
+    minQty: Number(g.min_qty ?? 0),
+    maxQty: Number(g.max_qty ?? 1),
+    items: (items ?? [])
+      .filter((i) => String(i.group_id) === String(g.id))
+      .map((i) => ({
+        id: String(i.id),
+        name: String(i.name),
+        description: String(i.description ?? ''),
+        price: Number(i.price ?? 0),
+        source: (i.source === 'industrializado' ? 'industrializado' : 'biblioteca') as 'biblioteca' | 'industrializado',
+        imageUrl: i.image_url ? String(i.image_url) : undefined,
+      })),
+  }))
+}
+
 export async function fetchComplementLibrary(storeId: string): Promise<ComplementLibraryItem[]> {
   if (!isSupabaseConfigured || !supabase) return []
 
