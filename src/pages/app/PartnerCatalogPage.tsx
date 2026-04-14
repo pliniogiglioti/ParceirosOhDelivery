@@ -28,7 +28,7 @@ import { AnimatedModal } from '@/components/partner/AnimatedModal'
 import { SectionFrame } from '@/components/partner/PartnerUi'
 import { StoreImagePickerModal } from '@/components/partner/StoreImagePickerModal'
 import type { PartnerCategory } from '@/types'
-import { createProduct, createProductCategory, fetchIndustrializados, updateProduct, saveProductComplements, fetchProductComplements, fetchComplementLibrary, createComplementLibraryItem, type IndustrializedItem } from '@/services/partner'
+import { createProduct, createProductCategory, fetchIndustrializados, updateProduct, saveProductComplements, fetchProductComplements, fetchComplementLibrary, createComplementLibraryItem, updateComplementLibraryItem, deleteComplementLibraryItem, type IndustrializedItem } from '@/services/partner'
 import type { PartnerProduct } from '@/types'
 
 function ThemeSwitch({
@@ -1014,24 +1014,49 @@ const normalizedSearch = search.trim().toLowerCase()
     if (!name) { toast.error('Informe o nome do item.'); return }
     setLibModalSaving(true)
     try {
-      const saved = await createComplementLibraryItem(data.store.id, {
-        name,
-        description: libModalEditDescription.trim(),
-        price: parseCurrencyInput(libModalEditPrice),
-        imageUrl: libModalEditImage || undefined,
-      })
-      setLibItems((prev) => [saved, ...prev])
-      setLibItemsLoaded(true)
+      if (libModalEditingId) {
+        // Update
+        const updated = await updateComplementLibraryItem(libModalEditingId, data.store.id, {
+          name,
+          description: libModalEditDescription.trim(),
+          price: parseCurrencyInput(libModalEditPrice),
+          imageUrl: libModalEditImage || undefined,
+        })
+        setLibItems((prev) => prev.map((i) => i.id === updated.id ? updated : i))
+        toast.success(`${name} atualizado.`)
+      } else {
+        // Create
+        const saved = await createComplementLibraryItem(data.store.id, {
+          name,
+          description: libModalEditDescription.trim(),
+          price: parseCurrencyInput(libModalEditPrice),
+          imageUrl: libModalEditImage || undefined,
+        })
+        setLibItems((prev) => [saved, ...prev])
+        setLibItemsLoaded(true)
+        toast.success(`${name} adicionado a biblioteca.`)
+      }
       setLibModalNewForm(false)
+      setLibModalEditingId(null)
       setLibModalEditName('')
       setLibModalEditDescription('')
       setLibModalEditPrice('')
       setLibModalEditImage('')
-      toast.success(`${name} adicionado a biblioteca.`)
     } catch {
       toast.error('Nao foi possivel salvar.')
     } finally {
       setLibModalSaving(false)
+    }
+  }
+
+  async function handleLibModalDelete(itemId: string) {
+    if (!data) return
+    try {
+      await deleteComplementLibraryItem(itemId, data.store.id)
+      setLibItems((prev) => prev.filter((i) => i.id !== itemId))
+      toast.success('Item removido da biblioteca.')
+    } catch {
+      toast.error('Nao foi possivel remover.')
     }
   }
 
@@ -1628,7 +1653,7 @@ const normalizedSearch = search.trim().toLowerCase()
 
         {libModalNewForm ? (
           <div className="mt-6 flex min-h-0 flex-1 flex-col">
-            <p className="text-sm font-semibold text-ink-900">Novo item</p>
+            <p className="text-sm font-semibold text-ink-900">{libModalEditingId ? 'Editar item' : 'Novo item'}</p>
             <div className="mt-4 grid grid-cols-[88px_minmax(0,1fr)] gap-4">
               <div>
                 {libModalEditImage ? (
@@ -1703,6 +1728,11 @@ const normalizedSearch = search.trim().toLowerCase()
                         }}
                         className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-ink-100 text-ink-500 hover:bg-ink-50">
                         <PencilLine className="h-4 w-4" />
+                      </button>
+                      <button type="button"
+                        onClick={() => void handleLibModalDelete(item.id)}
+                        className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-red-100 text-red-400 hover:bg-red-50">
+                        <X className="h-4 w-4" />
                       </button>
                     </div>
                   ))

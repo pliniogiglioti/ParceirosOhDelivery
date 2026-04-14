@@ -1020,7 +1020,7 @@ export async function createComplementLibraryItem(
       price: input.price,
       image_url: input.imageUrl ?? null,
     })
-    .select('id, name, description, price')
+    .select('id, name, description, price, image_url')
     .single()
 
   if (error) throw error
@@ -1030,7 +1030,50 @@ export async function createComplementLibraryItem(
     name: String(data.name),
     description: String(data.description ?? ''),
     price: Number(data.price ?? 0),
+    imageUrl: data.image_url ? String(data.image_url) : undefined,
   }
+}
+
+export async function updateComplementLibraryItem(
+  itemId: string,
+  storeId: string,
+  input: { name: string; description?: string; price: number; imageUrl?: string }
+): Promise<ComplementLibraryItem> {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
+
+  const { data, error } = await supabase
+    .from('complement_library')
+    .update({
+      name: input.name,
+      description: input.description ?? null,
+      price: input.price,
+      image_url: input.imageUrl ?? null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', itemId)
+    .eq('store_id', storeId)
+    .select('id, name, description, price, image_url')
+    .single()
+
+  if (error) throw error
+
+  return {
+    id: String(data.id),
+    name: String(data.name),
+    description: String(data.description ?? ''),
+    price: Number(data.price ?? 0),
+    imageUrl: data.image_url ? String(data.image_url) : undefined,
+  }
+}
+
+export async function deleteComplementLibraryItem(itemId: string, storeId: string): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
+  const { error } = await supabase
+    .from('complement_library')
+    .delete()
+    .eq('id', itemId)
+    .eq('store_id', storeId)
+  if (error) throw error
 }
 
 export async function loadPartnerDashboard(storeId: string): Promise<{
