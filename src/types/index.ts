@@ -116,6 +116,7 @@ export interface PartnerProduct {
   gelada: boolean
   active: boolean
   featured: boolean
+  kind?: 'industrializado' | 'preparado'
 }
 
 export interface PartnerHour {

@@ -637,6 +637,7 @@ export async function createProduct(
     gelada?: boolean
     active?: boolean
     featured?: boolean
+    kind?: 'industrializado' | 'preparado'
   }
 ): Promise<PartnerProduct> {
   if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
@@ -656,6 +657,7 @@ export async function createProduct(
       gelada: input.gelada ?? false,
       active: input.active ?? true,
       featured: input.featured ?? false,
+      kind: input.kind ?? 'industrializado',
       sort_order: 0,
     })
     .select('*')
@@ -676,6 +678,8 @@ export async function createProduct(
     gelada: Boolean(data.gelada ?? false),
     active: Boolean(data.active ?? true),
     featured: Boolean(data.featured ?? false),
+    kind: (data.kind === 'preparado' ? 'preparado' : 'industrializado') as 'industrializado' | 'preparado',
+    kind: (data.kind === 'preparado' ? 'preparado' : 'industrializado') as 'industrializado' | 'preparado',
   }
 }
 
@@ -764,6 +768,7 @@ export async function updateProduct(
     gelada: Boolean(data.gelada ?? false),
     active: Boolean(data.active ?? true),
     featured: Boolean(data.featured ?? false),
+    kind: (data.kind === 'preparado' ? 'preparado' : 'industrializado') as 'industrializado' | 'preparado',
   }
 }
 
@@ -1092,6 +1097,7 @@ export async function loadPartnerDashboard(storeId: string): Promise<{
       gelada: Boolean(row.gelada ?? false),
       active: Boolean(row.active ?? true),
       featured: Boolean(row.featured),
+      kind: (row.kind === 'preparado' ? 'preparado' : 'industrializado') as 'industrializado' | 'preparado',
     })) ?? []
 
   const orders: PartnerOrder[] =

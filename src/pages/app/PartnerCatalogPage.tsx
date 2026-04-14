@@ -470,8 +470,8 @@ const [showMaxFeaturedModal, setShowMaxFeaturedModal] = useState(false)
   }, [menuOpenCategoryId])
 
   const featuredCount = useMemo(
-    () => Object.values(featuredByProductId).filter(Boolean).length,
-    [featuredByProductId]
+    () => catalogProducts.filter((p) => featuredByProductId[p.id] ?? p.featured).length,
+    [featuredByProductId, catalogProducts]
   )
 
   const orderedCategories = useMemo(
@@ -496,6 +496,41 @@ const [showMaxFeaturedModal, setShowMaxFeaturedModal] = useState(false)
 
   function openEditProductModal(product: PartnerProduct) {
     setEditingProduct(product)
+
+    if (product.kind === 'preparado') {
+      // Abre o fluxo de preparado preenchido com os dados atuais
+      setAddItemCategoryId(product.categoryId)
+      setSelectedProductCreationKind('preparado')
+      setStandardItemStepTab('detalhes')
+      setPrepName(product.name)
+      setPrepDescription(product.description)
+      setPrepImage(product.imageUrl ?? '')
+      setPrepPrice(
+        product.price > 0
+          ? product.price.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+          : ''
+      )
+      setPrepPromotionPrice(
+        product.compareAtPrice != null && product.compareAtPrice > 0
+          ? product.compareAtPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+          : ''
+      )
+      setPrepManageStock(product.manageStock)
+      setPrepStockQty(product.stockQuantity != null ? String(product.stockQuantity) : '')
+      setPrepGelada(product.gelada)
+      setPrepActive(product.active)
+      setPrepFeatured(product.featured)
+      setPrepComplementGroups([])
+      setPrepDietaryTags([])
+      setShowAddGroupForm(false)
+      setComplementPickerGroupId(null)
+      setMenuOpenProductId(null)
+      setProductMenuPosition(null)
+      setProductKindModalOpen(true)
+      return
+    }
+
+    // Industrializado — fluxo de edição simples
     setEditStepTab('preco')
     setEditPrice(
       product.price > 0
@@ -734,21 +769,48 @@ const normalizedSearch = search.trim().toLowerCase()
     if (!addItemCategoryId || !data) return
     setSavingPrep(true)
     try {
-      const saved = await createProduct(data.store.id, {
-        categoryId: addItemCategoryId,
-        name: prepName.trim(),
-        description: prepDescription.trim(),
-        price: prepPriceValue,
-        compareAtPrice: prepPromotionPrice.trim() ? prepPromotionPriceValue : null,
-        imageUrl: prepImage || undefined,
-        manageStock: prepManageStock,
-        stockQuantity: prepManageStock ? prepStockQtyValue : null,
-        gelada: prepGelada,
-        active: prepActive,
-        featured: prepFeatured,
-      })
+      let saved: PartnerProduct
 
-      // Salva grupos de complementos se houver
+      if (editingProduct?.kind === 'preparado') {
+        // Editando preparado existente
+        saved = await updateProduct(editingProduct.id, data.store.id, {
+          name: prepName.trim(),
+          description: prepDescription.trim(),
+          price: prepPriceValue,
+          compareAtPrice: prepPromotionPrice.trim() ? prepPromotionPriceValue : null,
+          imageUrl: prepImage || undefined,
+          manageStock: prepManageStock,
+          stockQuantity: prepManageStock ? prepStockQtyValue : null,
+          gelada: prepGelada,
+          active: prepActive,
+          featured: prepFeatured,
+          categoryId: editingProduct.categoryId,
+        })
+        setCatalogProducts((current) => current.map((p) => (p.id === saved.id ? saved : p)))
+        setActiveByProductId((current) => ({ ...current, [saved.id]: saved.active }))
+        setFeaturedByProductId((current) => ({ ...current, [saved.id]: saved.featured }))
+        toast.success(`${prepName.trim()} atualizado com sucesso.`)
+      } else {
+        // Criando novo preparado
+        saved = await createProduct(data.store.id, {
+          categoryId: addItemCategoryId,
+          name: prepName.trim(),
+          description: prepDescription.trim(),
+          price: prepPriceValue,
+          compareAtPrice: prepPromotionPrice.trim() ? prepPromotionPriceValue : null,
+          imageUrl: prepImage || undefined,
+          manageStock: prepManageStock,
+          stockQuantity: prepManageStock ? prepStockQtyValue : null,
+          gelada: prepGelada,
+          active: prepActive,
+          featured: prepFeatured,
+          kind: 'preparado',
+        })
+        draftAddProduct(data.store.id, saved)
+        setCatalogProducts((current) => [...current, saved])
+        toast.success(`${prepName.trim()} adicionado ao cardapio.`)
+      }
+
       if (prepComplementGroups.length > 0) {
         await saveProductComplements(data.store.id, saved.id, prepComplementGroups.map((g) => ({
           name: g.name,
@@ -767,10 +829,8 @@ const normalizedSearch = search.trim().toLowerCase()
         })))
       }
 
-      draftAddProduct(data.store.id, saved)
-      setCatalogProducts((current) => [...current, saved])
+      setEditingProduct(null)
       setProductKindModalOpen(false)
-      toast.success(`${prepName.trim()} adicionado ao cardapio.`)
     } catch {
       toast.error('Nao foi possivel salvar o produto.')
     } finally {
@@ -1649,7 +1709,7 @@ const normalizedSearch = search.trim().toLowerCase()
 
       <AnimatedModal
         open={Boolean(productKindModalOpen && addItemCategory && selectedProductCreationKindMeta)}
-        onClose={() => setProductKindModalOpen(false)}
+        onClose={() => { setProductKindModalOpen(false); setEditingProduct(null) }}
         panelClassName="panel-card flex h-[min(88vh,860px)] w-full max-w-5xl flex-col p-6"
         ariaLabelledby="product-kind-title"
       >
