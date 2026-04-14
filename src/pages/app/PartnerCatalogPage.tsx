@@ -924,7 +924,7 @@ const normalizedSearch = search.trim().toLowerCase()
     const group: ComplementGroup = {
       id: `grp-${Date.now()}`,
       name,
-      required: addingGroupRequired || Number(addingGroupMin) >= 1,
+      required: Number(addingGroupMin) >= 1,
       minQty: Number(addingGroupMin),
       maxQty: Number(addingGroupMax) || 1,
       items: [],
@@ -1078,7 +1078,7 @@ const normalizedSearch = search.trim().toLowerCase()
       groups.map((g) => g.id === editingGroupId ? {
         ...g,
         name: editingGroupName.trim(),
-        required: editingGroupRequired || Number(editingGroupMin) >= 1,
+        required: Number(editingGroupMin) >= 1,
         minQty: Number(editingGroupMin),
         maxQty: Number(editingGroupMax) || 1,
       } : g)
@@ -2647,7 +2647,6 @@ const normalizedSearch = search.trim().toLowerCase()
                                   <span className="mb-1 block text-xs font-semibold text-ink-500">Min</span>
                                   <input type="number" min={0} value={editingGroupMin} onChange={(e) => {
                                     setEditingGroupMin(e.target.value)
-                                    if (Number(e.target.value) >= 1) setEditingGroupRequired(true)
                                   }}
                                     className="h-9 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
                                 </label>
@@ -2657,10 +2656,15 @@ const normalizedSearch = search.trim().toLowerCase()
                                     className="h-9 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
                                 </label>
                               </div>
-                              <div className="flex items-center justify-between rounded-xl border border-ink-100 bg-ink-50 px-3 py-2">
-                                <p className="text-sm font-semibold text-ink-900">Obrigatorio</p>
-                                <ThemeSwitch checked={editingGroupRequired} onChange={setEditingGroupRequired} ariaLabel="Obrigatorio" />
-                              </div>
+                              <p className={cn('rounded-xl px-3 py-2 text-xs font-semibold',
+                                Number(editingGroupMin) >= 1
+                                  ? 'bg-coral-100 text-coral-700'
+                                  : 'bg-ink-100 text-ink-500'
+                              )}>
+                                {Number(editingGroupMin) >= 1
+                                  ? '✓ Obrigatorio — o cliente deve escolher ao menos ' + editingGroupMin + ' item(s).'
+                                  : 'Opcional — o cliente pode ignorar este grupo.'}
+                              </p>
                               <div className="flex gap-2">
                                 <button type="button" onClick={() => setEditingGroupId(null)}
                                   className="h-8 flex-1 rounded-xl border border-ink-100 text-xs font-semibold text-ink-600 hover:bg-ink-50">Cancelar</button>
@@ -2909,10 +2913,7 @@ const normalizedSearch = search.trim().toLowerCase()
                           <div className="grid grid-cols-2 gap-3">
                             <label className="block">
                               <span className="mb-1 block text-xs font-semibold text-ink-500">Min</span>
-                              <input type="number" min={0} value={addingGroupMin} onChange={(e) => {
-                                setAddingGroupMin(e.target.value)
-                                if (Number(e.target.value) >= 1) setAddingGroupRequired(true)
-                              }}
+                              <input type="number" min={0} value={addingGroupMin} onChange={(e) => setAddingGroupMin(e.target.value)}
                                 className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
                             </label>
                             <label className="block">
@@ -2921,10 +2922,15 @@ const normalizedSearch = search.trim().toLowerCase()
                                 className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
                             </label>
                           </div>
-                          <div className="flex items-center justify-between rounded-xl border border-ink-100 bg-white px-3 py-2">
-                            <p className="text-sm font-semibold text-ink-900">Obrigatorio</p>
-                            <ThemeSwitch checked={addingGroupRequired} onChange={setAddingGroupRequired} ariaLabel="Obrigatorio" />
-                          </div>
+                          <p className={cn('rounded-xl px-3 py-2 text-xs font-semibold',
+                            Number(addingGroupMin) >= 1
+                              ? 'bg-coral-100 text-coral-700'
+                              : 'bg-ink-100 text-ink-500'
+                          )}>
+                            {Number(addingGroupMin) >= 1
+                              ? '✓ Obrigatorio — o cliente deve escolher ao menos ' + addingGroupMin + ' item(s).'
+                              : 'Opcional — o cliente pode ignorar este grupo.'}
+                          </p>
                           <div className="flex gap-2">
                             <button type="button" onClick={() => setShowAddGroupForm(false)}
                               className="h-9 flex-1 rounded-xl border border-ink-100 text-sm font-semibold text-ink-600 hover:bg-white">Cancelar</button>
