@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 
 type AnimatedModalProps = {
@@ -53,7 +54,7 @@ export function AnimatedModal({
     return null
   }
 
-  return (
+  return createPortal(
     <div
       className={cn(
         'modal-backdrop fixed inset-0 z-[90] flex items-center justify-center p-4',
@@ -83,6 +84,7 @@ export function AnimatedModal({
       >
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
