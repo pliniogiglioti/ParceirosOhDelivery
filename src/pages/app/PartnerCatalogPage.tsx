@@ -343,6 +343,14 @@ export function PartnerCatalogPage({
   const [newIndItemPrice, setNewIndItemPrice] = useState('')
   const [selectedIndItem, setSelectedIndItem] = useState<IndustrializedCatalogItem | null>(null)
   const [prepImagePickerOpen, setPrepImagePickerOpen] = useState(false)
+  // Edição inline de grupo e item de complemento
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null)
+  const [editingGroupName, setEditingGroupName] = useState('')
+  const [editingGroupRequired, setEditingGroupRequired] = useState(false)
+  const [editingGroupMin, setEditingGroupMin] = useState('0')
+  const [editingGroupMax, setEditingGroupMax] = useState('1')
+  const [editingItemId, setEditingItemId] = useState<string | null>(null)
+  const [editingItemPrice, setEditingItemPrice] = useState('')
 
   useEffect(() => {
     fetchIndustrializados()
@@ -1062,6 +1070,35 @@ const normalizedSearch = search.trim().toLowerCase()
 
   function removeComplementGroup(groupId: string) {
     setPrepComplementGroups((groups) => groups.filter((g) => g.id !== groupId))
+  }
+
+  function saveEditingGroup() {
+    if (!editingGroupId || !editingGroupName.trim()) return
+    setPrepComplementGroups((groups) =>
+      groups.map((g) => g.id === editingGroupId ? {
+        ...g,
+        name: editingGroupName.trim(),
+        required: editingGroupRequired,
+        minQty: Number(editingGroupMin) || 0,
+        maxQty: Number(editingGroupMax) || 1,
+      } : g)
+    )
+    setEditingGroupId(null)
+  }
+
+  function saveEditingItem(groupId: string) {
+    if (!editingItemId) return
+    setPrepComplementGroups((groups) =>
+      groups.map((g) => g.id === groupId ? {
+        ...g,
+        items: g.items.map((i) => i.id === editingItemId ? {
+          ...i,
+          price: parseCurrencyInput(editingItemPrice),
+        } : i),
+      } : g)
+    )
+    setEditingItemId(null)
+    setEditingItemPrice('')
   }
 
   // ── Edit helpers ────────────────────────────────────────────────────────────
@@ -2601,32 +2638,103 @@ const normalizedSearch = search.trim().toLowerCase()
 
                       {prepComplementGroups.map((group) => (
                         <div key={group.id} className="rounded-xl border border-ink-100 bg-white p-4">
-                          <div className="flex items-center justify-between gap-3">
-                            <div>
-                              <p className="text-sm font-bold text-ink-900">{group.name}</p>
-                              <p className="mt-0.5 text-xs text-ink-500">{group.required ? 'Obrigatorio' : 'Opcional'} · min {group.minQty} / max {group.maxQty}</p>
+                          {editingGroupId === group.id ? (
+                            <div className="space-y-2">
+                              <input type="text" value={editingGroupName} onChange={(e) => setEditingGroupName(e.target.value)} placeholder="Nome do grupo *"
+                                className="h-9 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
+                              <div className="grid grid-cols-2 gap-2">
+                                <label className="block">
+                                  <span className="mb-1 block text-xs font-semibold text-ink-500">Min</span>
+                                  <input type="number" min={0} value={editingGroupMin} onChange={(e) => setEditingGroupMin(e.target.value)}
+                                    className="h-9 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
+                                </label>
+                                <label className="block">
+                                  <span className="mb-1 block text-xs font-semibold text-ink-500">Max</span>
+                                  <input type="number" min={1} value={editingGroupMax} onChange={(e) => setEditingGroupMax(e.target.value)}
+                                    className="h-9 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
+                                </label>
+                              </div>
+                              <div className="flex items-center justify-between rounded-xl border border-ink-100 bg-ink-50 px-3 py-2">
+                                <p className="text-sm font-semibold text-ink-900">Obrigatorio</p>
+                                <ThemeSwitch checked={editingGroupRequired} onChange={setEditingGroupRequired} ariaLabel="Obrigatorio" />
+                              </div>
+                              <div className="flex gap-2">
+                                <button type="button" onClick={() => setEditingGroupId(null)}
+                                  className="h-8 flex-1 rounded-xl border border-ink-100 text-xs font-semibold text-ink-600 hover:bg-ink-50">Cancelar</button>
+                                <button type="button" onClick={saveEditingGroup}
+                                  className="h-8 flex-1 rounded-xl bg-coral-500 text-xs font-semibold text-white hover:bg-coral-600">Salvar</button>
+                              </div>
                             </div>
-                            <button type="button" onClick={() => removeComplementGroup(group.id)}
-                              className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-ink-100 text-ink-500 hover:bg-ink-50">
-                              <X className="h-4 w-4" />
-                            </button>
-                          </div>
+                          ) : (
+                            <div className="flex items-center justify-between gap-3">
+                              <div>
+                                <p className="text-sm font-bold text-ink-900">{group.name}</p>
+                                <p className="mt-0.5 text-xs text-ink-500">{group.required ? 'Obrigatorio' : 'Opcional'} · min {group.minQty} / max {group.maxQty}</p>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <button type="button" onClick={() => {
+                                  setEditingGroupId(group.id)
+                                  setEditingGroupName(group.name)
+                                  setEditingGroupRequired(group.required)
+                                  setEditingGroupMin(String(group.minQty))
+                                  setEditingGroupMax(String(group.maxQty))
+                                }}
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-ink-100 text-ink-500 hover:bg-ink-50">
+                                  <PencilLine className="h-3.5 w-3.5" />
+                                </button>
+                                <button type="button" onClick={() => removeComplementGroup(group.id)}
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-ink-100 text-ink-500 hover:bg-ink-50">
+                                  <X className="h-4 w-4" />
+                                </button>
+                              </div>
+                            </div>
+                          )}
 
                           {group.items.length > 0 ? (
                             <div className="mt-3 space-y-2">
                               {group.items.map((item) => (
-                                <div key={item.id} className="flex items-center justify-between gap-3 rounded-xl border border-ink-100 bg-ink-50 px-3 py-2">
-                                  <div className="flex min-w-0 items-center gap-2">
-                                    {item.imageUrl ? <img src={item.imageUrl} alt={item.name} className="h-8 w-8 rounded-lg object-cover shrink-0" /> : null}
-                                    <div className="min-w-0">
-                                      <p className="truncate text-sm font-semibold text-ink-900">{item.name}</p>
-                                      <p className="text-xs text-ink-500">{item.price > 0 ? `+ ${formatCurrency(item.price)}` : 'Gratis'} · {item.source === 'biblioteca' ? 'Biblioteca' : 'Industrializado'}</p>
+                                <div key={item.id} className="rounded-xl border border-ink-100 bg-ink-50 px-3 py-2">
+                                  {editingItemId === item.id ? (
+                                    <div className="flex items-center gap-2">
+                                      <div className="flex min-w-0 flex-1 items-center gap-2">
+                                        {item.imageUrl ? <img src={item.imageUrl} alt={item.name} className="h-7 w-7 rounded-lg object-cover shrink-0" /> : null}
+                                        <p className="truncate text-sm font-semibold text-ink-900">{item.name}</p>
+                                      </div>
+                                      <div className="relative w-28 shrink-0">
+                                        <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-ink-400">R$</span>
+                                        <input type="text" inputMode="numeric" value={editingItemPrice} onChange={(e) => setEditingItemPrice(formatCurrencyInput(e.target.value))} placeholder="0,00" autoFocus
+                                          className="h-7 w-full rounded-lg border border-coral-300 bg-white pl-7 pr-2 text-xs outline-none" />
+                                      </div>
+                                      <button type="button" onClick={() => saveEditingItem(group.id)}
+                                        className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-lg bg-coral-500 text-white hover:bg-coral-600">
+                                        <svg className="h-3 w-3" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                      </button>
+                                      <button type="button" onClick={() => { setEditingItemId(null); setEditingItemPrice('') }}
+                                        className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-lg border border-ink-100 text-ink-400 hover:bg-ink-100">
+                                        <X className="h-3 w-3" />
+                                      </button>
                                     </div>
-                                  </div>
-                                  <button type="button" onClick={() => removeComplementItem(group.id, item.id)}
-                                    className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-lg border border-ink-100 text-ink-400 hover:bg-ink-100">
-                                    <X className="h-3 w-3" />
-                                  </button>
+                                  ) : (
+                                    <div className="flex items-center justify-between gap-3">
+                                      <div className="flex min-w-0 items-center gap-2">
+                                        {item.imageUrl ? <img src={item.imageUrl} alt={item.name} className="h-8 w-8 rounded-lg object-cover shrink-0" /> : null}
+                                        <div className="min-w-0">
+                                          <p className="truncate text-sm font-semibold text-ink-900">{item.name}</p>
+                                          <p className="text-xs text-ink-500">{item.price > 0 ? `+ ${formatCurrency(item.price)}` : 'Gratis'} · {item.source === 'biblioteca' ? 'Biblioteca' : 'Industrializado'}</p>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        <button type="button" onClick={() => { setEditingItemId(item.id); setEditingItemPrice(item.price > 0 ? item.price.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '') }}
+                                          className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-lg border border-ink-100 text-ink-400 hover:bg-ink-100">
+                                          <PencilLine className="h-3 w-3" />
+                                        </button>
+                                        <button type="button" onClick={() => removeComplementItem(group.id, item.id)}
+                                          className="shrink-0 inline-flex h-7 w-7 items-center justify-center rounded-lg border border-ink-100 text-ink-400 hover:bg-ink-100">
+                                          <X className="h-3 w-3" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               ))}
                             </div>
