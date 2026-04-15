@@ -2,11 +2,14 @@ import { Loader2, MapPin } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { RadiusDeliveryMap, type RadiusZone } from '@/components/partner/RadiusDeliveryMap'
+import { MapPicker } from '@/components/MapPicker'
+import { AnimatedModal } from '@/components/partner/AnimatedModal'
 import { SectionFrame } from '@/components/partner/PartnerUi'
 import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
 import { usePartnerPageData } from '@/hooks/usePartnerPageData'
 import { saveDeliveryArea, saveStore } from '@/services/partner'
 import type { DeliveryArea } from '@/types'
+import { X } from 'lucide-react'
 
 const ZONE_COLORS = ['#ff3600', '#f97316', '#eab308']
 
@@ -54,6 +57,10 @@ export function PartnerDeliveryAreasPage() {
   )
   const [savedAreas, setSavedAreas] = useState<DeliveryArea[]>(data.deliveryAreas)
   const [saving, setSaving] = useState(false)
+  const [locationModalOpen, setLocationModalOpen] = useState(false)
+  const [draftLat, setDraftLat] = useState<number | null>(data.store.lat)
+  const [draftLng, setDraftLng] = useState<number | null>(data.store.lng)
+  const [savingLocation, setSavingLocation] = useState(false)
 
   useEffect(() => {
     const activeAreas = data.deliveryAreas.filter((area) => area.active)
@@ -128,18 +135,86 @@ export function PartnerDeliveryAreasPage() {
     }
   }
 
+  async function handleSaveLocation() {
+    if (draftLat === null || draftLng === null) return
+    setSavingLocation(true)
+    try {
+      await saveStore(data.store.id, { lat: draftLat, lng: draftLng })
+      updateStore(data.store.id, { lat: draftLat, lng: draftLng })
+      setMapLat(draftLat)
+      setMapLng(draftLng)
+      setSavedLat(draftLat)
+      setSavedLng(draftLng)
+      setLocationModalOpen(false)
+      toast.success('Localizacao da loja atualizada.')
+    } catch {
+      toast.error('Nao foi possivel salvar a localizacao.')
+    } finally {
+      setSavingLocation(false)
+    }
+  }
+
   const activeAreasCount = savedAreas.filter((area) => area.active).length
 
   return (
     <SectionFrame eyebrow="Areas" title="Cobertura de entrega">
+      <AnimatedModal
+        open={locationModalOpen}
+        onClose={() => setLocationModalOpen(false)}
+        panelClassName="panel-card w-full max-w-2xl p-6"
+        ariaLabelledby="location-modal-title"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">Areas</p>
+            <h3 id="location-modal-title" className="mt-1 text-xl font-bold text-ink-900">Localizacao</h3>
+            <p className="mt-1 text-sm text-ink-500">Mova o mapa ate o pino estar sobre o local exato da loja</p>
+          </div>
+          <button type="button" onClick={() => setLocationModalOpen(false)}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="mt-6">
+          <MapPicker
+            lat={draftLat}
+            lng={draftLng}
+            onChange={(lat, lng) => { setDraftLat(lat); setDraftLng(lng) }}
+            height={380}
+          />
+        </div>
+
+        <div className="mt-6 flex justify-end gap-3">
+          <button type="button" onClick={() => setLocationModalOpen(false)}
+            className="inline-flex h-11 items-center justify-center rounded-2xl border border-ink-100 px-5 text-sm font-semibold text-ink-700 hover:bg-ink-50">
+            Cancelar
+          </button>
+          <button type="button" onClick={() => void handleSaveLocation()} disabled={savingLocation}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white hover:bg-coral-600 disabled:opacity-60">
+            {savingLocation ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            Salvar localizacao
+          </button>
+        </div>
+      </AnimatedModal>
       <div className="grid gap-4 lg:grid-cols-[1fr_300px]">
         <div className="panel-card p-5">
           <div className="flex flex-col gap-4">
-            <div>
-              <p className="text-sm font-semibold text-ink-900">Mapa de cobertura</p>
-              <p className="mt-1 text-sm text-ink-500">
-                Ajuste o ponto da loja, defina os raios de entrega e atualize as taxas da mesma forma do primeiro acesso.
-              </p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-ink-900">Mapa de cobertura</p>
+                <p className="mt-1 text-sm text-ink-500">
+                  Ajuste o ponto da loja, defina os raios de entrega e atualize as taxas da mesma forma do primeiro acesso.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => { setDraftLat(mapLat); setDraftLng(mapLng); setLocationModalOpen(true) }}
+                className="shrink-0 inline-flex h-10 items-center justify-center gap-2 rounded-2xl border border-coral-200 bg-white px-4 text-sm font-semibold text-coral-600 transition hover:bg-coral-50"
+              >
+                <MapPin className="h-4 w-4" />
+                Mudar localizacao
+              </button>
             </div>
 
             <RadiusDeliveryMap
