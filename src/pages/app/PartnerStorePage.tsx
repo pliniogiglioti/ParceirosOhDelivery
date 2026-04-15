@@ -1,13 +1,21 @@
-import { Camera, ChevronDown, Clock3, Star } from 'lucide-react'
+import { Camera, ChevronDown, Clock3, Mail, MoreVertical, Plus, Shield, Star, Trash2, UserCheck, UserX } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
 import { usePartnerPageData } from '@/hooks/usePartnerPageData'
 import { getStoreCategories } from '@/services/profile'
 import { saveStore } from '@/services/partner'
+import {
+  fetchStoreMembers,
+  inviteStoreMember,
+  updateStoreMember,
+  removeStoreMember,
+} from '@/services/members'
+import type { StoreMember, MemberRole } from '@/services/members'
 import { MapPicker } from '@/components/MapPicker'
 import type { PartnerStore, StoreCategory } from '@/types'
 import { formatCurrency, formatTime } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { MiniInfoCard, SectionFrame } from '@/components/partner/PartnerUi'
 import { StoreImagePickerModal } from '@/components/partner/StoreImagePickerModal'
 
@@ -614,33 +622,291 @@ function StoreAddressTab() {
 
 function StoreAccessTab() {
   const { data } = usePartnerPageData()
+  const storeId = data.store.id
+
+  const [members, setMembers] = useState<StoreMember[]>([])
+  const [loading, setLoading] = useState(true)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [inviteRole, setInviteRole] = useState<MemberRole>('operador')
+  const [inviting, setInviting] = useState(false)
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+
+  useEffect(() => {
+    setLoading(true)
+    fetchStoreMembers(storeId)
+      .then(setMembers)
+      .catch(() => toast.error('Nao foi possivel carregar os membros.'))
+      .finally(() => setLoading(false))
+  }, [storeId])
+
+  async function handleInvite() {
+    const email = inviteEmail.trim().toLowerCase()
+    if (!email || inviting) return
+
+    // Não pode convidar o próprio dono
+    if (email === data.profile.email.toLowerCase()) {
+      toast.error('Voce ja e o responsavel principal desta loja.')
+      return
+    }
+
+    setInviting(true)
+    try {
+      const member = await inviteStoreMember(storeId, email, inviteRole)
+      setMembers((prev) => {
+        const exists = prev.find((m) => m.id === member.id)
+        return exists ? prev.map((m) => (m.id === member.id ? member : m)) : [member, ...prev]
+      })
+      setInviteEmail('')
+      toast.success(`Convite enviado para ${email}.`)
+    } catch {
+      toast.error('Nao foi possivel convidar. Verifique o email e tente novamente.')
+    } finally {
+      setInviting(false)
+    }
+  }
+
+  async function handleChangeRole(member: StoreMember, role: MemberRole) {
+    try {
+      const updated = await updateStoreMember(member.id, storeId, { role })
+      setMembers((prev) => prev.map((m) => (m.id === updated.id ? updated : m)))
+      toast.success('Funcao atualizada.')
+    } catch {
+      toast.error('Nao foi possivel atualizar.')
+    }
+    setOpenMenuId(null)
+  }
+
+  async function handleToggleStatus(member: StoreMember) {
+    const nextStatus = member.status === 'inativo' ? 'ativo' : 'inativo'
+    try {
+      const updated = await updateStoreMember(member.id, storeId, { status: nextStatus })
+      setMembers((prev) => prev.map((m) => (m.id === updated.id ? updated : m)))
+      toast.success(nextStatus === 'ativo' ? 'Acesso reativado.' : 'Acesso suspenso.')
+    } catch {
+      toast.error('Nao foi possivel atualizar.')
+    }
+    setOpenMenuId(null)
+  }
+
+  async function handleRemove(member: StoreMember) {
+    try {
+      await removeStoreMember(member.id, storeId)
+      setMembers((prev) => prev.filter((m) => m.id !== member.id))
+      toast.success('Membro removido.')
+    } catch {
+      toast.error('Nao foi possivel remover.')
+    }
+    setOpenMenuId(null)
+  }
+
+  function statusBadge(status: StoreMember['status']) {
+    if (status === 'ativo') return 'bg-green-50 text-green-700'
+    if (status === 'pendente') return 'bg-amber-50 text-amber-700'
+    return 'bg-ink-100 text-ink-500'
+  }
+
+  function statusLabel(status: StoreMember['status']) {
+    if (status === 'ativo') return 'Ativo'
+    if (status === 'pendente') return 'Pendente'
+    return 'Inativo'
+  }
+
+  function roleLabel(role: MemberRole) {
+    return role === 'gerente' ? 'Gerente' : 'Operador'
+  }
 
   return (
     <div className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-      <article className="panel-card p-6">
-        <p className="text-sm font-semibold text-ink-900">Responsavel principal</p>
-        <div className="mt-5 rounded-3xl border border-ink-100 bg-ink-50 p-5">
-          <p className="text-lg font-bold text-ink-900">{data.profile.name}</p>
-          <p className="mt-1 text-sm text-ink-500">{data.profile.email}</p>
-          <p className="mt-3 inline-flex rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">
-            {data.profile.role}
-          </p>
-        </div>
-      </article>
 
+      {/* Responsável principal */}
+      <div className="flex flex-col gap-4">
+        <article className="panel-card p-6">
+          <div className="flex items-center gap-2">
+            <Shield className="h-4 w-4 text-coral-500" />
+            <p className="text-sm font-semibold text-ink-900">Responsavel principal</p>
+          </div>
+          <div className="mt-4 rounded-2xl border border-ink-100 bg-ink-50 p-4">
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-coral-500 text-sm font-bold text-white">
+                {(data.profile.name || data.profile.email).slice(0, 1).toUpperCase()}
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-ink-900">{data.profile.name || '—'}</p>
+                <p className="truncate text-xs text-ink-500">{data.profile.email}</p>
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <MiniInfoCard label="Funcao" value="Proprietario" />
+              <MiniInfoCard label="Loja" value={data.store.name} />
+            </div>
+          </div>
+        </article>
+
+        {/* Convidar novo membro */}
+        <article className="panel-card p-6">
+          <div className="flex items-center gap-2">
+            <Plus className="h-4 w-4 text-coral-500" />
+            <p className="text-sm font-semibold text-ink-900">Convidar membro</p>
+          </div>
+          <p className="mt-1 text-xs text-ink-500">
+            Adicione operadores ou gerentes que terao acesso ao painel desta loja.
+          </p>
+
+          <div className="mt-4 space-y-3">
+            <label className="block">
+              <span className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Email</span>
+              <div className="flex items-center gap-2 rounded-2xl border border-ink-100 bg-white px-3 focus-within:border-coral-400">
+                <Mail className="h-4 w-4 shrink-0 text-ink-400" />
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && void handleInvite()}
+                  placeholder="email@exemplo.com"
+                  className="h-11 flex-1 bg-transparent text-sm text-ink-900 outline-none placeholder:text-ink-300"
+                />
+              </div>
+            </label>
+
+            <label className="block">
+              <span className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Funcao</span>
+              <div className="relative">
+                <select
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value as MemberRole)}
+                  className="h-11 w-full appearance-none rounded-2xl border border-ink-100 bg-white px-4 pr-10 text-sm font-semibold text-ink-900 outline-none transition focus:border-coral-400 cursor-pointer"
+                >
+                  <option value="operador">Operador — visualiza e gerencia pedidos</option>
+                  <option value="gerente">Gerente — acesso completo exceto financeiro</option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-400" />
+              </div>
+            </label>
+
+            <button
+              type="button"
+              onClick={() => void handleInvite()}
+              disabled={!inviteEmail.trim() || inviting}
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-coral-500 text-sm font-semibold text-white transition hover:bg-coral-600 disabled:opacity-50"
+            >
+              <Plus className="h-4 w-4" />
+              {inviting ? 'Convidando...' : 'Enviar convite'}
+            </button>
+          </div>
+        </article>
+      </div>
+
+      {/* Lista de membros */}
       <article className="panel-card p-6">
-        <p className="text-sm font-semibold text-ink-900">Gestao de acesso</p>
-        <div className="mt-5 grid gap-3 md:grid-cols-2">
-          <MiniInfoCard label="Perfil" value={data.profile.role} />
-          <MiniInfoCard label="Loja vinculada" value={data.store.name} />
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-ink-900">Membros da equipe</p>
+            <p className="mt-0.5 text-xs text-ink-500">
+              {members.length === 0 ? 'Nenhum membro convidado ainda.' : `${members.length} membro${members.length !== 1 ? 's' : ''}`}
+            </p>
+          </div>
         </div>
 
-        <div className="mt-5 rounded-3xl border border-ink-100 bg-white p-5">
-          <p className="text-sm leading-7 text-ink-600">
-            Esta secao simula governanca de acesso no tema do painel. O cadastro principal e o vinculo operacional da
-            loja aparecem aqui enquanto o restante do app continua refletindo os dados do perfil atual.
-          </p>
-        </div>
+        {loading ? (
+          <div className="mt-6 flex items-center justify-center py-10">
+            <p className="text-sm text-ink-400">Carregando...</p>
+          </div>
+        ) : members.length === 0 ? (
+          <div className="mt-6 flex flex-col items-center gap-3 rounded-2xl border border-dashed border-ink-200 py-10 text-center">
+            <UserCheck className="h-8 w-8 text-ink-200" />
+            <p className="text-sm text-ink-400">Nenhum membro ainda.</p>
+            <p className="text-xs text-ink-300">Convide operadores ou gerentes pelo formulario ao lado.</p>
+          </div>
+        ) : (
+          <div className="mt-4 divide-y divide-ink-100">
+            {members.map((member) => (
+              <div key={member.id} className="flex items-center gap-3 py-3.5">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink-100 text-sm font-bold text-ink-600">
+                  {(member.name || member.email).slice(0, 1).toUpperCase()}
+                </span>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-sm font-semibold text-ink-900">
+                      {member.name || member.email}
+                    </p>
+                    <span className={cn('shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold', statusBadge(member.status))}>
+                      {statusLabel(member.status)}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-xs text-ink-500">{member.email}</p>
+                    <span className="shrink-0 text-[10px] font-semibold text-ink-400">· {roleLabel(member.role)}</span>
+                  </div>
+                </div>
+
+                {/* Menu de ações */}
+                <div className="relative shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setOpenMenuId(openMenuId === member.id ? null : member.id)}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-xl text-ink-400 transition hover:bg-ink-50 hover:text-ink-700"
+                    aria-label="Opcoes do membro"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </button>
+
+                  {openMenuId === member.id && (
+                    <div className="absolute right-0 top-9 z-20 w-48 rounded-2xl border border-ink-100 bg-white py-1 shadow-float">
+                      {/* Trocar função */}
+                      {member.role === 'operador' ? (
+                        <button
+                          type="button"
+                          onClick={() => void handleChangeRole(member, 'gerente')}
+                          className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-ink-700 hover:bg-ink-50"
+                        >
+                          <Shield className="h-4 w-4 text-ink-400" />
+                          Promover a Gerente
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => void handleChangeRole(member, 'operador')}
+                          className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-ink-700 hover:bg-ink-50"
+                        >
+                          <Shield className="h-4 w-4 text-ink-400" />
+                          Rebaixar a Operador
+                        </button>
+                      )}
+
+                      {/* Suspender / Reativar */}
+                      {member.status !== 'pendente' && (
+                        <button
+                          type="button"
+                          onClick={() => void handleToggleStatus(member)}
+                          className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-ink-700 hover:bg-ink-50"
+                        >
+                          {member.status === 'inativo' ? (
+                            <><UserCheck className="h-4 w-4 text-green-500" />Reativar acesso</>
+                          ) : (
+                            <><UserX className="h-4 w-4 text-amber-500" />Suspender acesso</>
+                          )}
+                        </button>
+                      )}
+
+                      <div className="my-1 border-t border-ink-100" />
+
+                      {/* Remover */}
+                      <button
+                        type="button"
+                        onClick={() => void handleRemove(member)}
+                        className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-coral-600 hover:bg-coral-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Remover membro
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </article>
     </div>
   )

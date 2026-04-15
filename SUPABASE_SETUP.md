@@ -9,8 +9,8 @@ Este guia descreve como configurar a conexão com o Supabase via MCP no Claude C
 | Item | Valor |
 |------|-------|
 | Supabase Project ID | `emjnqqbsmigqswbfhpzi` |
-| Supabase Access Token | `sbp_ed84c308304f0c5f9219e2950fc1e9a31a4c60d6` |
-| GitHub Token (scope: repo + workflow) | `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` |
+| Supabase Access Token | `sbp_854b51d3da1bb499d394e1ce4303a7aaf665b919` |
+| GitHub Token (scope: repo + workflow) | `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` |
 | Repositório de migrations | https://github.com/pliniogiglioti/migrationsohdelivery |
 | Dashboard Supabase | https://supabase.com/dashboard/project/emjnqqbsmigqswbfhpzi |
 
@@ -33,7 +33,7 @@ O MCP permite que o Claude Code acesse e edite o banco Supabase diretamente.
       "command": "npx",
       "args": ["-y", "@supabase/mcp-server-supabase@latest"],
       "env": {
-        "SUPABASE_ACCESS_TOKEN": "sbp_ed84c308304f0c5f9219e2950fc1e9a31a4c60d6"
+        "SUPABASE_ACCESS_TOKEN": "sbp_854b51d3da1bb499d394e1ce4303a7aaf665b919"
       }
     }
   }
@@ -104,7 +104,7 @@ jobs:
 
 | Nome | Valor |
 |------|-------|
-| `SUPABASE_ACCESS_TOKEN` | `sbp_ed84c308304f0c5f9219e2950fc1e9a31a4c60d6` |
+| `SUPABASE_ACCESS_TOKEN` | `sbp_854b51d3da1bb499d394e1ce4303a7aaf665b919` |
 
 Para adicionar: **Settings > Secrets and variables > Actions > New repository secret**
 
