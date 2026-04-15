@@ -1540,6 +1540,18 @@ const normalizedSearch = search.trim().toLowerCase()
                 >
                   Biblioteca de Complementos
                 </button>
+                {catalogCategories.some((c) => getCategoryTemplate(c) === 'pizza') ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const pizzaCats = catalogCategories.filter((c) => getCategoryTemplate(c) === 'pizza')
+                      openFlavorLibModal(pizzaCats[0].id)
+                    }}
+                    className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-coral-200 bg-white px-4 text-sm font-semibold text-coral-600 transition hover:bg-coral-50"
+                  >
+                    Biblioteca de Sabores
+                  </button>
+                ) : null}
                 <button
                   type="button"
                   onClick={openCreateCategoryModal}
@@ -1628,23 +1640,14 @@ const normalizedSearch = search.trim().toLowerCase()
 
                         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
                           {getCategoryTemplate(category) === 'pizza' ? (
-                            <>
-                              <button
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); openFlavorModal(category.id) }}
-                                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-coral-200 bg-white px-4 text-sm font-semibold text-coral-600 transition hover:bg-coral-50"
-                              >
-                                <Plus className="h-4 w-4" />
-                                Adicionar sabor
-                              </button>
-                              <button
-                                type="button"
-                                onClick={(e) => { e.stopPropagation(); openFlavorLibModal(category.id) }}
-                                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-coral-200 bg-white px-4 text-sm font-semibold text-coral-600 transition hover:bg-coral-50"
-                              >
-                                Biblioteca de Sabores
-                              </button>
-                            </>
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); openFlavorModal(category.id) }}
+                              className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-coral-200 bg-white px-4 text-sm font-semibold text-coral-600 transition hover:bg-coral-50"
+                            >
+                              <Plus className="h-4 w-4" />
+                              Adicionar sabor
+                            </button>
                           ) : (
                             <button
                               type="button"
