@@ -1,5 +1,4 @@
 ﻿import {
-  ArrowUpDown,
   ChevronDown,
   ChefHat,
   Clock3,
@@ -270,9 +269,8 @@ export function PartnerCatalogPage({
   const [selectedCategoryId, setSelectedCategoryId] = useState('all')
   const [search, setSearch] = useState('')
   const [categoryOrderIds, setCategoryOrderIds] = useState<string[]>([])
-  const [sortModalOpen, setSortModalOpen] = useState(false)
-  const [draftCategoryOrderIds, setDraftCategoryOrderIds] = useState<string[]>([])
   const [draggingCategoryId, setDraggingCategoryId] = useState<string | null>(null)
+  const [dragOverCategoryId, setDragOverCategoryId] = useState<string | null>(null)
   const [createCategoryModalOpen, setCreateCategoryModalOpen] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
   const [newCategoryTemplate, setNewCategoryTemplate] = useState<CategoryTemplate>('padrao')
@@ -545,11 +543,10 @@ const [showMaxFeaturedModal, setShowMaxFeaturedModal] = useState(false)
   }, [activeByProductId, catalogCategories, catalogProducts])
 
   useEffect(() => {
-    if (!sortModalOpen && !createCategoryModalOpen && !addItemTypeModalOpen && !standardItemStepsModalOpen && !productKindModalOpen) return
+    if (!createCategoryModalOpen && !addItemTypeModalOpen && !standardItemStepsModalOpen && !productKindModalOpen) return
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') {
-        setSortModalOpen(false)
         setCreateCategoryModalOpen(false)
         setAddItemTypeModalOpen(false)
         setStandardItemStepsModalOpen(false)
@@ -562,7 +559,7 @@ const [showMaxFeaturedModal, setShowMaxFeaturedModal] = useState(false)
     return () => {
       document.removeEventListener('keydown', handleKeyDown)
     }
-  }, [sortModalOpen, createCategoryModalOpen, addItemTypeModalOpen, standardItemStepsModalOpen, productKindModalOpen])
+  }, [createCategoryModalOpen, addItemTypeModalOpen, standardItemStepsModalOpen, productKindModalOpen])
 
   useEffect(() => {
     if (!menuOpenProductId) return
@@ -758,13 +755,6 @@ const normalizedSearch = search.trim().toLowerCase()
   function handleClearFilters() {
     setSelectedCategoryId('all')
     setSearch('')
-  }
-
-  function openSortModal() {
-    setDraftCategoryOrderIds(categoryOrderIds)
-    setDraggingCategoryId(null)
-    setSortModalOpen(true)
-    setMenuOpenCategoryId(null)
   }
 
   function openCreateCategoryModal() {
@@ -1621,12 +1611,10 @@ const normalizedSearch = search.trim().toLowerCase()
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <button
                 type="button"
-                onClick={openSortModal}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-coral-200 bg-white px-4 text-sm font-semibold text-coral-600 transition hover:bg-coral-50"
-              >
-                <ArrowUpDown className="h-4 w-4" />
-                Ordenar categorias
-              </button>
+              <p className="flex items-center gap-2 text-xs text-ink-400">
+                <GripVertical className="h-4 w-4" />
+                Arraste as categorias para reordenar
+              </p>
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <button
@@ -1716,9 +1704,50 @@ const normalizedSearch = search.trim().toLowerCase()
                   const isActive = activeByCategoryId[category.id] ?? true
 
                   return (
-                    <article key={category.id} className="rounded-xl border border-ink-100 bg-white">
+                    <article
+                      key={category.id}
+                      draggable
+                      onDragStart={(e) => {
+                        setDraggingCategoryId(category.id)
+                        // Prevent ghost transparency — use a clone
+                        const el = e.currentTarget
+                        e.dataTransfer.effectAllowed = 'move'
+                        e.dataTransfer.setDragImage(el, el.offsetWidth / 2, 20)
+                      }}
+                      onDragEnd={() => {
+                        setDraggingCategoryId(null)
+                        setDragOverCategoryId(null)
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault()
+                        e.dataTransfer.dropEffect = 'move'
+                        if (category.id !== draggingCategoryId) {
+                          setDragOverCategoryId(category.id)
+                        }
+                      }}
+                      onDragLeave={() => {
+                        setDragOverCategoryId(null)
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault()
+                        if (!draggingCategoryId || draggingCategoryId === category.id) return
+                        setCategoryOrderIds((current) =>
+                          reorderCategoryIds(current, draggingCategoryId, category.id)
+                        )
+                        setDraggingCategoryId(null)
+                        setDragOverCategoryId(null)
+                      }}
+                      className={cn(
+                        'rounded-xl border bg-white transition-all duration-200',
+                        draggingCategoryId === category.id
+                          ? 'border-coral-300 shadow-lg ring-2 ring-coral-200 cursor-grabbing'
+                          : dragOverCategoryId === category.id
+                            ? 'border-coral-400 shadow-md translate-y-1'
+                            : 'border-ink-100 cursor-grab'
+                      )}
+                    >
                       <div
-                        className="flex cursor-pointer flex-col gap-4 px-4 py-4 lg:flex-row lg:items-center lg:justify-between lg:px-5"
+                        className="flex cursor-grab flex-col gap-4 px-4 py-4 lg:flex-row lg:items-center lg:justify-between lg:px-5"
                         onClick={() => {
                           setExpandedByCategoryId((current) => ({
                             ...current,
@@ -1730,7 +1759,9 @@ const normalizedSearch = search.trim().toLowerCase()
                           }
                         }}
                       >
-                        <div className="min-w-0">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <GripVertical className="h-5 w-5 shrink-0 text-ink-300" />
+                          <div className="min-w-0">
                           <div className="flex min-w-0 flex-wrap items-center gap-2">
                             <p className="truncate text-lg font-bold text-ink-900">{category.name}</p>
                             {getCategoryTemplate(category) === 'pizza' ? (
@@ -1747,6 +1778,7 @@ const normalizedSearch = search.trim().toLowerCase()
                                 {products.length} {products.length === 1 ? 'item' : 'itens'}
                               </span>
                             )}
+                          </div>
                           </div>
                         </div>
 
@@ -2787,100 +2819,6 @@ const normalizedSearch = search.trim().toLowerCase()
             </div>
           </div>
         </>
-      </AnimatedModal>
-
-      <AnimatedModal
-        open={sortModalOpen}
-        onClose={() => setSortModalOpen(false)}
-        panelClassName="panel-card w-full max-w-2xl p-6"
-        ariaLabelledby="sort-categories-title"
-      >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">Ordenar categorias</p>
-                <h3 id="sort-categories-title" className="mt-2 text-xl font-bold text-ink-900">
-                  Arraste e solte para reorganizar
-                </h3>
-                <p className="mt-2 text-sm leading-6 text-ink-500">
-                  A ordem salva aqui passa a valer no cardapio e no filtro de categorias.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setSortModalOpen(false)}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50"
-                aria-label="Fechar ordenacao"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="mt-6 space-y-3">
-              {draftCategoryOrderIds.map((categoryId, index) => {
-                const category = catalogCategories.find((item) => item.id === categoryId)
-                if (!category) return null
-
-                return (
-                  <div
-                    key={category.id}
-                    draggable
-                    onDragStart={() => setDraggingCategoryId(category.id)}
-                    onDragEnd={() => setDraggingCategoryId(null)}
-                    onDragOver={(event) => event.preventDefault()}
-                    onDrop={() => {
-                      if (!draggingCategoryId) return
-                      setDraftCategoryOrderIds((current) =>
-                        reorderCategoryIds(current, draggingCategoryId, category.id)
-                      )
-                      setDraggingCategoryId(null)
-                    }}
-                    className={cn(
-                      'flex items-center gap-4 rounded-xl border border-ink-100 bg-white px-4 py-4 transition',
-                      draggingCategoryId === category.id && 'border-coral-300 bg-coral-50'
-                    )}
-                  >
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-ink-50 text-ink-500">
-                      <GripVertical className="h-4 w-4" />
-                    </div>
-
-                    <div className="flex min-w-0 flex-1 items-center justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="truncate text-base font-bold text-ink-900">{category.name}</p>
-                        <p className="mt-1 text-sm text-ink-500">
-                          Posicao {index + 1} de {draftCategoryOrderIds.length}
-                        </p>
-                      </div>
-
-                      <div className="rounded-xl bg-ink-50 px-3 py-2 text-sm font-semibold text-ink-600">
-                        {category.productCount} {category.productCount === 1 ? 'item' : 'itens'}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-
-            <div className="mt-6 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setSortModalOpen(false)}
-                className="inline-flex h-11 items-center justify-center rounded-2xl border border-ink-100 px-5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setCategoryOrderIds(draftCategoryOrderIds)
-                  setSortModalOpen(false)
-                  toast.success('Categorias reordenadas com sucesso.')
-                }}
-                className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
-              >
-                Salvar ordem
-              </button>
-            </div>
       </AnimatedModal>
 
       <AnimatedModal
