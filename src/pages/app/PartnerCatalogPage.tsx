@@ -2250,7 +2250,7 @@ const normalizedSearch = search.trim().toLowerCase()
 
       <AnimatedModal
         open={pizzaModalOpen}
-        onClose={() => { setPizzaModalOpen(false); setPizzaEditingCategoryId(null) }}}
+        onClose={() => { setPizzaModalOpen(false); setPizzaEditingCategoryId(null) }}
         panelClassName="panel-card flex h-[min(88vh,860px)] w-full max-w-5xl flex-col p-6"
         ariaLabelledby="pizza-modal-title"
       >
