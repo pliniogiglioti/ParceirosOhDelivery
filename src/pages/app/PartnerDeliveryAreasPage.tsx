@@ -162,6 +162,7 @@ export function PartnerDeliveryAreasPage() {
         open={locationModalOpen}
         onClose={() => setLocationModalOpen(false)}
         panelClassName="panel-card w-full max-w-2xl p-6"
+        overlayClassName="z-[2000]"
         ariaLabelledby="location-modal-title"
       >
         <div className="flex items-start justify-between gap-4">
