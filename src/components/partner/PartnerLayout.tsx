@@ -12,6 +12,7 @@ import { usePartnerDashboard } from '@/hooks/usePartnerDashboard'
 import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
 import { usePartnerUiStore } from '@/hooks/usePartnerUiStore'
 import { cn, isSameUtcDate } from '@/lib/utils'
+import { saveStore } from '@/services/partner'
 
 export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
   const { selectedStoreId } = usePartnerAuth()
@@ -134,6 +135,12 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
   function handleToggleStoreStatus() {
     const nextValue = !displayData.store.isOpen
     setStoreOpen(nextValue)
+    // Persiste no banco
+    saveStore(data.store.id, { isOpen: nextValue }).catch(() => {
+      // Reverte se falhar
+      setStoreOpen(!nextValue)
+      toast.error('Nao foi possivel atualizar o status da loja.')
+    })
     toast.success(nextValue ? 'Loja aberta com sucesso.' : 'Loja fechada com sucesso.')
   }
 

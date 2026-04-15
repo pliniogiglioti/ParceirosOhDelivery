@@ -330,6 +330,7 @@ export async function saveStore(storeId: string, patch: Partial<import('@/types'
       ...(patch.etaMax !== undefined && { eta_max: patch.etaMax }),
       ...(patch.pickupEta !== undefined && { pickup_eta: patch.pickupEta }),
       ...(patch.active !== undefined && { active: patch.active }),
+      ...(patch.isOpen !== undefined && { is_open: patch.isOpen }),
       ...(patch.coverImageUrl !== undefined && { cover_image_url: patch.coverImageUrl }),
       ...(patch.logoImageUrl !== undefined && { logo_image_url: patch.logoImageUrl }),
       ...(patch.addressStreet !== undefined && { address_street: patch.addressStreet }),
