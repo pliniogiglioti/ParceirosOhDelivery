@@ -273,6 +273,7 @@ export function PartnerCatalogPage({
   const [dragOverCategoryId, setDragOverCategoryId] = useState<string | null>(null)
   const dragCloneRef = useRef<HTMLDivElement | null>(null)
   const dragWidthRef = useRef(0)
+  const dragSourceRef = useRef<string | null>(null)
   const [createCategoryModalOpen, setCreateCategoryModalOpen] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
   const [newCategoryTemplate, setNewCategoryTemplate] = useState<CategoryTemplate>('padrao')
@@ -1706,62 +1707,30 @@ const normalizedSearch = search.trim().toLowerCase()
                   return (
                     <article
                       key={category.id}
-                      draggable
-                      onDragStart={(e) => {
-                        setDraggingCategoryId(category.id)
-                        e.dataTransfer.effectAllowed = 'move'
-                        const el = e.currentTarget
-                        dragWidthRef.current = el.offsetWidth
-                        // Create opaque clone that follows cursor
-                        const clone = el.cloneNode(true) as HTMLDivElement
-                        clone.style.cssText = `
-                          position:fixed;top:${e.clientY - 20}px;left:${e.clientX - el.offsetWidth / 2}px;
-                          width:${el.offsetWidth}px;pointer-events:none;z-index:9999;opacity:1;
-                          box-shadow:0 8px 32px rgba(0,0,0,0.18);border-radius:12px;background:white;
-                          transform:rotate(1.5deg) scale(1.02);
-                        `
-                        document.body.appendChild(clone)
-                        dragCloneRef.current = clone
-                        // Hide browser ghost
-                        const ghost = document.createElement('div')
-                        ghost.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;'
-                        document.body.appendChild(ghost)
-                        e.dataTransfer.setDragImage(ghost, 0, 0)
-                        setTimeout(() => document.body.removeChild(ghost), 0)
-                      }}
-                      onDrag={(e) => {
-                        if (!dragCloneRef.current || e.clientX === 0) return
-                        dragCloneRef.current.style.top = `${e.clientY - 20}px`
-                        dragCloneRef.current.style.left = `${e.clientX - dragWidthRef.current / 2}px`
-                      }}
-                      onDragEnd={() => {
-                        if (dragCloneRef.current) {
-                          document.body.removeChild(dragCloneRef.current)
-                          dragCloneRef.current = null
-                        }
-                        setDraggingCategoryId(null)
-                        setDragOverCategoryId(null)
-                      }}
                       onDragOver={(e) => {
                         e.preventDefault()
-                        e.dataTransfer.dropEffect = 'move'
-                        if (category.id !== draggingCategoryId) {
+                        if (category.id !== dragSourceRef.current) {
                           setDragOverCategoryId(category.id)
                         }
                       }}
                       onDragLeave={(e) => {
-                        // Only clear if leaving to outside this element
                         if (!e.currentTarget.contains(e.relatedTarget as Node)) {
                           setDragOverCategoryId(null)
                         }
                       }}
                       onDrop={(e) => {
                         e.preventDefault()
-                        if (!draggingCategoryId || draggingCategoryId === category.id) return
-                        const nextOrder = reorderCategoryIds(categoryOrderIds, draggingCategoryId, category.id)
+                        const from = dragSourceRef.current
+                        if (!from || from === category.id) return
+                        const nextOrder = reorderCategoryIds(categoryOrderIds, from, category.id)
                         setCategoryOrderIds(nextOrder)
                         setDraggingCategoryId(null)
                         setDragOverCategoryId(null)
+                        dragSourceRef.current = null
+                        if (dragCloneRef.current) {
+                          document.body.removeChild(dragCloneRef.current)
+                          dragCloneRef.current = null
+                        }
                         // Persist to DB
                         if (data) {
                           import('@/lib/supabase').then(({ supabase }) => {
@@ -1778,12 +1747,10 @@ const normalizedSearch = search.trim().toLowerCase()
                         }
                       }}
                       className={cn(
-                        'rounded-xl border bg-white transition-all duration-150',
-                        draggingCategoryId === category.id
-                          ? 'border-dashed border-coral-300 bg-coral-50/50 opacity-40'
-                          : dragOverCategoryId === category.id
-                            ? 'border-coral-400 shadow-md scale-[1.01]'
-                            : 'border-ink-100'
+                        'rounded-xl border bg-white transition-colors duration-150',
+                        dragOverCategoryId === category.id && draggingCategoryId !== category.id
+                          ? 'border-coral-400 ring-2 ring-coral-200'
+                          : 'border-ink-100'
                       )}
                     >
                       <div
@@ -1800,7 +1767,27 @@ const normalizedSearch = search.trim().toLowerCase()
                         }}
                       >
                         <div className="flex min-w-0 items-center gap-3">
-                          <GripVertical className="h-5 w-5 shrink-0 text-ink-300" />
+                          <div
+                            draggable
+                            onDragStart={(e) => {
+                              dragSourceRef.current = category.id
+                              setDraggingCategoryId(category.id)
+                              e.dataTransfer.effectAllowed = 'move'
+                              // Use the article as drag image — full opacity
+                              const article = e.currentTarget.closest('article') as HTMLElement
+                              if (article) {
+                                e.dataTransfer.setDragImage(article, article.offsetWidth / 2, 30)
+                              }
+                            }}
+                            onDragEnd={() => {
+                              setDraggingCategoryId(null)
+                              setDragOverCategoryId(null)
+                              dragSourceRef.current = null
+                            }}
+                            className="cursor-grab active:cursor-grabbing touch-none shrink-0 p-1 text-ink-300 hover:text-ink-500"
+                          >
+                            <GripVertical className="h-5 w-5" />
+                          </div>
                           <div className="min-w-0">
                           <div className="flex min-w-0 flex-wrap items-center gap-2">
                             <p className="truncate text-lg font-bold text-ink-900">{category.name}</p>
