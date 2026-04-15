@@ -332,7 +332,14 @@ export function PartnerCatalogPage({
   const [flavorImagePickerOpen, setFlavorImagePickerOpen] = useState(false)
   const [savingFlavor, setSavingFlavor] = useState(false)
   const [editingFlavorId, setEditingFlavorId] = useState<string | null>(null)
-  // Pizza flavor library modal
+  // Pizza flavors per category
+  const [flavorsByCategory, setFlavorsByCategory] = useState<Record<string, import('@/types').PizzaFlavor[]>>({})
+
+  function loadFlavorsForCategory(categoryId: string) {
+    fetchPizzaFlavors(categoryId).then((flavors) => {
+      setFlavorsByCategory((prev) => ({ ...prev, [categoryId]: flavors }))
+    }).catch(() => {})
+  }
   const [flavorLibModalOpen, setFlavorLibModalOpen] = useState(false)
   const [flavorLibItems, setFlavorLibItems] = useState<import('@/types').PizzaFlavor[]>([])
   const [flavorLibSearch, setFlavorLibSearch] = useState('')
@@ -1356,10 +1363,11 @@ const normalizedSearch = search.trim().toLowerCase()
         imageUrl: flavorImage || undefined,
         prices,
       })
-      // Refresh flavor library if open
-      if (flavorLibCategoryId === flavorModalCategoryId) {
-        fetchPizzaFlavors(flavorModalCategoryId).then(setFlavorLibItems).catch(() => {})
-      }
+      // Refresh flavor list for this category
+      fetchPizzaFlavors(flavorModalCategoryId).then((flavors) => {
+        setFlavorsByCategory((prev) => ({ ...prev, [flavorModalCategoryId]: flavors }))
+        if (flavorLibCategoryId === flavorModalCategoryId) setFlavorLibItems(flavors)
+      }).catch(() => {})
       setFlavorModalOpen(false)
       toast.success(`${flavorName.trim()} ${editingFlavorId ? 'atualizado' : 'adicionado'} com sucesso.`)
     } catch {
@@ -1622,12 +1630,16 @@ const normalizedSearch = search.trim().toLowerCase()
                     <article key={category.id} className="rounded-xl border border-ink-100 bg-white">
                       <div
                         className="flex cursor-pointer flex-col gap-4 px-4 py-4 lg:flex-row lg:items-center lg:justify-between lg:px-5"
-                        onClick={() =>
+                        onClick={() => {
                           setExpandedByCategoryId((current) => ({
                             ...current,
                             [category.id]: !isExpanded,
                           }))
-                        }
+                          // Load pizza flavors when expanding a pizza category
+                          if (!isExpanded && getCategoryTemplate(category) === 'pizza') {
+                            loadFlavorsForCategory(category.id)
+                          }
+                        }}
                       >
                         <div className="min-w-0">
                           <div className="flex min-w-0 items-center gap-2">
@@ -1720,7 +1732,52 @@ const normalizedSearch = search.trim().toLowerCase()
                       <div className={cn('grid transition-all duration-300 ease-in-out', isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')}>
                         <div className="overflow-hidden">
                         <div className="border-t border-ink-100 px-4 py-4 lg:px-5">
-                          {products.length > 0 ? (
+                          {getCategoryTemplate(category) === 'pizza' ? (
+                            // Pizza category — show flavors
+                            (() => {
+                              const flavors = flavorsByCategory[category.id] ?? []
+                              return flavors.length > 0 ? (
+                                <div className="overflow-hidden rounded-xl border border-ink-100 bg-white">
+                                  <div className="hidden grid-cols-[88px_minmax(0,1.8fr)_minmax(0,1fr)_44px] items-center gap-4 border-b border-ink-100 bg-ink-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-ink-500 lg:grid">
+                                    <span>Foto</span>
+                                    <span>Sabor</span>
+                                    <span>Precos</span>
+                                    <span />
+                                  </div>
+                                  <div className="divide-y divide-ink-100">
+                                    {flavors.map((flavor) => (
+                                      <div key={flavor.id} className="grid gap-4 px-4 py-4 lg:grid-cols-[88px_minmax(0,1.8fr)_minmax(0,1fr)_44px] lg:items-center">
+                                        <div>
+                                          <img src={flavor.imageUrl ?? DEFAULT_PRODUCT_IMAGE} alt={flavor.name}
+                                            className="h-16 w-16 rounded-xl object-cover" />
+                                        </div>
+                                        <div className="min-w-0">
+                                          <p className="truncate text-sm font-bold text-ink-900">{flavor.name}</p>
+                                          {flavor.description ? <p className="mt-1 line-clamp-2 text-sm text-ink-500">{flavor.description}</p> : null}
+                                        </div>
+                                        <div className="text-sm text-ink-500">
+                                          {Object.keys(flavor.prices).length > 0
+                                            ? Object.values(flavor.prices).map((p) => formatCurrency(p)).join(' / ')
+                                            : 'Sem preço'}
+                                        </div>
+                                        <div className="flex justify-end">
+                                          <button type="button" onClick={() => openFlavorModal(category.id, flavor)}
+                                            className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50">
+                                            <PencilLine className="h-4 w-4" />
+                                          </button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="rounded-xl border border-dashed border-ink-200 bg-ink-50 px-5 py-8 text-center">
+                                  <p className="text-sm font-semibold text-ink-700">Nenhum sabor cadastrado</p>
+                                  <p className="mt-2 text-sm text-ink-500">Clique em "Adicionar sabor" para comecar.</p>
+                                </div>
+                              )
+                            })()
+                          ) : products.length > 0 ? (
                             <div className="overflow-hidden rounded-xl border border-ink-100 bg-white">
                               <div className="hidden grid-cols-[88px_minmax(0,1.8fr)_140px_160px_128px_120px_44px] items-center gap-4 border-b border-ink-100 bg-ink-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-ink-500 lg:grid">
                                 <span>Foto</span>
@@ -1867,7 +1924,7 @@ const normalizedSearch = search.trim().toLowerCase()
                               <p className="text-sm font-semibold text-ink-700">Nenhum item nesta categoria</p>
                               <p className="mt-2 text-sm text-ink-500">Adicione produtos para preencher esta secao do cardapio.</p>
                             </div>
-                          )}
+                          ) : null}
                         </div>
                         </div>
                       </div>
