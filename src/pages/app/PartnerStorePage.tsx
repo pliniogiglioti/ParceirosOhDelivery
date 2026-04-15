@@ -712,7 +712,9 @@ function StoreAccessTab() {
   }
 
   function roleLabel(role: MemberRole) {
-    return role === 'gerente' ? 'Gerente' : 'Operador'
+    if (role === 'gerente') return 'Gerente'
+    if (role === 'financeiro') return 'Financeiro'
+    return 'Operador'
   }
 
   return (
@@ -778,6 +780,7 @@ function StoreAccessTab() {
                 >
                   <option value="operador">Operador — visualiza e gerencia pedidos</option>
                   <option value="gerente">Gerente — acesso completo exceto financeiro</option>
+                  <option value="financeiro">Financeiro — acesso ao modulo financeiro</option>
                 </select>
                 <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-400" />
               </div>
@@ -855,23 +858,62 @@ function StoreAccessTab() {
                     <div className="absolute right-0 top-9 z-20 w-48 rounded-2xl border border-ink-100 bg-white py-1 shadow-float">
                       {/* Trocar função */}
                       {member.role === 'operador' ? (
-                        <button
-                          type="button"
-                          onClick={() => void handleChangeRole(member, 'gerente')}
-                          className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-ink-700 hover:bg-ink-50"
-                        >
-                          <Shield className="h-4 w-4 text-ink-400" />
-                          Promover a Gerente
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => void handleChangeRole(member, 'gerente')}
+                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-ink-700 hover:bg-ink-50"
+                          >
+                            <Shield className="h-4 w-4 text-ink-400" />
+                            Promover a Gerente
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleChangeRole(member, 'financeiro')}
+                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-ink-700 hover:bg-ink-50"
+                          >
+                            <Shield className="h-4 w-4 text-ink-400" />
+                            Definir como Financeiro
+                          </button>
+                        </>
+                      ) : member.role === 'gerente' ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => void handleChangeRole(member, 'operador')}
+                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-ink-700 hover:bg-ink-50"
+                          >
+                            <Shield className="h-4 w-4 text-ink-400" />
+                            Rebaixar a Operador
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleChangeRole(member, 'financeiro')}
+                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-ink-700 hover:bg-ink-50"
+                          >
+                            <Shield className="h-4 w-4 text-ink-400" />
+                            Definir como Financeiro
+                          </button>
+                        </>
                       ) : (
-                        <button
-                          type="button"
-                          onClick={() => void handleChangeRole(member, 'operador')}
-                          className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-ink-700 hover:bg-ink-50"
-                        >
-                          <Shield className="h-4 w-4 text-ink-400" />
-                          Rebaixar a Operador
-                        </button>
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => void handleChangeRole(member, 'operador')}
+                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-ink-700 hover:bg-ink-50"
+                          >
+                            <Shield className="h-4 w-4 text-ink-400" />
+                            Definir como Operador
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void handleChangeRole(member, 'gerente')}
+                            className="flex w-full items-center gap-2.5 px-4 py-2.5 text-sm text-ink-700 hover:bg-ink-50"
+                          >
+                            <Shield className="h-4 w-4 text-ink-400" />
+                            Promover a Gerente
+                          </button>
+                        </>
                       )}
 
                       {/* Suspender / Reativar */}

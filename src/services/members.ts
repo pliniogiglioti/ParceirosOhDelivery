@@ -1,6 +1,6 @@
 import { isSupabaseConfigured, supabase } from '@/lib/supabase'
 
-export type MemberRole = 'operador' | 'gerente'
+export type MemberRole = 'operador' | 'gerente' | 'financeiro'
 export type MemberStatus = 'pendente' | 'ativo' | 'inativo'
 
 export interface StoreMember {
