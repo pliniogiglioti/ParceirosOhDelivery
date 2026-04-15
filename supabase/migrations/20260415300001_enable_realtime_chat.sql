@@ -1,11 +1,27 @@
 -- Habilita Realtime para as tabelas de chat e avaliações
--- Necessário para que o frontend receba atualizações em tempo real
+-- Usa DO block para evitar erro se já estiver na publicação
 
--- Adiciona chat_messages à publicação do Realtime
-alter publication supabase_realtime add table public.chat_messages;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'chat_messages'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_messages;
+  END IF;
 
--- Adiciona chat_sessions à publicação do Realtime
-alter publication supabase_realtime add table public.chat_sessions;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'chat_sessions'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.chat_sessions;
+  END IF;
 
--- Adiciona store_reviews à publicação do Realtime (para badge de novas avaliações)
-alter publication supabase_realtime add table public.store_reviews;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime' AND tablename = 'store_reviews'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.store_reviews;
+  END IF;
+END;
+$$;
