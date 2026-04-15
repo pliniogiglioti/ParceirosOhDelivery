@@ -1,11 +1,12 @@
 import type { DragEvent, MouseEvent as ReactMouseEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
-import { ArrowRight, ChevronDown, GripVertical, Info, Maximize2, Minimize2, Search, Settings, X } from 'lucide-react'
+import { ArrowRight, ChevronDown, GripVertical, Info, Maximize2, MessageCircle, Minimize2, Search, Settings, X } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import type { OrderStatus, OrderStatusEvent, PartnerOrder, PartnerOrderSettings } from '@/types'
 import { cancelOrder, fetchOrderStatusEvents, updateOrderStatus } from '@/services/partner'
 import { AnimatedModal } from '@/components/partner/AnimatedModal'
+import { OrderChatPanel } from '@/components/partner/OrderChatPanel'
 import { SectionFrame } from '@/components/partner/PartnerUi'
 import { usePartnerPageData } from '@/hooks/usePartnerPageData'
 import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
@@ -191,6 +192,7 @@ export function PartnerOrdersPage() {
   const [now, setNow] = useState(() => Date.now())
   const [statusEvents, setStatusEvents] = useState<OrderStatusEvent[]>([])
   const [statusEventsLoading, setStatusEventsLoading] = useState(false)
+  const [orderModalTab, setOrderModalTab] = useState<'detalhes' | 'chat'>('detalhes')
   const orderSettings = {
     ...defaultOrderSettings,
     ...(orderSettingsByStoreId[data.store.id] ?? {}),
@@ -418,6 +420,7 @@ export function PartnerOrdersPage() {
     setSelectedOrder(null)
     setSearchParams({})
     setStatusEvents([])
+    setOrderModalTab('detalhes')
   }
 
   function handleBoardDragOver(event: DragEvent<HTMLDivElement>) {
@@ -808,11 +811,25 @@ export function PartnerOrdersPage() {
                                     data-prevent-board-pan="true"
                                     onClick={(event) => {
                                       event.stopPropagation()
+                                      setOrderModalTab('detalhes')
                                       setSelectedOrder(order)
                                     }}
                                     className="inline-flex h-10 w-full items-center justify-center rounded-2xl border border-ink-100 bg-white px-3 text-[13px] font-semibold text-ink-800 transition hover:border-coral-200 hover:text-coral-600"
                                   >
                                     Ver pedido
+                                  </button>
+                                  <button
+                                    type="button"
+                                    data-prevent-board-pan="true"
+                                    onClick={(event) => {
+                                      event.stopPropagation()
+                                      setOrderModalTab('chat')
+                                      setSelectedOrder(order)
+                                    }}
+                                    className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-2xl border border-ink-100 bg-white px-3 text-[13px] font-semibold text-ink-800 transition hover:border-coral-200 hover:text-coral-600"
+                                  >
+                                    <MessageCircle className="h-4 w-4 text-coral-500" />
+                                    Mensagem ao cliente
                                   </button>
                                 </div>
                               </div>
@@ -911,7 +928,47 @@ export function PartnerOrdersPage() {
                 </button>
               </div>
 
-              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {/* Tabs */}
+              <div className="mt-4 flex gap-1 rounded-2xl border border-ink-100 bg-ink-50 p-1">
+                <button
+                  type="button"
+                  onClick={() => setOrderModalTab('detalhes')}
+                  className={cn(
+                    'flex-1 rounded-xl py-2 text-xs font-semibold transition',
+                    orderModalTab === 'detalhes'
+                      ? 'bg-white text-ink-900 shadow-soft'
+                      : 'text-ink-500 hover:text-ink-700'
+                  )}
+                >
+                  Detalhes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOrderModalTab('chat')}
+                  className={cn(
+                    'flex flex-1 items-center justify-center gap-1.5 rounded-xl py-2 text-xs font-semibold transition',
+                    orderModalTab === 'chat'
+                      ? 'bg-white text-ink-900 shadow-soft'
+                      : 'text-ink-500 hover:text-ink-700'
+                  )}
+                >
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  Chat
+                </button>
+              </div>
+
+              {orderModalTab === 'chat' ? (
+                <div className="mt-4">
+                  <OrderChatPanel
+                    order={orderDetails}
+                    storeId={data.store.id}
+                    storeName={data.store.name}
+                    profileId={orderDetails.customerProfileId ?? undefined}
+                  />
+                </div>
+              ) : (
+                <>
+                <div className="mt-5 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-2xl border border-ink-100 bg-ink-50/70 p-3">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">Status</p>
                   <p className="mt-1 text-sm font-semibold text-ink-900">{orderStatusLabel(orderDetails)}</p>
@@ -1029,6 +1086,8 @@ export function PartnerOrdersPage() {
                   </ol>
                 )}
               </div>
+              </>
+              )}
             </>
           ) : null}
         </AnimatedModal>

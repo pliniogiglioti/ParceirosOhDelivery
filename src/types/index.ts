@@ -68,6 +68,7 @@ export interface PartnerOrder {
   id: string
   code: string
   customerName: string
+  customerProfileId: string | null
   status: OrderStatus
   total: number
   paymentMethod: string
@@ -208,6 +209,8 @@ export interface ReviewItem {
   rating: number
   comment: string
   createdAt: string
+  ownerReply: string | null
+  ownerRepliedAt: string | null
 }
 
 export interface LogisticsSnapshot {

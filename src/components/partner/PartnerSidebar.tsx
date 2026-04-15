@@ -161,6 +161,7 @@ export function PartnerSidebar({
   collapsed,
   onToggleCollapsed,
   onNavigate,
+  newReviewsCount = 0,
   className,
 }: {
   data: PartnerDashboardData
@@ -170,6 +171,7 @@ export function PartnerSidebar({
   collapsed: boolean
   onToggleCollapsed: () => void
   onNavigate?: () => void
+  newReviewsCount?: number
   className?: string
 }) {
   const [signOutModalOpen, setSignOutModalOpen] = useState(false)
@@ -260,6 +262,16 @@ export function PartnerSidebar({
                           )}
                         >
                           {acceptOrdersCount}
+                        </span>
+                      ) : null}
+                      {item.id === 'avaliacoes' && newReviewsCount > 0 ? (
+                        <span
+                          className={cn(
+                            'absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white',
+                            isActive ? 'bg-yellow-500' : 'bg-yellow-400'
+                          )}
+                        >
+                          {newReviewsCount}
                         </span>
                       ) : null}
                     </span>

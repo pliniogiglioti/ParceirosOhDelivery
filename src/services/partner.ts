@@ -1281,6 +1281,20 @@ export async function fetchPizzaSizes(categoryId: string): Promise<import('@/typ
   }))
 }
 
+export async function replyToReview(reviewId: string, reply: string): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
+
+  const { error } = await supabase
+    .from('store_reviews')
+    .update({
+      owner_reply: reply.trim() || null,
+      owner_replied_at: reply.trim() ? new Date().toISOString() : null,
+    })
+    .eq('id', reviewId)
+
+  if (error) throw error
+}
+
 export async function loadPartnerDashboard(storeId: string): Promise<{
   data: PartnerDashboardData
   source: 'supabase'
@@ -1422,6 +1436,7 @@ export async function loadPartnerDashboard(storeId: string): Promise<{
       id: String(row.id),
       code: String(row.order_code ?? '#0000'),
       customerName: String(row.customer_name ?? 'Cliente'),
+      customerProfileId: row.profile_id ? String(row.profile_id) : null,
       status: mapStatus(row.status),
       total: Number(row.total_amount ?? 0),
       paymentMethod: String(row.payment_method ?? 'Pix'),
@@ -1456,6 +1471,8 @@ export async function loadPartnerDashboard(storeId: string): Promise<{
       rating: Number(row.rating ?? 0),
       comment: String(row.comment ?? ''),
       createdAt: String(row.created_at ?? ''),
+      ownerReply: row.owner_reply ? String(row.owner_reply) : null,
+      ownerRepliedAt: row.owner_replied_at ? String(row.owner_replied_at) : null,
     })) ?? []
 
   const brandRowsByMethodId = new Map<string, Array<Record<string, unknown>>>()

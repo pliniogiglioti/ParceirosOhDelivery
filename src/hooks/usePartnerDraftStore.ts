@@ -9,6 +9,7 @@ import type {
   PartnerProduct,
   PartnerStore,
   PaymentMethodItem,
+  ReviewItem,
   StoreCourier,
 } from '@/types'
 
@@ -24,6 +25,8 @@ interface PartnerDraftStoreState {
   // In-session only — not persisted to localStorage
   categoriesByStoreId: Record<string, PartnerCategory[]>
   productsByStoreId: Record<string, PartnerProduct[]>
+  reviewsByStoreId: Record<string, ReviewItem[]>
+  newReviewsCountByStoreId: Record<string, number>
   setStoreOpen: (value: boolean) => void
   hydrateStoreOpen: (value: boolean) => void
   hydrateStore: (store: PartnerStore) => void
@@ -45,6 +48,10 @@ interface PartnerDraftStoreState {
   addCategory: (storeId: string, category: PartnerCategory) => void
   hydrateProducts: (storeId: string, products: PartnerProduct[]) => void
   addProduct: (storeId: string, product: PartnerProduct) => void
+  hydrateReviews: (storeId: string, reviews: ReviewItem[]) => void
+  addReview: (storeId: string, review: ReviewItem) => void
+  updateReview: (storeId: string, reviewId: string, patch: Partial<ReviewItem>) => void
+  clearNewReviews: (storeId: string) => void
 }
 
 export const usePartnerDraftStore = create<PartnerDraftStoreState>()(
@@ -60,6 +67,8 @@ export const usePartnerDraftStore = create<PartnerDraftStoreState>()(
       logisticsByStoreId: {},
       categoriesByStoreId: {},
       productsByStoreId: {},
+      reviewsByStoreId: {},
+      newReviewsCountByStoreId: {},
       setStoreOpen: (storeOpen) => set({ storeOpen }),
       hydrateStoreOpen: (value) => {
         if (get().storeOpen == null) {
@@ -274,6 +283,43 @@ export const usePartnerDraftStore = create<PartnerDraftStoreState>()(
         const current = get().productsByStoreId[storeId] ?? []
         set((state) => ({
           productsByStoreId: { ...state.productsByStoreId, [storeId]: [...current, product] },
+        }))
+      },
+      hydrateReviews: (storeId, reviews) => {
+        set((state) => ({
+          reviewsByStoreId: { ...state.reviewsByStoreId, [storeId]: reviews },
+        }))
+      },
+      addReview: (storeId, review) => {
+        const current = get().reviewsByStoreId[storeId] ?? []
+        if (current.some((r) => r.id === review.id)) return
+        const currentCount = get().newReviewsCountByStoreId[storeId] ?? 0
+        set((state) => ({
+          reviewsByStoreId: {
+            ...state.reviewsByStoreId,
+            [storeId]: [review, ...current],
+          },
+          newReviewsCountByStoreId: {
+            ...state.newReviewsCountByStoreId,
+            [storeId]: currentCount + 1,
+          },
+        }))
+      },
+      updateReview: (storeId, reviewId, patch) => {
+        const current = get().reviewsByStoreId[storeId] ?? []
+        set((state) => ({
+          reviewsByStoreId: {
+            ...state.reviewsByStoreId,
+            [storeId]: current.map((r) => (r.id === reviewId ? { ...r, ...patch } : r)),
+          },
+        }))
+      },
+      clearNewReviews: (storeId) => {
+        set((state) => ({
+          newReviewsCountByStoreId: {
+            ...state.newReviewsCountByStoreId,
+            [storeId]: 0,
+          },
         }))
       },
     }),

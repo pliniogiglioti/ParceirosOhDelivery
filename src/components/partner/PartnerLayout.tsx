@@ -7,6 +7,7 @@ import { PartnerSidebar } from '@/components/partner/PartnerSidebar'
 import { PartnerTopbar } from '@/components/partner/PartnerTopbar'
 import { useOrderNotifications } from '@/hooks/useOrderNotifications'
 import { useOrdersRealtime } from '@/hooks/useOrdersRealtime'
+import { useReviewsRealtime } from '@/hooks/useReviewsRealtime'
 import { usePartnerAuth } from '@/hooks/usePartnerAuth'
 import { usePartnerDashboard } from '@/hooks/usePartnerDashboard'
 import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
@@ -28,6 +29,8 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
     logisticsByStoreId,
     categoriesByStoreId,
     productsByStoreId,
+    reviewsByStoreId,
+    newReviewsCountByStoreId,
     setStoreOpen,
     hydrateStore,
     hydrateStoreOpen,
@@ -38,6 +41,8 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
     hydrateLogistics,
     hydrateCategories,
     hydrateProducts,
+    hydrateReviews,
+    addReview,
   } = usePartnerDraftStore()
 
   useEffect(() => {
@@ -51,6 +56,7 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
       hydrateLogistics(data.store.id, data.logistics)
       hydrateCategories(data.store.id, data.categories)
       hydrateProducts(data.store.id, data.products)
+      hydrateReviews(data.store.id, data.reviews)
     }
   }, [
     data?.store,
@@ -63,6 +69,7 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
     data?.logistics,
     data?.categories,
     data?.products,
+    data?.reviews,
     hydrateOrders,
     hydratePaymentMethods,
     hydrateCouriers,
@@ -72,10 +79,17 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
     hydrateStoreOpen,
     hydrateCategories,
     hydrateProducts,
+    hydrateReviews,
   ])
 
   useOrderNotifications(data?.store.id ?? '')
   useOrdersRealtime(data?.store.id ?? '')
+  useReviewsRealtime(data?.store.id ?? '', (review) => {
+    if (data?.store.id) {
+      addReview(data.store.id, review)
+      toast('Nova avaliacao recebida!', { icon: '⭐' })
+    }
+  })
 
   if (loading) {
     return <LoadingScreen />
@@ -102,6 +116,8 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
   const draftLogistics = logisticsByStoreId[data.store.id] ?? data.logistics
   const draftCategories = categoriesByStoreId[data.store.id] ?? data.categories
   const draftProducts = productsByStoreId[data.store.id] ?? data.products
+  const draftReviews = reviewsByStoreId[data.store.id] ?? data.reviews
+  const newReviewsCount = newReviewsCountByStoreId[data.store.id] ?? 0
   const today = new Date()
   const validOrders = draftOrders.filter((order) => order.status !== 'cancelado')
   const todayOrders = validOrders.filter((order) => isSameUtcDate(order.createdAt, today))
@@ -123,6 +139,7 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
     logistics: draftLogistics,
     categories: draftCategories,
     products: draftProducts,
+    reviews: draftReviews,
     metrics: {
       ...data.metrics,
       grossRevenue,
@@ -159,6 +176,7 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
           onToggleStoreStatus={handleToggleStoreStatus}
           collapsed={sidebarCollapsed}
           onToggleCollapsed={() => setSidebarCollapsed(!sidebarCollapsed)}
+          newReviewsCount={newReviewsCount}
           className="h-full"
         />
       </div>
@@ -185,7 +203,7 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
           </div>
 
           {error ? <div className="panel-card px-5 py-4 text-sm text-coral-700">{error}</div> : null}
-          <Outlet context={{ data: displayData, source, serverData: data }} />
+          <Outlet context={{ data: displayData, source, serverData: data, storeId: data.store.id }} />
         </div>
       </div>
 
@@ -207,6 +225,7 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
               collapsed={false}
               onToggleCollapsed={() => undefined}
               onNavigate={() => setSidebarOpen(false)}
+              newReviewsCount={newReviewsCount}
               className="h-[calc(100dvh-5.5rem)]"
             />
           </div>
