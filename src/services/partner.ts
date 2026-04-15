@@ -1076,6 +1076,117 @@ export async function deleteComplementLibraryItem(itemId: string, storeId: strin
   if (error) throw error
 }
 
+export async function savePizzaFlavor(
+  storeId: string,
+  input: {
+    id?: string
+    categoryId: string
+    name: string
+    description: string
+    imageUrl?: string
+    active?: boolean
+    featured?: boolean
+    prices: Record<string, number> // sizeId -> price
+  }
+): Promise<import('@/types').PizzaFlavor> {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
+
+  let flavorId: string
+
+  if (input.id) {
+    const { data, error } = await supabase
+      .from('pizza_flavors')
+      .update({
+        name: input.name,
+        description: input.description || null,
+        image_url: input.imageUrl ?? null,
+        active: input.active ?? true,
+        featured: input.featured ?? false,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', input.id)
+      .eq('store_id', storeId)
+      .select('id')
+      .single()
+    if (error) throw error
+    flavorId = String(data.id)
+  } else {
+    const { data, error } = await supabase
+      .from('pizza_flavors')
+      .insert({
+        category_id: input.categoryId,
+        store_id: storeId,
+        name: input.name,
+        description: input.description || null,
+        image_url: input.imageUrl ?? null,
+        active: input.active ?? true,
+        featured: input.featured ?? false,
+      })
+      .select('id')
+      .single()
+    if (error) throw error
+    flavorId = String(data.id)
+  }
+
+  // Upsert prices
+  const priceRows = Object.entries(input.prices).map(([sizeId, price]) => ({
+    flavor_id: flavorId,
+    size_id: sizeId,
+    store_id: storeId,
+    price,
+  }))
+
+  if (priceRows.length > 0) {
+    const { error } = await supabase
+      .from('pizza_flavor_prices')
+      .upsert(priceRows, { onConflict: 'flavor_id,size_id' })
+    if (error) throw error
+  }
+
+  return {
+    id: flavorId,
+    categoryId: input.categoryId,
+    name: input.name,
+    description: input.description,
+    imageUrl: input.imageUrl,
+    active: input.active ?? true,
+    featured: input.featured ?? false,
+    prices: input.prices,
+  }
+}
+
+export async function fetchPizzaFlavors(categoryId: string): Promise<import('@/types').PizzaFlavor[]> {
+  if (!isSupabaseConfigured || !supabase) return []
+
+  const { data: flavors, error } = await supabase
+    .from('pizza_flavors')
+    .select('id, category_id, name, description, image_url, active, featured')
+    .eq('category_id', categoryId)
+    .order('sort_order')
+  if (error) { console.warn('[fetchPizzaFlavors]', error.message); return [] }
+  if (!flavors?.length) return []
+
+  const flavorIds = flavors.map((f) => String(f.id))
+  const { data: prices } = await supabase
+    .from('pizza_flavor_prices')
+    .select('flavor_id, size_id, price')
+    .in('flavor_id', flavorIds)
+
+  return flavors.map((f) => ({
+    id: String(f.id),
+    categoryId: String(f.category_id),
+    name: String(f.name),
+    description: String(f.description ?? ''),
+    imageUrl: f.image_url ? String(f.image_url) : undefined,
+    active: Boolean(f.active ?? true),
+    featured: Boolean(f.featured ?? false),
+    prices: Object.fromEntries(
+      (prices ?? []).filter((p) => String(p.flavor_id) === String(f.id))
+        .map((p) => [String(p.size_id), Number(p.price ?? 0)])
+    ),
+  }))
+}
+
 export async function savePizzaCategory(
   storeId: string,
   categoryId: string,

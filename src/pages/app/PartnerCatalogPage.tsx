@@ -28,7 +28,7 @@ import { AnimatedModal } from '@/components/partner/AnimatedModal'
 import { SectionFrame } from '@/components/partner/PartnerUi'
 import { StoreImagePickerModal } from '@/components/partner/StoreImagePickerModal'
 import type { PartnerCategory } from '@/types'
-import { createProduct, createProductCategory, fetchIndustrializados, updateProduct, saveProductComplements, fetchProductComplements, fetchComplementLibrary, createComplementLibraryItem, updateComplementLibraryItem, deleteComplementLibraryItem, savePizzaCategory, type IndustrializedItem } from '@/services/partner'
+import { createProduct, createProductCategory, fetchIndustrializados, updateProduct, saveProductComplements, fetchProductComplements, fetchComplementLibrary, createComplementLibraryItem, updateComplementLibraryItem, deleteComplementLibraryItem, savePizzaCategory, savePizzaFlavor, fetchPizzaSizes, fetchPizzaFlavors, type IndustrializedItem } from '@/services/partner'
 import type { PartnerProduct } from '@/types'
 
 function ThemeSwitch({
@@ -319,6 +319,24 @@ export function PartnerCatalogPage({
     { id: 'massas', label: 'Massas' },
     { id: 'bordas', label: 'Bordas' },
   ]
+
+  // Pizza flavor modal
+  const [flavorModalOpen, setFlavorModalOpen] = useState(false)
+  const [flavorModalCategoryId, setFlavorModalCategoryId] = useState<string | null>(null)
+  const [flavorTab, setFlavorTab] = useState<'detalhes' | 'preco'>('detalhes')
+  const [flavorName, setFlavorName] = useState('')
+  const [flavorDescription, setFlavorDescription] = useState('')
+  const [flavorImage, setFlavorImage] = useState('')
+  const [flavorPrices, setFlavorPrices] = useState<Record<string, string>>({})
+  const [flavorSizes, setFlavorSizes] = useState<import('@/types').PizzaSize[]>([])
+  const [flavorImagePickerOpen, setFlavorImagePickerOpen] = useState(false)
+  const [savingFlavor, setSavingFlavor] = useState(false)
+  const [editingFlavorId, setEditingFlavorId] = useState<string | null>(null)
+  // Pizza flavor library modal
+  const [flavorLibModalOpen, setFlavorLibModalOpen] = useState(false)
+  const [flavorLibItems, setFlavorLibItems] = useState<import('@/types').PizzaFlavor[]>([])
+  const [flavorLibSearch, setFlavorLibSearch] = useState('')
+  const [flavorLibCategoryId, setFlavorLibCategoryId] = useState<string | null>(null)
 
   // Edit product modal (same flow as industrialized: preco → classificacao → revisao)
   const [editProductModalOpen, setEditProductModalOpen] = useState(false)
@@ -1298,6 +1316,66 @@ const normalizedSearch = search.trim().toLowerCase()
     }
   }
 
+  // ── Pizza Flavor helpers ───────────────────────────────────────────────────
+  function openFlavorModal(categoryId: string, flavor?: import('@/types').PizzaFlavor) {
+    setFlavorModalCategoryId(categoryId)
+    setFlavorTab('detalhes')
+    setFlavorName(flavor?.name ?? '')
+    setFlavorDescription(flavor?.description ?? '')
+    setFlavorImage(flavor?.imageUrl ?? '')
+    setEditingFlavorId(flavor?.id ?? null)
+    // Load sizes for this category
+    fetchPizzaSizes(categoryId).then(setFlavorSizes).catch(() => {})
+    // Init prices
+    if (flavor) {
+      const priceMap: Record<string, string> = {}
+      Object.entries(flavor.prices).forEach(([sizeId, price]) => {
+        priceMap[sizeId] = price > 0 ? price.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : ''
+      })
+      setFlavorPrices(priceMap)
+    } else {
+      setFlavorPrices({})
+    }
+    setFlavorModalOpen(true)
+  }
+
+  async function handleSaveFlavor() {
+    if (!data || !flavorModalCategoryId) return
+    if (!flavorName.trim()) { toast.error('Informe o nome do sabor.'); return }
+    setSavingFlavor(true)
+    try {
+      const prices: Record<string, number> = {}
+      flavorSizes.forEach((s) => {
+        prices[s.id] = parseCurrencyInput(flavorPrices[s.id] ?? '')
+      })
+      await savePizzaFlavor(data.store.id, {
+        id: editingFlavorId ?? undefined,
+        categoryId: flavorModalCategoryId,
+        name: flavorName.trim(),
+        description: flavorDescription.trim(),
+        imageUrl: flavorImage || undefined,
+        prices,
+      })
+      // Refresh flavor library if open
+      if (flavorLibCategoryId === flavorModalCategoryId) {
+        fetchPizzaFlavors(flavorModalCategoryId).then(setFlavorLibItems).catch(() => {})
+      }
+      setFlavorModalOpen(false)
+      toast.success(`${flavorName.trim()} ${editingFlavorId ? 'atualizado' : 'adicionado'} com sucesso.`)
+    } catch {
+      toast.error('Nao foi possivel salvar o sabor.')
+    } finally {
+      setSavingFlavor(false)
+    }
+  }
+
+  function openFlavorLibModal(categoryId: string) {
+    setFlavorLibCategoryId(categoryId)
+    setFlavorLibSearch('')
+    fetchPizzaFlavors(categoryId).then(setFlavorLibItems).catch(() => {})
+    setFlavorLibModalOpen(true)
+  }
+
   const addItemCategory =
     addItemCategoryId ? catalogCategories.find((category) => category.id === addItemCategoryId) ?? null : null
   const selectedProductCreationKindMeta =
@@ -1549,14 +1627,34 @@ const normalizedSearch = search.trim().toLowerCase()
                         </div>
 
                         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); openAddItemModal(category) }}
-                            className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-coral-200 bg-white px-4 text-sm font-semibold text-coral-600 transition hover:bg-coral-50"
-                          >
-                            <Plus className="h-4 w-4" />
-                            Adicionar item
-                          </button>
+                          {getCategoryTemplate(category) === 'pizza' ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); openFlavorModal(category.id) }}
+                                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-coral-200 bg-white px-4 text-sm font-semibold text-coral-600 transition hover:bg-coral-50"
+                              >
+                                <Plus className="h-4 w-4" />
+                                Adicionar sabor
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => { e.stopPropagation(); openFlavorLibModal(category.id) }}
+                                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-coral-200 bg-white px-4 text-sm font-semibold text-coral-600 transition hover:bg-coral-50"
+                              >
+                                Biblioteca de Sabores
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); openAddItemModal(category) }}
+                              className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-coral-200 bg-white px-4 text-sm font-semibold text-coral-600 transition hover:bg-coral-50"
+                            >
+                              <Plus className="h-4 w-4" />
+                              Adicionar item
+                            </button>
+                          )}
 
 <div onClick={(e) => e.stopPropagation()} className="flex items-center justify-between gap-3 rounded-2xl border border-ink-100 bg-white px-4 py-2">
                             <span className="text-sm font-semibold text-ink-700">Ativo</span>
@@ -2173,6 +2271,221 @@ const normalizedSearch = search.trim().toLowerCase()
                 className={cn('inline-flex h-11 items-center justify-center gap-2 rounded-2xl px-5 text-sm font-semibold text-white transition',
                   canContinuePizza && !savingPizza ? 'bg-coral-500 hover:bg-coral-600' : 'bg-ink-300 text-white/80')}>
                 {savingPizza ? <><Loader2 className="h-4 w-4 animate-spin" /> Salvando...</> : pizzaTab === 'bordas' ? 'Salvar categoria' : 'Continuar'}
+              </button>
+            </div>
+          </div>
+        </>
+      </AnimatedModal>
+
+      <StoreImagePickerModal
+        open={flavorImagePickerOpen}
+        storeId={data.store.id}
+        slot="logo"
+        overlayClassName="z-[200]"
+        onSelect={(url) => { setFlavorImage(url); setFlavorImagePickerOpen(false) }}
+        onClose={() => setFlavorImagePickerOpen(false)}
+      />
+
+      {/* ── Modal de sabor ── */}
+      <AnimatedModal
+        open={flavorModalOpen}
+        onClose={() => { if (!flavorImagePickerOpen) setFlavorModalOpen(false) }}
+        panelClassName="panel-card flex h-[min(88vh,700px)] w-full max-w-3xl flex-col p-6"
+        ariaLabelledby="flavor-modal-title"
+      >
+        <>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">Pizza</p>
+              <h3 id="flavor-modal-title" className="mt-1 text-xl font-bold text-ink-900">
+                {editingFlavorId ? flavorName || 'Editar sabor' : 'Novo sabor'}
+              </h3>
+              <p className="mt-1 text-sm text-ink-500">Configure o sabor da pizza</p>
+            </div>
+            <button type="button" onClick={() => setFlavorModalOpen(false)}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          {/* Tabs */}
+          <div className="mt-5 rounded-2xl border border-ink-100 bg-white px-4 py-3">
+            <div className="flex gap-2">
+              {(['detalhes', 'preco'] as const).map((tab) => (
+                <button key={tab} type="button"
+                  onClick={() => setFlavorTab(tab)}
+                  className={cn('inline-flex shrink-0 items-center rounded-2xl border px-4 py-3 text-sm font-semibold transition',
+                    flavorTab === tab ? 'border-coral-200 bg-coral-50 text-coral-700'
+                      : 'border-transparent text-ink-500 hover:border-ink-100 hover:bg-ink-50 hover:text-ink-900')}>
+                  {tab === 'detalhes' ? 'Detalhes' : 'Preço'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-5 min-h-0 flex-1 overflow-y-auto pr-1">
+
+            {/* ── DETALHES ── */}
+            {flavorTab === 'detalhes' ? (
+              <div className="grid gap-5 md:grid-cols-[180px_minmax(0,1fr)]">
+                {/* Imagem */}
+                <div className="flex flex-col gap-2">
+                  <span className="block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Imagem do item</span>
+                  <p className="text-xs text-ink-400">Aparece na listagem e no detalhe do prato</p>
+                  {flavorImage ? (
+                    <div className="relative">
+                      <img src={flavorImage} alt="preview" className="h-44 w-full rounded-2xl object-cover" />
+                      <button type="button" onClick={() => setFlavorImagePickerOpen(true)}
+                        className="absolute right-2 top-2 rounded-xl bg-white px-2.5 py-1.5 text-xs font-semibold text-ink-700 shadow transition hover:bg-coral-500 hover:text-white">
+                        Trocar
+                      </button>
+                    </div>
+                  ) : (
+                    <button type="button" onClick={() => setFlavorImagePickerOpen(true)}
+                      className="flex h-44 w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-ink-200 bg-ink-50 text-sm font-semibold text-ink-400 hover:border-coral-400 hover:bg-coral-50 hover:text-coral-600">
+                      <Plus className="h-6 w-6" />
+                      Selecionar imagem
+                    </button>
+                  )}
+                </div>
+
+                {/* Nome e descrição */}
+                <div className="flex flex-col gap-4">
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-semibold text-ink-900">Sabor <span className="text-coral-500">*</span></span>
+                    <input type="text" value={flavorName} onChange={(e) => setFlavorName(e.target.value.slice(0, 80))}
+                      placeholder="Sabor da pizza"
+                      className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400" />
+                    <p className="mt-1 text-right text-xs text-ink-400">{flavorName.length}/80</p>
+                  </label>
+                  <label className="block flex-1">
+                    <span className="mb-2 block text-sm font-semibold text-ink-900">Descrição</span>
+                    <textarea value={flavorDescription} onChange={(e) => setFlavorDescription(e.target.value.slice(0, 100))}
+                      rows={4} placeholder="Pizza artesanal, base com molho de tomate..."
+                      className="w-full rounded-2xl border border-ink-100 bg-white px-4 py-3 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400 resize-none" />
+                    <p className="mt-1 text-right text-xs text-ink-400">{flavorDescription.length}/100</p>
+                  </label>
+                </div>
+              </div>
+            ) : null}
+
+            {/* ── PREÇO ── */}
+            {flavorTab === 'preco' ? (
+              <div className="space-y-4">
+                {flavorSizes.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-ink-200 bg-ink-50 px-5 py-10 text-center">
+                    <p className="text-sm font-semibold text-ink-700">Nenhum tamanho cadastrado nesta categoria.</p>
+                    <p className="mt-1 text-sm text-ink-500">Edite a categoria pizza para adicionar tamanhos primeiro.</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {flavorSizes.map((size) => (
+                      <div key={size.id} className="rounded-2xl border border-ink-100 bg-white p-4">
+                        <p className="text-xs font-semibold text-ink-500">Preço para o tamanho</p>
+                        <p className="mt-0.5 text-sm font-bold text-ink-900">{size.name}</p>
+                        <div className="relative mt-3">
+                          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-ink-400">R$</span>
+                          <input type="text" inputMode="numeric"
+                            value={flavorPrices[size.id] ?? ''}
+                            onChange={(e) => setFlavorPrices((prev) => ({ ...prev, [size.id]: formatCurrencyInput(e.target.value) }))}
+                            placeholder="0,00"
+                            className="h-12 w-full rounded-2xl border border-ink-100 bg-white pl-11 pr-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : null}
+
+          </div>
+
+          <div className="mt-5 flex justify-end gap-3 border-t border-ink-100 pt-4">
+            <button type="button" onClick={() => setFlavorModalOpen(false)}
+              className="inline-flex h-11 items-center justify-center rounded-2xl border border-ink-100 px-5 text-sm font-semibold text-ink-700 hover:bg-ink-50">
+              Cancelar
+            </button>
+            {flavorTab === 'detalhes' ? (
+              <button type="button" onClick={() => setFlavorTab('preco')} disabled={!flavorName.trim()}
+                className={cn('inline-flex h-11 items-center justify-center rounded-2xl px-5 text-sm font-semibold text-white transition',
+                  flavorName.trim() ? 'bg-coral-500 hover:bg-coral-600' : 'bg-ink-300 text-white/80')}>
+                Próximo
+              </button>
+            ) : (
+              <button type="button" onClick={() => void handleSaveFlavor()} disabled={savingFlavor}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white hover:bg-coral-600 disabled:opacity-60">
+                {savingFlavor ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Salvar sabor
+              </button>
+            )}
+          </div>
+        </>
+      </AnimatedModal>
+
+      {/* ── Modal biblioteca de sabores ── */}
+      <AnimatedModal
+        open={flavorLibModalOpen}
+        onClose={() => setFlavorLibModalOpen(false)}
+        panelClassName="panel-card flex h-[min(88vh,700px)] w-full max-w-2xl flex-col p-6"
+        ariaLabelledby="flavor-lib-title"
+      >
+        <>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">Pizza</p>
+              <h3 id="flavor-lib-title" className="mt-1 text-xl font-bold text-ink-900">Biblioteca de Sabores</h3>
+              <p className="mt-1 text-sm text-ink-500">Sabores cadastrados nesta categoria.</p>
+            </div>
+            <button type="button" onClick={() => setFlavorLibModalOpen(false)}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="mt-5 flex min-h-0 flex-1 flex-col gap-3">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
+              <input type="text" value={flavorLibSearch} onChange={(e) => setFlavorLibSearch(e.target.value)}
+                placeholder="Buscar sabor..."
+                className="h-12 w-full rounded-2xl border border-ink-100 bg-white pl-11 pr-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400" />
+            </div>
+
+            <div className="min-h-0 flex-1 overflow-y-auto space-y-2 pr-1">
+              {flavorLibItems.filter((f) => `${f.name} ${f.description}`.toLowerCase().includes(flavorLibSearch.toLowerCase())).length > 0 ? (
+                flavorLibItems
+                  .filter((f) => `${f.name} ${f.description}`.toLowerCase().includes(flavorLibSearch.toLowerCase()))
+                  .map((flavor) => (
+                    <div key={flavor.id} className="flex items-center gap-3 rounded-2xl border border-ink-100 bg-white p-3">
+                      {flavor.imageUrl ? (
+                        <img src={flavor.imageUrl} alt={flavor.name} className="h-12 w-12 shrink-0 rounded-xl object-cover" />
+                      ) : (
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-ink-100 text-sm font-bold text-ink-500">
+                          {flavor.name.slice(0, 1).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-bold text-ink-900">{flavor.name}</p>
+                        {flavor.description ? <p className="truncate text-xs text-ink-500">{flavor.description}</p> : null}
+                      </div>
+                      <button type="button"
+                        onClick={() => { setFlavorLibModalOpen(false); if (flavorLibCategoryId) openFlavorModal(flavorLibCategoryId, flavor) }}
+                        className="shrink-0 inline-flex h-9 w-9 items-center justify-center rounded-xl border border-ink-100 text-ink-500 hover:bg-ink-50">
+                        <PencilLine className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))
+              ) : (
+                <div className="rounded-2xl border border-dashed border-ink-200 bg-ink-50 px-5 py-10 text-center">
+                  <p className="text-sm font-semibold text-ink-700">{flavorLibSearch ? 'Nenhum resultado.' : 'Nenhum sabor cadastrado ainda.'}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button type="button"
+                onClick={() => { setFlavorLibModalOpen(false); if (flavorLibCategoryId) openFlavorModal(flavorLibCategoryId) }}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white hover:bg-coral-600">
+                <Plus className="h-4 w-4" /> Novo sabor
               </button>
             </div>
           </div>

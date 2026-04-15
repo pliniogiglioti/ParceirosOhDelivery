@@ -128,6 +128,17 @@ export interface PizzaEdge {
   price: number
 }
 
+export interface PizzaFlavor {
+  id: string
+  categoryId: string
+  name: string
+  description: string
+  imageUrl?: string
+  active: boolean
+  featured: boolean
+  prices: Record<string, number> // sizeId -> price
+}
+
 export interface PartnerProduct {
   id: string
   name: string
