@@ -10,7 +10,7 @@ Este guia descreve como configurar a conexão com o Supabase via MCP no Claude C
 |------|-------|
 | Supabase Project ID | `emjnqqbsmigqswbfhpzi` |
 | Supabase Access Token | `sbp_ed84c308304f0c5f9219e2950fc1e9a31a4c60d6` |
-| GitHub Token (scope: repo + workflow) | `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` |
+| GitHub Token (scope: repo + workflow) | `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` |
 | Repositório de migrations | https://github.com/pliniogiglioti/migrationsohdelivery |
 | Dashboard Supabase | https://supabase.com/dashboard/project/emjnqqbsmigqswbfhpzi |
 
@@ -57,7 +57,7 @@ Todos os projetos compartilham o **mesmo banco Supabase**. Para evitar conflito,
 ### Como clonar o repo de migrations
 
 ```bash
-git clone https://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@github.com/pliniogiglioti/migrationsohdelivery.git
+git clone https://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@github.com/pliniogiglioti/migrationsohdelivery.git
 ```
 
 ### Regra importante
