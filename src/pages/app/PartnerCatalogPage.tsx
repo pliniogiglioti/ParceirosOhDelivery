@@ -306,6 +306,7 @@ export function PartnerCatalogPage({
   // Pizza category modal
   type PizzaTab = 'detalhes' | 'tamanhos' | 'massas' | 'bordas'
   const [pizzaModalOpen, setPizzaModalOpen] = useState(false)
+  const [pizzaEditingCategoryId, setPizzaEditingCategoryId] = useState<string | null>(null)
   const [pizzaTab, setPizzaTab] = useState<PizzaTab>('detalhes')
   const [pizzaMaxTab, setPizzaMaxTab] = useState(0)
   const [pizzaCategoryName, setPizzaCategoryName] = useState('')
@@ -506,6 +507,12 @@ const [showMaxFeaturedModal, setShowMaxFeaturedModal] = useState(false)
   useEffect(() => {
     setActiveByCategoryId((current) =>
       catalogCategories.reduce<Record<string, boolean>>((accumulator, category) => {
+        // Pizza categories are not controlled by products — preserve current state
+        if (getCategoryTemplate(category) === 'pizza') {
+          accumulator[category.id] = current[category.id] ?? false
+          return accumulator
+        }
+
         const categoryProducts = catalogProducts.filter((product) => product.categoryId === category.id)
         const hasAtLeastOneActiveProduct = categoryProducts.some(
           (product) => activeByProductId[product.id] ?? product.active
@@ -1224,6 +1231,46 @@ const normalizedSearch = search.trim().toLowerCase()
       : true
 
   // ── Pizza helpers ─────────────────────────────────────────────────────────
+  function openPizzaEditModal(category: PartnerCategory) {
+    setPizzaEditingCategoryId(category.id)
+    setPizzaCategoryName(category.name)
+    setPizzaPricePolicy('maior')
+    setPizzaTab('detalhes')
+    setPizzaMaxTab(3) // all tabs unlocked for editing
+    setPizzaSizes([])
+    setPizzaCrusts({})
+    setPizzaEdges({})
+    setMenuOpenCategoryId(null)
+    setCategoryMenuPosition(null)
+    // Load existing sizes/crusts/edges
+    fetchPizzaSizes(category.id).then((sizes) => {
+      const sizeDrafts: PizzaSizeDraft[] = sizes.map((s) => ({
+        id: s.id,
+        name: s.name,
+        slices: s.slices,
+        maxFlavors: s.maxFlavors,
+      }))
+      setPizzaSizes(sizeDrafts)
+      const crustMap: Record<string, PizzaCrustDraft[]> = {}
+      const edgeMap: Record<string, PizzaEdgeDraft[]> = {}
+      sizes.forEach((s) => {
+        crustMap[s.id] = s.crusts.map((c) => ({
+          id: c.id,
+          name: c.name,
+          price: c.price > 0 ? c.price.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '',
+        }))
+        edgeMap[s.id] = s.edges.map((e) => ({
+          id: e.id,
+          name: e.name,
+          price: e.price > 0 ? e.price.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '',
+        }))
+      })
+      setPizzaCrusts(crustMap)
+      setPizzaEdges(edgeMap)
+    }).catch(() => {})
+    setPizzaModalOpen(true)
+  }
+
   const pizzaTabIndex = pizzaTabList.findIndex((t) => t.id === pizzaTab)
 
   function addPizzaSize() {
@@ -1293,14 +1340,35 @@ const normalizedSearch = search.trim().toLowerCase()
     if (!data) return
     setSavingPizza(true)
     try {
-      const saved = await createProductCategory(data.store.id, {
-        name: pizzaCategoryName.trim(),
-        icon: 'PZ',
-        template: 'pizza',
-        pricePolicy: pizzaPricePolicy,
-      } as Parameters<typeof createProductCategory>[1] & { pricePolicy: string })
+      let saved: PartnerCategory
 
-      await savePizzaCategory(data.store.id, saved.id, pizzaSizes.map((s, i) => ({
+      if (pizzaEditingCategoryId) {
+        // Update existing category name
+        const { error } = await (await import('@/lib/supabase')).supabase!
+          .from('product_categories')
+          .update({ name: pizzaCategoryName.trim(), updated_at: new Date().toISOString() })
+          .eq('id', pizzaEditingCategoryId)
+          .eq('store_id', data.store.id)
+        if (error) throw error
+        saved = catalogCategories.find((c) => c.id === pizzaEditingCategoryId)!
+        saved = { ...saved, name: pizzaCategoryName.trim() }
+        setCatalogCategories((prev) => prev.map((c) => c.id === pizzaEditingCategoryId ? saved : c))
+      } else {
+        saved = await createProductCategory(data.store.id, {
+          name: pizzaCategoryName.trim(),
+          icon: 'PZ',
+          template: 'pizza',
+          pricePolicy: pizzaPricePolicy,
+        } as Parameters<typeof createProductCategory>[1] & { pricePolicy: string })
+        draftAddCategory(data.store.id, saved)
+        setCatalogCategories((prev) => [...prev, saved])
+        setCategoryOrderIds((prev) => [...prev, saved.id])
+        setExpandedByCategoryId((prev) => ({ ...prev, [saved.id]: false }))
+        setActiveByCategoryId((prev) => ({ ...prev, [saved.id]: false }))
+      }
+
+      const categoryId = pizzaEditingCategoryId ?? saved.id
+      await savePizzaCategory(data.store.id, categoryId, pizzaSizes.map((s, i) => ({
         name: s.name,
         slices: s.slices,
         maxFlavors: s.maxFlavors,
@@ -1313,13 +1381,9 @@ const normalizedSearch = search.trim().toLowerCase()
         })),
       })))
 
-      draftAddCategory(data.store.id, saved)
-      setCatalogCategories((prev) => [...prev, saved])
-      setCategoryOrderIds((prev) => [...prev, saved.id])
-      setExpandedByCategoryId((prev) => ({ ...prev, [saved.id]: false }))
-      setActiveByCategoryId((prev) => ({ ...prev, [saved.id]: true }))
       setPizzaModalOpen(false)
-      toast.success(`Categoria ${pizzaCategoryName.trim()} criada com sucesso.`)
+      setPizzaEditingCategoryId(null)
+      toast.success(`Categoria ${pizzaCategoryName.trim()} ${pizzaEditingCategoryId ? 'atualizada' : 'criada'} com sucesso.`)
     } catch {
       toast.error('Nao foi possivel salvar a categoria pizza.')
     } finally {
@@ -1647,11 +1711,22 @@ const normalizedSearch = search.trim().toLowerCase()
                         }}
                       >
                         <div className="min-w-0">
-                          <div className="flex min-w-0 items-center gap-2">
+                          <div className="flex min-w-0 flex-wrap items-center gap-2">
                             <p className="truncate text-lg font-bold text-ink-900">{category.name}</p>
-                            <span className="shrink-0 rounded-full bg-ink-100 px-2 py-0.5 text-xs font-semibold text-ink-600">
-                              {products.length}
-                            </span>
+                            {getCategoryTemplate(category) === 'pizza' ? (
+                              <>
+                                <span className="shrink-0 rounded-full bg-ink-100 px-2 py-0.5 text-xs font-semibold text-ink-600">
+                                  {(flavorsByCategory[category.id] ?? []).length} sabores
+                                </span>
+                                <span className="shrink-0 rounded-full bg-ink-100 px-2 py-0.5 text-xs font-semibold text-ink-600">
+                                  {category.productCount} tamanhos
+                                </span>
+                              </>
+                            ) : (
+                              <span className="shrink-0 rounded-full bg-ink-100 px-2 py-0.5 text-xs font-semibold text-ink-600">
+                                {products.length}
+                              </span>
+                            )}
                           </div>
                         </div>
 
@@ -2175,7 +2250,7 @@ const normalizedSearch = search.trim().toLowerCase()
 
       <AnimatedModal
         open={pizzaModalOpen}
-        onClose={() => setPizzaModalOpen(false)}
+        onClose={() => { setPizzaModalOpen(false); setPizzaEditingCategoryId(null) }}}
         panelClassName="panel-card flex h-[min(88vh,860px)] w-full max-w-5xl flex-col p-6"
         ariaLabelledby="pizza-modal-title"
       >
@@ -2184,7 +2259,7 @@ const normalizedSearch = search.trim().toLowerCase()
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">Pizza</p>
               <h3 id="pizza-modal-title" className="mt-1 text-xl font-bold text-ink-900">
-                {pizzaCategoryName || 'Nova categoria pizza'}
+                {pizzaEditingCategoryId ? `Editar: ${pizzaCategoryName}` : (pizzaCategoryName || 'Nova categoria pizza')}
               </h3>
             </div>
             <button type="button" onClick={() => setPizzaModalOpen(false)}
@@ -2227,8 +2302,10 @@ const normalizedSearch = search.trim().toLowerCase()
                         <Pizza className="h-5 w-5 text-coral-500" />
                         <span className="text-sm font-semibold text-ink-900">Pizza</span>
                       </div>
-                      <button type="button" onClick={() => { setPizzaModalOpen(false); setCreateCategoryModalOpen(true) }}
-                        className="text-sm font-semibold text-coral-500 hover:text-coral-600">Alterar</button>
+                      {!pizzaEditingCategoryId ? (
+                        <button type="button" onClick={() => { setPizzaModalOpen(false); setCreateCategoryModalOpen(true) }}
+                          className="text-sm font-semibold text-coral-500 hover:text-coral-600">Alterar</button>
+                      ) : null}
                     </div>
                   </div>
                   <label className="block">
@@ -4238,8 +4315,12 @@ const normalizedSearch = search.trim().toLowerCase()
                   <button
                     type="button"
                     onClick={() => {
-                      toast.success(`Edicao da categoria ${category.name} em preparacao.`)
-                      setMenuOpenCategoryId(null)
+                      if (getCategoryTemplate(category) === 'pizza') {
+                        openPizzaEditModal(category)
+                      } else {
+                        toast.success(`Edicao da categoria ${category.name} em preparacao.`)
+                        setMenuOpenCategoryId(null)
+                      }
                     }}
                     className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-ink-700 transition hover:bg-ink-50"
                   >
