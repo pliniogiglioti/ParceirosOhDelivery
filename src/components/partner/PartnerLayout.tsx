@@ -136,7 +136,7 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
     const nextValue = !displayData.store.isOpen
     setStoreOpen(nextValue)
     // Persiste no banco
-    saveStore(data.store.id, { isOpen: nextValue }).catch(() => {
+    saveStore(displayData.store.id, { isOpen: nextValue }).catch(() => {
       // Reverte se falhar
       setStoreOpen(!nextValue)
       toast.error('Nao foi possivel atualizar o status da loja.')
