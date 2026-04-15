@@ -28,7 +28,7 @@ import { AnimatedModal } from '@/components/partner/AnimatedModal'
 import { SectionFrame } from '@/components/partner/PartnerUi'
 import { StoreImagePickerModal } from '@/components/partner/StoreImagePickerModal'
 import type { PartnerCategory } from '@/types'
-import { createProduct, createProductCategory, fetchIndustrializados, updateProduct, saveProductComplements, fetchProductComplements, fetchComplementLibrary, createComplementLibraryItem, updateComplementLibraryItem, deleteComplementLibraryItem, type IndustrializedItem } from '@/services/partner'
+import { createProduct, createProductCategory, fetchIndustrializados, updateProduct, saveProductComplements, fetchProductComplements, fetchComplementLibrary, createComplementLibraryItem, updateComplementLibraryItem, deleteComplementLibraryItem, savePizzaCategory, type IndustrializedItem } from '@/services/partner'
 import type { PartnerProduct } from '@/types'
 
 function ThemeSwitch({
@@ -146,6 +146,26 @@ const dietaryTags: Array<{ id: DietaryTag; label: string; description: string; e
 ]
 
 type ServesOption = 'nao_aplica' | '1' | '2' | '3' | '4'
+
+// ── Pizza types ───────────────────────────────────────────────────────────────
+interface PizzaSizeDraft {
+  id: string
+  name: string
+  slices: number
+  maxFlavors: 1 | 2 | 3 | 4
+}
+
+interface PizzaCrustDraft {
+  id: string
+  name: string
+  price: string
+}
+
+interface PizzaEdgeDraft {
+  id: string
+  name: string
+  price: string
+}
 
 const categoryTemplates: Array<{
   id: CategoryTemplate
@@ -282,6 +302,23 @@ export function PartnerCatalogPage({
   const [industrializedGelada, setIndustrializedGelada] = useState(false)
   const [savingIndustrialized, setSavingIndustrialized] = useState(false)
   const [industrializedCatalogItems, setIndustrializedCatalogItems] = useState<IndustrializedCatalogItem[]>([])
+
+  // Pizza category modal
+  type PizzaTab = 'detalhes' | 'tamanhos' | 'massas' | 'bordas'
+  const [pizzaModalOpen, setPizzaModalOpen] = useState(false)
+  const [pizzaTab, setPizzaTab] = useState<PizzaTab>('detalhes')
+  const [pizzaMaxTab, setPizzaMaxTab] = useState(0)
+  const [pizzaCategoryName, setPizzaCategoryName] = useState('')
+  const [pizzaSizes, setPizzaSizes] = useState<PizzaSizeDraft[]>([])
+  const [pizzaCrusts, setPizzaCrusts] = useState<Record<string, PizzaCrustDraft[]>>({})
+  const [pizzaEdges, setPizzaEdges] = useState<Record<string, PizzaEdgeDraft[]>>({})
+  const [savingPizza, setSavingPizza] = useState(false)
+  const pizzaTabList: Array<{ id: PizzaTab; label: string }> = [
+    { id: 'detalhes', label: 'Detalhes' },
+    { id: 'tamanhos', label: 'Tamanhos' },
+    { id: 'massas', label: 'Massas' },
+    { id: 'bordas', label: 'Bordas' },
+  ]
 
   // Edit product modal (same flow as industrialized: preco → classificacao → revisao)
   const [editProductModalOpen, setEditProductModalOpen] = useState(false)
@@ -693,6 +730,19 @@ const normalizedSearch = search.trim().toLowerCase()
     }
 
     const selectedTemplate = categoryTemplates.find((template) => template.id === newCategoryTemplate) ?? categoryTemplates[0]
+
+    if (selectedTemplate.id === 'pizza') {
+      // Abre o modal de pizza em vez de criar direto
+      setPizzaCategoryName(trimmedName)
+      setPizzaTab('detalhes')
+      setPizzaMaxTab(0)
+      setPizzaSizes([])
+      setPizzaCrusts({})
+      setPizzaEdges({})
+      setCreateCategoryModalOpen(false)
+      setPizzaModalOpen(true)
+      return
+    }
 
     try {
       const saved = await createProductCategory(data!.store.id, {
@@ -1144,6 +1194,109 @@ const normalizedSearch = search.trim().toLowerCase()
         (!editPromotionPrice.trim() || editPromotionPriceValue < editPriceValue) &&
         (!editManageStock || editHasValidStockQty)
       : true
+
+  // ── Pizza helpers ─────────────────────────────────────────────────────────
+  const pizzaTabIndex = pizzaTabList.findIndex((t) => t.id === pizzaTab)
+
+  function addPizzaSize() {
+    if (pizzaSizes.length >= 3) { toast.error('Maximo de 3 tamanhos.'); return }
+    const id = `sz-${Date.now()}`
+    setPizzaSizes((prev) => [...prev, { id, name: '', slices: 8, maxFlavors: 1 }])
+    setPizzaCrusts((prev) => ({ ...prev, [id]: [] }))
+    setPizzaEdges((prev) => ({ ...prev, [id]: [] }))
+  }
+
+  function removePizzaSize(id: string) {
+    setPizzaSizes((prev) => prev.filter((s) => s.id !== id))
+    setPizzaCrusts((prev) => { const n = { ...prev }; delete n[id]; return n })
+    setPizzaEdges((prev) => { const n = { ...prev }; delete n[id]; return n })
+  }
+
+  function updatePizzaSize(id: string, patch: Partial<PizzaSizeDraft>) {
+    setPizzaSizes((prev) => prev.map((s) => s.id === id ? { ...s, ...patch } : s))
+  }
+
+  function addCrust(sizeId: string) {
+    setPizzaCrusts((prev) => ({ ...prev, [sizeId]: [...(prev[sizeId] ?? []), { id: `cr-${Date.now()}`, name: '', price: '' }] }))
+  }
+
+  function removeCrust(sizeId: string, crustId: string) {
+    setPizzaCrusts((prev) => ({ ...prev, [sizeId]: (prev[sizeId] ?? []).filter((c) => c.id !== crustId) }))
+  }
+
+  function updateCrust(sizeId: string, crustId: string, patch: Partial<PizzaCrustDraft>) {
+    setPizzaCrusts((prev) => ({ ...prev, [sizeId]: (prev[sizeId] ?? []).map((c) => c.id === crustId ? { ...c, ...patch } : c) }))
+  }
+
+  function addEdge(sizeId: string) {
+    setPizzaEdges((prev) => ({ ...prev, [sizeId]: [...(prev[sizeId] ?? []), { id: `ed-${Date.now()}`, name: '', price: '' }] }))
+  }
+
+  function removeEdge(sizeId: string, edgeId: string) {
+    setPizzaEdges((prev) => ({ ...prev, [sizeId]: (prev[sizeId] ?? []).filter((e) => e.id !== edgeId) }))
+  }
+
+  function updateEdge(sizeId: string, edgeId: string, patch: Partial<PizzaEdgeDraft>) {
+    setPizzaEdges((prev) => ({ ...prev, [sizeId]: (prev[sizeId] ?? []).map((e) => e.id === edgeId ? { ...e, ...patch } : e) }))
+  }
+
+  function handleContinuePizzaFlow() {
+    if (pizzaTab === 'detalhes') {
+      if (!pizzaCategoryName.trim()) { toast.error('Informe o nome da categoria.'); return }
+      setPizzaTab('tamanhos'); setPizzaMaxTab((m) => Math.max(m, 1)); return
+    }
+    if (pizzaTab === 'tamanhos') {
+      if (pizzaSizes.length === 0) { toast.error('Adicione ao menos um tamanho.'); return }
+      if (pizzaSizes.some((s) => !s.name.trim())) { toast.error('Preencha o nome de todos os tamanhos.'); return }
+      setPizzaTab('massas'); setPizzaMaxTab((m) => Math.max(m, 2)); return
+    }
+    if (pizzaTab === 'massas') {
+      setPizzaTab('bordas'); setPizzaMaxTab((m) => Math.max(m, 3)); return
+    }
+    void handleSavePizzaCategory()
+  }
+
+  const canContinuePizza =
+    pizzaTab === 'detalhes' ? Boolean(pizzaCategoryName.trim()) :
+    pizzaTab === 'tamanhos' ? pizzaSizes.length > 0 && pizzaSizes.every((s) => s.name.trim()) :
+    true
+
+  async function handleSavePizzaCategory() {
+    if (!data) return
+    setSavingPizza(true)
+    try {
+      const saved = await createProductCategory(data.store.id, {
+        name: pizzaCategoryName.trim(),
+        icon: 'PZ',
+        template: 'pizza',
+      })
+
+      await savePizzaCategory(data.store.id, saved.id, pizzaSizes.map((s, i) => ({
+        name: s.name,
+        slices: s.slices,
+        maxFlavors: s.maxFlavors,
+        sortOrder: i,
+        crusts: (pizzaCrusts[s.id] ?? []).filter((c) => c.name.trim()).map((c, j) => ({
+          name: c.name, price: parseCurrencyInput(c.price), sortOrder: j,
+        })),
+        edges: (pizzaEdges[s.id] ?? []).filter((e) => e.name.trim()).map((e, j) => ({
+          name: e.name, price: parseCurrencyInput(e.price), sortOrder: j,
+        })),
+      })))
+
+      draftAddCategory(data.store.id, saved)
+      setCatalogCategories((prev) => [...prev, saved])
+      setCategoryOrderIds((prev) => [...prev, saved.id])
+      setExpandedByCategoryId((prev) => ({ ...prev, [saved.id]: false }))
+      setActiveByCategoryId((prev) => ({ ...prev, [saved.id]: true }))
+      setPizzaModalOpen(false)
+      toast.success(`Categoria ${pizzaCategoryName.trim()} criada com sucesso.`)
+    } catch {
+      toast.error('Nao foi possivel salvar a categoria pizza.')
+    } finally {
+      setSavingPizza(false)
+    }
+  }
 
   const addItemCategory =
     addItemCategoryId ? catalogCategories.find((category) => category.id === addItemCategoryId) ?? null : null
@@ -1796,6 +1949,234 @@ const normalizedSearch = search.trim().toLowerCase()
             </div>
           </div>
         )}
+      </AnimatedModal>
+
+      <AnimatedModal
+        open={pizzaModalOpen}
+        onClose={() => setPizzaModalOpen(false)}
+        panelClassName="panel-card flex h-[min(88vh,860px)] w-full max-w-5xl flex-col p-6"
+        ariaLabelledby="pizza-modal-title"
+      >
+        <>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">Pizza</p>
+              <h3 id="pizza-modal-title" className="mt-1 text-xl font-bold text-ink-900">
+                {pizzaCategoryName || 'Nova categoria pizza'}
+              </h3>
+            </div>
+            <button type="button" onClick={() => setPizzaModalOpen(false)}
+              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="mt-6 flex min-h-0 flex-1 flex-col">
+            {/* Tabs */}
+            <div className="rounded-2xl border border-ink-100 bg-white px-4 py-3 sm:px-5">
+              <div className="hide-scrollbar flex gap-2 overflow-x-auto">
+                {pizzaTabList.map((tab) => {
+                  const idx = pizzaTabList.findIndex((t) => t.id === tab.id)
+                  const visited = idx <= pizzaMaxTab
+                  return (
+                    <button key={tab.id} type="button"
+                      onClick={() => { if (visited) setPizzaTab(tab.id) }}
+                      disabled={!visited}
+                      className={cn('inline-flex shrink-0 items-center rounded-2xl border px-4 py-3 text-sm font-semibold transition',
+                        pizzaTab === tab.id ? 'border-coral-200 bg-coral-50 text-coral-700'
+                          : visited ? 'border-transparent text-ink-500 hover:border-ink-100 hover:bg-ink-50 hover:text-ink-900'
+                          : 'border-transparent text-ink-400 opacity-60')}>
+                      {tab.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="mt-6 min-h-0 flex-1 overflow-y-auto pr-1">
+
+              {/* ── DETALHES ── */}
+              {pizzaTab === 'detalhes' ? (
+                <div className="space-y-5">
+                  <div className="rounded-xl border border-ink-100 bg-white p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Modelo</p>
+                    <div className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-ink-100 bg-ink-50 px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <Pizza className="h-5 w-5 text-coral-500" />
+                        <span className="text-sm font-semibold text-ink-900">Pizza</span>
+                      </div>
+                      <button type="button" onClick={() => { setPizzaModalOpen(false); setCreateCategoryModalOpen(true) }}
+                        className="text-sm font-semibold text-coral-500 hover:text-coral-600">Alterar</button>
+                    </div>
+                  </div>
+                  <label className="block">
+                    <span className="mb-2 block text-sm font-semibold text-ink-900">Nome da categoria</span>
+                    <input type="text" value={pizzaCategoryName} onChange={(e) => setPizzaCategoryName(e.target.value.slice(0, 40))}
+                      placeholder="Ex: Pizza Grande 8 pedaços"
+                      className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400" />
+                    <p className="mt-1 text-right text-xs text-ink-400">{pizzaCategoryName.length}/40</p>
+                  </label>
+                </div>
+              ) : null}
+
+              {/* ── TAMANHOS ── */}
+              {pizzaTab === 'tamanhos' ? (
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm font-semibold text-ink-900">Tamanhos</p>
+                    <p className="mt-1 text-sm text-ink-500">Indique os tamanhos, pedaços e quantos sabores cada um aceita. Maximo 3 tamanhos.</p>
+                  </div>
+
+                  {pizzaSizes.map((size) => (
+                    <div key={size.id} className="rounded-xl border border-ink-100 bg-white p-4">
+                      <div className="flex flex-wrap items-center gap-3">
+                        <label className="block w-36 shrink-0">
+                          <span className="mb-1 block text-xs font-semibold text-ink-500">Tamanho</span>
+                          <input type="text" value={size.name} onChange={(e) => updatePizzaSize(size.id, { name: e.target.value })}
+                            placeholder="Ex: Grande"
+                            className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
+                        </label>
+                        <label className="block w-20 shrink-0">
+                          <span className="mb-1 block text-xs font-semibold text-ink-500">Pedaços</span>
+                          <input type="number" min={1} value={size.slices} onChange={(e) => updatePizzaSize(size.id, { slices: Number(e.target.value) || 8 })}
+                            className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
+                        </label>
+                        <div className="flex-1">
+                          <span className="mb-1 block text-xs font-semibold text-ink-500">Sabores</span>
+                          <div className="flex gap-1">
+                            {([1, 2, 3, 4] as const).map((n) => (
+                              <button key={n} type="button" onClick={() => updatePizzaSize(size.id, { maxFlavors: n })}
+                                className={cn('h-10 w-10 rounded-xl border text-sm font-bold transition',
+                                  size.maxFlavors === n ? 'border-coral-400 bg-coral-50 text-coral-700' : 'border-ink-100 bg-white text-ink-600 hover:bg-ink-50')}>
+                                {n}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <button type="button" onClick={() => removePizzaSize(size.id)}
+                          className="mt-4 inline-flex h-10 items-center gap-1.5 rounded-xl border border-red-100 px-3 text-xs font-semibold text-red-500 hover:bg-red-50">
+                          Excluir
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {pizzaSizes.length < 3 ? (
+                    <button type="button" onClick={addPizzaSize}
+                      className="inline-flex h-11 items-center gap-2 rounded-2xl border border-dashed border-coral-300 px-4 text-sm font-semibold text-coral-600 hover:bg-coral-50">
+                      <Plus className="h-4 w-4" /> Adicionar tamanho
+                    </button>
+                  ) : null}
+
+                  {/* Preview */}
+                  {pizzaSizes.some((s) => s.name.trim()) ? (
+                    <div>
+                      <p className="text-sm font-semibold text-ink-900">O que o cliente verá</p>
+                      <div className="mt-3 flex flex-wrap gap-3">
+                        {pizzaSizes.filter((s) => s.name.trim()).map((size) => (
+                          <div key={size.id} className="flex h-28 w-28 flex-col items-center justify-center rounded-2xl border-2 border-ink-200 bg-white p-3 text-center">
+                            <p className="text-sm font-bold text-ink-900">{size.name}</p>
+                            <p className="mt-1 text-xs text-ink-500">Cortada em {size.slices} pedaços</p>
+                            <p className="text-xs text-ink-500">Aceita {size.maxFlavors} sabor{size.maxFlavors > 1 ? 'es' : ''}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {/* ── MASSAS ── */}
+              {pizzaTab === 'massas' ? (
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm font-semibold text-ink-900">Massas</p>
+                    <p className="mt-1 text-sm text-ink-500">Defina as opcoes de massa para cada tamanho. Deixe em branco para nao oferecer escolha de massa.</p>
+                  </div>
+                  {pizzaSizes.map((size) => (
+                    <div key={size.id} className="rounded-xl border border-ink-100 bg-white p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Para o tamanho: <span className="text-ink-900">{size.name || 'Sem nome'}</span></p>
+                      <div className="mt-3 space-y-2">
+                        {(pizzaCrusts[size.id] ?? []).map((crust) => (
+                          <div key={crust.id} className="flex items-center gap-2">
+                            <input type="text" value={crust.name} onChange={(e) => updateCrust(size.id, crust.id, { name: e.target.value })}
+                              placeholder="Escolha o nome"
+                              className="h-10 flex-1 rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
+                            <div className="relative w-36 shrink-0">
+                              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-ink-400">R$</span>
+                              <input type="text" inputMode="numeric" value={crust.price} onChange={(e) => updateCrust(size.id, crust.id, { price: formatCurrencyInput(e.target.value) })}
+                                placeholder="0,00"
+                                className="h-10 w-full rounded-xl border border-ink-100 bg-white pl-8 pr-3 text-sm outline-none focus:border-coral-400" />
+                            </div>
+                            <button type="button" onClick={() => removeCrust(size.id, crust.id)}
+                              className="inline-flex h-10 items-center gap-1 rounded-xl border border-red-100 px-3 text-xs font-semibold text-red-500 hover:bg-red-50">
+                              Excluir
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      <button type="button" onClick={() => addCrust(size.id)}
+                        className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-xl border border-dashed border-coral-300 px-3 text-xs font-semibold text-coral-600 hover:bg-coral-50">
+                        <Plus className="h-3.5 w-3.5" /> Adicionar massa
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+
+              {/* ── BORDAS ── */}
+              {pizzaTab === 'bordas' ? (
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm font-semibold text-ink-900">Bordas</p>
+                    <p className="mt-1 text-sm text-ink-500">Defina as opcoes de borda para cada tamanho. Deixe em branco para nao oferecer escolha de borda.</p>
+                  </div>
+                  {pizzaSizes.map((size) => (
+                    <div key={size.id} className="rounded-xl border border-ink-100 bg-white p-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Para o tamanho: <span className="text-ink-900">{size.name || 'Sem nome'}</span></p>
+                      <div className="mt-3 space-y-2">
+                        {(pizzaEdges[size.id] ?? []).map((edge) => (
+                          <div key={edge.id} className="flex items-center gap-2">
+                            <input type="text" value={edge.name} onChange={(e) => updateEdge(size.id, edge.id, { name: e.target.value })}
+                              placeholder="Escolha o nome"
+                              className="h-10 flex-1 rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
+                            <div className="relative w-36 shrink-0">
+                              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-ink-400">R$</span>
+                              <input type="text" inputMode="numeric" value={edge.price} onChange={(e) => updateEdge(size.id, edge.id, { price: formatCurrencyInput(e.target.value) })}
+                                placeholder="0,00"
+                                className="h-10 w-full rounded-xl border border-ink-100 bg-white pl-8 pr-3 text-sm outline-none focus:border-coral-400" />
+                            </div>
+                            <button type="button" onClick={() => removeEdge(size.id, edge.id)}
+                              className="inline-flex h-10 items-center gap-1 rounded-xl border border-red-100 px-3 text-xs font-semibold text-red-500 hover:bg-red-50">
+                              Excluir
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                      <button type="button" onClick={() => addEdge(size.id)}
+                        className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-xl border border-dashed border-coral-300 px-3 text-xs font-semibold text-coral-600 hover:bg-coral-50">
+                        <Plus className="h-3.5 w-3.5" /> Adicionar borda
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+
+            </div>
+
+            <div className="sticky bottom-0 mt-6 flex justify-end gap-3 border-t border-ink-100 bg-white pt-4">
+              <button type="button" onClick={() => setPizzaModalOpen(false)}
+                className="inline-flex h-11 items-center justify-center rounded-2xl border border-ink-100 px-5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50">
+                Cancelar
+              </button>
+              <button type="button" onClick={handleContinuePizzaFlow} disabled={!canContinuePizza || savingPizza}
+                className={cn('inline-flex h-11 items-center justify-center gap-2 rounded-2xl px-5 text-sm font-semibold text-white transition',
+                  canContinuePizza && !savingPizza ? 'bg-coral-500 hover:bg-coral-600' : 'bg-ink-300 text-white/80')}>
+                {savingPizza ? <><Loader2 className="h-4 w-4 animate-spin" /> Salvando...</> : pizzaTab === 'bordas' ? 'Salvar categoria' : 'Continuar'}
+              </button>
+            </div>
+          </div>
+        </>
       </AnimatedModal>
 
       <AnimatedModal

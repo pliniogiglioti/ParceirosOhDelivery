@@ -103,6 +103,31 @@ export interface PartnerCategory {
   productCount: number
 }
 
+export interface PizzaSize {
+  id: string
+  categoryId: string
+  name: string
+  slices: number
+  maxFlavors: 1 | 2 | 3 | 4
+  sortOrder: number
+  crusts: PizzaCrust[]
+  edges: PizzaEdge[]
+}
+
+export interface PizzaCrust {
+  id: string
+  sizeId: string
+  name: string
+  price: number
+}
+
+export interface PizzaEdge {
+  id: string
+  sizeId: string
+  name: string
+  price: number
+}
+
 export interface PartnerProduct {
   id: string
   name: string

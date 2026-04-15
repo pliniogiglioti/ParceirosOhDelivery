@@ -1076,6 +1076,97 @@ export async function deleteComplementLibraryItem(itemId: string, storeId: strin
   if (error) throw error
 }
 
+export async function savePizzaCategory(
+  storeId: string,
+  categoryId: string,
+  sizes: Array<{
+    id?: string
+    name: string
+    slices: number
+    maxFlavors: number
+    sortOrder: number
+    crusts: Array<{ id?: string; name: string; price: number }>
+    edges: Array<{ id?: string; name: string; price: number }>
+  }>
+): Promise<void> {
+  if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
+
+  // Delete all existing sizes (cascade deletes crusts and edges)
+  await supabase.from('pizza_sizes').delete().eq('category_id', categoryId).eq('store_id', storeId)
+
+  for (let i = 0; i < sizes.length; i++) {
+    const size = sizes[i]
+    const { data: sizeRow, error: sizeError } = await supabase
+      .from('pizza_sizes')
+      .insert({
+        category_id: categoryId,
+        store_id: storeId,
+        name: size.name,
+        slices: size.slices,
+        max_flavors: size.maxFlavors,
+        sort_order: i,
+      })
+      .select('id')
+      .single()
+    if (sizeError) throw sizeError
+
+    const sizeId = String(sizeRow.id)
+
+    for (let j = 0; j < size.crusts.length; j++) {
+      const crust = size.crusts[j]
+      if (!crust.name.trim()) continue
+      const { error } = await supabase.from('pizza_crusts').insert({
+        size_id: sizeId, store_id: storeId,
+        name: crust.name, price: crust.price, sort_order: j,
+      })
+      if (error) throw error
+    }
+
+    for (let j = 0; j < size.edges.length; j++) {
+      const edge = size.edges[j]
+      if (!edge.name.trim()) continue
+      const { error } = await supabase.from('pizza_edges').insert({
+        size_id: sizeId, store_id: storeId,
+        name: edge.name, price: edge.price, sort_order: j,
+      })
+      if (error) throw error
+    }
+  }
+}
+
+export async function fetchPizzaSizes(categoryId: string): Promise<import('@/types').PizzaSize[]> {
+  if (!isSupabaseConfigured || !supabase) return []
+
+  const { data: sizes, error } = await supabase
+    .from('pizza_sizes')
+    .select('id, category_id, name, slices, max_flavors, sort_order')
+    .eq('category_id', categoryId)
+    .order('sort_order')
+  if (error) { console.warn('[fetchPizzaSizes]', error.message); return [] }
+  if (!sizes?.length) return []
+
+  const sizeIds = sizes.map((s) => String(s.id))
+  const [{ data: crusts }, { data: edges }] = await Promise.all([
+    supabase.from('pizza_crusts').select('id, size_id, name, price, sort_order').in('size_id', sizeIds).order('sort_order'),
+    supabase.from('pizza_edges').select('id, size_id, name, price, sort_order').in('size_id', sizeIds).order('sort_order'),
+  ])
+
+  return sizes.map((s) => ({
+    id: String(s.id),
+    categoryId: String(s.category_id),
+    name: String(s.name),
+    slices: Number(s.slices ?? 8),
+    maxFlavors: (Number(s.max_flavors ?? 1)) as 1 | 2 | 3 | 4,
+    sortOrder: Number(s.sort_order ?? 0),
+    crusts: (crusts ?? []).filter((c) => String(c.size_id) === String(s.id)).map((c) => ({
+      id: String(c.id), sizeId: String(c.size_id), name: String(c.name), price: Number(c.price ?? 0),
+    })),
+    edges: (edges ?? []).filter((e) => String(e.size_id) === String(s.id)).map((e) => ({
+      id: String(e.id), sizeId: String(e.size_id), name: String(e.name), price: Number(e.price ?? 0),
+    })),
+  }))
+}
+
 export async function loadPartnerDashboard(storeId: string): Promise<{
   data: PartnerDashboardData
   source: 'supabase'
