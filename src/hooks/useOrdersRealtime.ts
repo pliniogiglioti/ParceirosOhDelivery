@@ -24,6 +24,7 @@ function rowToOrder(row: Record<string, unknown>, items: PartnerOrderItem[] = []
     code: String(row.order_code ?? '#0000'),
     customerName: String(row.customer_name ?? 'Cliente'),
     customerProfileId: row.profile_id ? String(row.profile_id) : null,
+    customerEmail: row.customer_email ? String(row.customer_email) : null,
     status: mapStatus(row.status),
     total: Number(row.total_amount ?? 0),
     paymentMethod: String(row.payment_method ?? 'Pix'),

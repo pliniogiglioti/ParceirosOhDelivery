@@ -325,6 +325,20 @@ export const usePartnerDraftStore = create<PartnerDraftStoreState>()(
     }),
     {
       name: 'partner-oh-drafts',
+      version: 3,
+      migrate: () => {
+        // Qualquer versão anterior é descartada — o dashboard recarrega do banco
+        return {
+          storeOpen: null,
+          storeByStoreId: {},
+          storeHoursByStoreId: {},
+          ordersByStoreId: {},
+          orderSettingsByStoreId: {},
+          paymentMethodsByStoreId: {},
+          couriersByStoreId: {},
+          logisticsByStoreId: {},
+        }
+      },
       partialize: (state) => ({
         storeOpen: state.storeOpen,
         storeByStoreId: state.storeByStoreId,

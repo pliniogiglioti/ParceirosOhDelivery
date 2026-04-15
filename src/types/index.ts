@@ -69,6 +69,7 @@ export interface PartnerOrder {
   code: string
   customerName: string
   customerProfileId: string | null
+  customerEmail: string | null
   status: OrderStatus
   total: number
   paymentMethod: string
