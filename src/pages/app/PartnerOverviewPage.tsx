@@ -154,6 +154,7 @@ export function PartnerOverviewPage() {
   const [orders, setOrders] = useState<OverviewOrder[]>([])
   const [topProducts, setTopProducts] = useState<TopProduct[]>([])
   const [pageViews, setPageViews] = useState(0)
+  const [funnelCounts, setFunnelCounts] = useState({ visita: 0, visualizacao: 0, sacola: 0, revisao: 0, venda: 0 })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -165,15 +166,15 @@ export function PartnerOverviewPage() {
     async function load() {
       setLoading(true)
 
-      const [ordersRes, viewsRes] = await Promise.all([
+      const [ordersRes, funnelRes] = await Promise.all([
         client.from('orders')
           .select('id, order_code, customer_name, status, total_amount, created_at, payment_method')
           .eq('store_id', data.store.id)
           .gte('created_at', fromDate.toISOString())
           .order('created_at', { ascending: false })
           .limit(500),
-        client.from('store_page_views')
-          .select('id', { count: 'exact', head: true })
+        client.from('store_funnel_events')
+          .select('event_type')
           .eq('store_id', data.store.id)
           .gte('created_at', fromDate.toISOString()),
       ])
@@ -233,7 +234,18 @@ export function PartnerOverviewPage() {
         .slice(0, 6)
       setTopProducts(sorted)
 
-      setPageViews(viewsRes.count ?? 0)
+      const funnelRows = funnelRes.data ?? []
+      const funnelCount = (type: string) => funnelRows.filter((r) => r.event_type === type).length
+      const deliveredInPeriod = orderRows.filter((r) => r.status === 'entregue').length
+
+      setPageViews(funnelCount('visita'))
+      setFunnelCounts({
+        visita: funnelCount('visita'),
+        visualizacao: funnelCount('visualizacao'),
+        sacola: funnelCount('sacola'),
+        revisao: funnelCount('revisao'),
+        venda: deliveredInPeriod,
+      })
       setLoading(false)
     }
 
@@ -250,11 +262,13 @@ export function PartnerOverviewPage() {
   const deliveredCount = orders.filter((o) => o.status === 'entregue').length
   const cancelledCount = orders.filter((o) => o.status === 'cancelado').length
 
-  // Funil
+  // Funil — 5 etapas reais
   const funnelSteps = [
-    { label: 'Visitas', value: pageViews, color: 'bg-blue-500' },
-    { label: 'Pedidos', value: ordersCount + cancelledCount, color: 'bg-orange-400' },
-    { label: 'Entregues', value: deliveredCount, color: 'bg-green-500' },
+    { label: 'Visitas', value: funnelCounts.visita, color: 'bg-blue-500' },
+    { label: 'Visualizacao', value: funnelCounts.visualizacao, color: 'bg-purple-500' },
+    { label: 'Sacola', value: funnelCounts.sacola, color: 'bg-orange-400' },
+    { label: 'Revisao', value: funnelCounts.revisao, color: 'bg-yellow-500' },
+    { label: 'Vendas', value: funnelCounts.venda, color: 'bg-green-500' },
   ]
   const funnelMax = Math.max(...funnelSteps.map((s) => s.value), 1)
 
@@ -429,7 +443,7 @@ export function PartnerOverviewPage() {
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiCard label="Entregues" value={String(deliveredCount)}
           sub={PERIOD_LABEL[period]} icon={Bike} iconBg="bg-[#14c8bb]/10" iconColor="text-[#0fa89d]" />
-        <KpiCard label="Visitas" value={String(pageViews)}
+        <KpiCard label="Visitas" value={String(funnelCounts.visita)}
           sub="pagina da loja" icon={Users} iconBg="bg-purple-50" iconColor="text-purple-600" />
         <KpiCard label="Avaliacao" value={rating}
           sub={`${data.reviews.length || data.store.reviewCount} avaliacoes`}
