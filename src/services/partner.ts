@@ -1318,7 +1318,6 @@ export async function loadPartnerDashboard(storeId: string): Promise<{
       .from('product_categories')
       .select('*')
       .eq('store_id', storeRow.id)
-      .eq('active', true)
       .order('sort_order', { ascending: true }),
     supabase.from('products').select('*').eq('store_id', storeRow.id).order('sort_order', { ascending: true }),
     supabase.from('orders').select('*').eq('store_id', storeRow.id).order('created_at', { ascending: false }),

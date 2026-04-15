@@ -336,10 +336,14 @@ export function PartnerCatalogPage({
   const [editingFlavorId, setEditingFlavorId] = useState<string | null>(null)
   // Pizza flavors per category
   const [flavorsByCategory, setFlavorsByCategory] = useState<Record<string, import('@/types').PizzaFlavor[]>>({})
+  const [sizeCountByCategory, setSizeCountByCategory] = useState<Record<string, number>>({})
 
   function loadFlavorsForCategory(categoryId: string) {
     fetchPizzaFlavors(categoryId).then((flavors) => {
       setFlavorsByCategory((prev) => ({ ...prev, [categoryId]: flavors }))
+    }).catch(() => {})
+    fetchPizzaSizes(categoryId).then((sizes) => {
+      setSizeCountByCategory((prev) => ({ ...prev, [categoryId]: sizes.length }))
     }).catch(() => {})
   }
   const [flavorLibModalOpen, setFlavorLibModalOpen] = useState(false)
@@ -421,6 +425,12 @@ export function PartnerCatalogPage({
     fetchIndustrializados()
       .then(setIndustrializedCatalogItems)
       .catch((err) => console.error('[industrializados]', err))
+    // Pre-load pizza size counts for existing pizza categories
+    catalogCategories.filter((c) => getCategoryTemplate(c) === 'pizza').forEach((c) => {
+      fetchPizzaSizes(c.id).then((sizes) => {
+        setSizeCountByCategory((prev) => ({ ...prev, [c.id]: sizes.length }))
+      }).catch(() => {})
+    })
   }, [])
   const [expandedByCategoryId, setExpandedByCategoryId] = useState<Record<string, boolean>>({})
   const [activeByCategoryId, setActiveByCategoryId] = useState<Record<string, boolean>>({})
@@ -482,7 +492,11 @@ const [showMaxFeaturedModal, setShowMaxFeaturedModal] = useState(false)
 
     setActiveByCategoryId((current) =>
       catalogCategories.reduce<Record<string, boolean>>((accumulator, category) => {
-        accumulator[category.id] = current[category.id] ?? category.productCount > 0
+        // Pizza categories default to false (no products to check), others use productCount
+        const defaultActive = getCategoryTemplate(category) === 'pizza'
+          ? (current[category.id] ?? false)
+          : (current[category.id] ?? category.productCount > 0)
+        accumulator[category.id] = defaultActive
         return accumulator
       }, {})
     )
@@ -1383,6 +1397,8 @@ const normalizedSearch = search.trim().toLowerCase()
 
       setPizzaModalOpen(false)
       setPizzaEditingCategoryId(null)
+      // Refresh size count
+      setSizeCountByCategory((prev) => ({ ...prev, [categoryId]: pizzaSizes.length }))
       toast.success(`Categoria ${pizzaCategoryName.trim()} ${pizzaEditingCategoryId ? 'atualizada' : 'criada'} com sucesso.`)
     } catch {
       toast.error('Nao foi possivel salvar a categoria pizza.')
@@ -1719,12 +1735,12 @@ const normalizedSearch = search.trim().toLowerCase()
                                   {(flavorsByCategory[category.id] ?? []).length} sabores
                                 </span>
                                 <span className="shrink-0 rounded-full bg-ink-100 px-2 py-0.5 text-xs font-semibold text-ink-600">
-                                  {category.productCount} tamanhos
+                                  {sizeCountByCategory[category.id] ?? 0} tamanhos
                                 </span>
                               </>
                             ) : (
                               <span className="shrink-0 rounded-full bg-ink-100 px-2 py-0.5 text-xs font-semibold text-ink-600">
-                                {products.length}
+                                {products.length} {products.length === 1 ? 'item' : 'itens'}
                               </span>
                             )}
                           </div>
@@ -1768,6 +1784,21 @@ const normalizedSearch = search.trim().toLowerCase()
                                   ...current,
                                   [category.id]: nextValue,
                                 }))
+                                // Persiste no banco
+                                if (data) {
+                                  import('@/lib/supabase').then(({ supabase }) => {
+                                    supabase?.from('product_categories')
+                                      .update({ active: nextValue })
+                                      .eq('id', category.id)
+                                      .eq('store_id', data.store.id)
+                                      .then(({ error }) => {
+                                        if (error) {
+                                          setActiveByCategoryId((current) => ({ ...current, [category.id]: !nextValue }))
+                                          toast.error('Nao foi possivel atualizar a categoria.')
+                                        }
+                                      })
+                                  })
+                                }
                               }}
                               ariaLabel={`Alternar categoria ${category.name}`}
                             />
