@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 
@@ -26,6 +26,8 @@ export function AnimatedModal({
 }: AnimatedModalProps) {
   const [shouldRender, setShouldRender] = useState(open)
   const [animationState, setAnimationState] = useState<ModalAnimationState>(open ? 'open' : 'closing')
+  // Track where mousedown started — only close if it started on the backdrop itself
+  const mouseDownOnBackdrop = useRef(false)
 
   useEffect(() => {
     let openTimeoutId = 0
@@ -65,7 +67,14 @@ export function AnimatedModal({
             : 'modal-backdrop-closing',
         overlayClassName
       )}
-      onClick={onClose}
+      onMouseDown={(e) => {
+        // Only mark as backdrop click if the mousedown target IS the backdrop
+        mouseDownOnBackdrop.current = e.target === e.currentTarget
+      }}
+      onClick={() => {
+        if (mouseDownOnBackdrop.current) onClose()
+        mouseDownOnBackdrop.current = false
+      }}
     >
       <div
         role="dialog"
@@ -80,7 +89,8 @@ export function AnimatedModal({
               : 'modal-panel-closing',
           panelClassName
         )}
-        onClick={(event) => event.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        onClick={(e) => e.stopPropagation()}
       >
         {children}
       </div>
