@@ -147,3 +147,65 @@ export async function sendStoreMessage(chatId: string, body: string): Promise<Ch
 
   return mapMessage(data as Record<string, unknown>)
 }
+
+/** Busca todas as sessões de chat de uma loja com a última mensagem */
+export async function fetchAllChatSessions(storeId: string): Promise<ChatSession[]> {
+  if (!isSupabaseConfigured || !supabase) return []
+
+  const { data: sessions, error } = await supabase
+    .from('chat_sessions')
+    .select('*')
+    .eq('store_id', storeId)
+    .order('updated_at', { ascending: false })
+
+  if (error) throw error
+  if (!sessions || sessions.length === 0) return []
+
+  const sessionIds = sessions.map((s) => String(s.id))
+
+  const { data: allMessages, error: msgError } = await supabase
+    .from('chat_messages')
+    .select('*')
+    .in('chat_id', sessionIds)
+    .order('created_at', { ascending: true })
+
+  if (msgError) throw msgError
+
+  const messagesByChat = new Map<string, ChatMessage[]>()
+  ;(allMessages ?? []).forEach((row) => {
+    const chatId = String(row.chat_id)
+    const list = messagesByChat.get(chatId) ?? []
+    list.push(mapMessage(row as Record<string, unknown>))
+    messagesByChat.set(chatId, list)
+  })
+
+  return sessions.map((s) => ({
+    id: String(s.id),
+    orderId: s.order_id ? String(s.order_id) : null,
+    orderCode: String(s.order_code ?? ''),
+    storeId: String(s.store_id),
+    storeName: String(s.store_name ?? ''),
+    profileId: String(s.profile_id),
+    createdAt: String(s.created_at),
+    updatedAt: String(s.updated_at),
+    messages: messagesByChat.get(String(s.id)) ?? [],
+  }))
+}
+
+/** Conta mensagens não lidas (sender = 'user') após a última mensagem da loja */
+export function countUnread(session: ChatSession): number {
+  const messages = session.messages
+  if (messages.length === 0) return 0
+
+  // Encontra o índice da última mensagem da loja
+  let lastStoreIdx = -1
+  for (let i = messages.length - 1; i >= 0; i--) {
+    if (messages[i].sender === 'store') {
+      lastStoreIdx = i
+      break
+    }
+  }
+
+  // Conta mensagens do cliente após a última da loja
+  return messages.slice(lastStoreIdx + 1).filter((m) => m.sender === 'user').length
+}
