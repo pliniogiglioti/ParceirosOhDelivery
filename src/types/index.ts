@@ -101,6 +101,7 @@ export interface PartnerCategory {
   template?: 'padrao' | 'pizza'
   sortOrder: number
   productCount: number
+  active: boolean
 }
 
 export interface PizzaSize {

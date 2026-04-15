@@ -499,11 +499,8 @@ const [showMaxFeaturedModal, setShowMaxFeaturedModal] = useState(false)
 
     setActiveByCategoryId((current) =>
       catalogCategories.reduce<Record<string, boolean>>((accumulator, category) => {
-        // Pizza categories default to false (no products to check), others use productCount
-        const defaultActive = getCategoryTemplate(category) === 'pizza'
-          ? (current[category.id] ?? false)
-          : (current[category.id] ?? category.productCount > 0)
-        accumulator[category.id] = defaultActive
+        // Always use the real active value from DB on first load, preserve local changes after
+        accumulator[category.id] = current[category.id] ?? category.active
         return accumulator
       }, {})
     )

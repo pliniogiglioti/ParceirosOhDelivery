@@ -622,6 +622,7 @@ export async function createProductCategory(
     template: data.template === 'pizza' ? 'pizza' : 'padrao',
     sortOrder: Number(data.sort_order ?? 0),
     productCount: 0,
+    active: Boolean(data.active ?? true),
   }
 }
 
@@ -1396,6 +1397,7 @@ export async function loadPartnerDashboard(storeId: string): Promise<{
       template: row.template === 'pizza' ? 'pizza' : 'padrao',
       sortOrder: Number(row.sort_order ?? 0),
       productCount: (productRows ?? []).filter((product) => String(product.category_id) === String(row.id)).length,
+      active: Boolean(row.active ?? true),
     })) ?? []
 
   const products: PartnerProduct[] =
