@@ -1,16 +1,19 @@
 import { Bell, ChevronDown, HelpCircle, MessageCircle, Store } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { usePartnerAuth } from '@/hooks/usePartnerAuth'
+import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
 import { getStoresByEmail } from '@/services/partner'
 import type { PartnerDashboardData, PartnerStoreCard } from '@/types'
 
-export function PartnerTopbar({ data }: { data: PartnerDashboardData }) {
+export function PartnerTopbar({ data, unreadMessages = 0 }: { data: PartnerDashboardData; unreadMessages?: number }) {
   const [open, setOpen] = useState(false)
   const [stores, setStores] = useState<PartnerStoreCard[]>([])
   const ref = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
+  const location = useLocation()
   const { user, selectStore } = usePartnerAuth()
+  const { clearUnreadMessages } = usePartnerDraftStore()
 
   useEffect(() => {
     if (!user?.email) return
@@ -24,6 +27,13 @@ export function PartnerTopbar({ data }: { data: PartnerDashboardData }) {
     if (open) document.addEventListener('mousedown', handleOutside)
     return () => document.removeEventListener('mousedown', handleOutside)
   }, [open])
+
+  // Zera badge quando está na página de mensagens
+  useEffect(() => {
+    if (location.pathname === '/app/mensagens' && unreadMessages > 0) {
+      clearUnreadMessages(data.store.id)
+    }
+  }, [location.pathname, data.store.id, unreadMessages, clearUnreadMessages])
 
   function handleSelectStore(store: PartnerStoreCard) {
     if (store.registrationStatus !== 'aprovado') return
@@ -111,13 +121,20 @@ export function PartnerTopbar({ data }: { data: PartnerDashboardData }) {
 
         <button
           type="button"
-          onClick={() => navigate('/app/mensagens')}
+          onClick={() => {
+            clearUnreadMessages(data.store.id)
+            navigate('/app/mensagens')
+          }}
           className="relative inline-flex h-9 w-9 items-center justify-center rounded-2xl text-ink-600 transition hover:bg-ink-50 hover:text-ink-900"
           aria-label="Mensagens"
           title="Mensagens"
         >
           <MessageCircle className="h-5 w-5" />
-          <span className="absolute right-1.5 top-1.5 flex h-2 w-2 rounded-full bg-coral-500" />
+          {unreadMessages > 0 && (
+            <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-coral-500 px-1 text-[9px] font-bold text-white">
+              {unreadMessages > 99 ? '99+' : unreadMessages}
+            </span>
+          )}
         </button>
 
         <button

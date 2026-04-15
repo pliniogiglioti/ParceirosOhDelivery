@@ -27,6 +27,7 @@ interface PartnerDraftStoreState {
   productsByStoreId: Record<string, PartnerProduct[]>
   reviewsByStoreId: Record<string, ReviewItem[]>
   newReviewsCountByStoreId: Record<string, number>
+  unreadMessagesCountByStoreId: Record<string, number>
   setStoreOpen: (value: boolean) => void
   hydrateStoreOpen: (value: boolean) => void
   hydrateStore: (store: PartnerStore) => void
@@ -52,6 +53,8 @@ interface PartnerDraftStoreState {
   addReview: (storeId: string, review: ReviewItem) => void
   updateReview: (storeId: string, reviewId: string, patch: Partial<ReviewItem>) => void
   clearNewReviews: (storeId: string) => void
+  incrementUnreadMessages: (storeId: string) => void
+  clearUnreadMessages: (storeId: string) => void
 }
 
 export const usePartnerDraftStore = create<PartnerDraftStoreState>()(
@@ -69,6 +72,7 @@ export const usePartnerDraftStore = create<PartnerDraftStoreState>()(
       productsByStoreId: {},
       reviewsByStoreId: {},
       newReviewsCountByStoreId: {},
+      unreadMessagesCountByStoreId: {},
       setStoreOpen: (storeOpen) => set({ storeOpen }),
       hydrateStoreOpen: (value) => {
         if (get().storeOpen == null) {
@@ -318,6 +322,22 @@ export const usePartnerDraftStore = create<PartnerDraftStoreState>()(
         set((state) => ({
           newReviewsCountByStoreId: {
             ...state.newReviewsCountByStoreId,
+            [storeId]: 0,
+          },
+        }))
+      },
+      incrementUnreadMessages: (storeId) => {
+        set((state) => ({
+          unreadMessagesCountByStoreId: {
+            ...state.unreadMessagesCountByStoreId,
+            [storeId]: (state.unreadMessagesCountByStoreId[storeId] ?? 0) + 1,
+          },
+        }))
+      },
+      clearUnreadMessages: (storeId) => {
+        set((state) => ({
+          unreadMessagesCountByStoreId: {
+            ...state.unreadMessagesCountByStoreId,
             [storeId]: 0,
           },
         }))

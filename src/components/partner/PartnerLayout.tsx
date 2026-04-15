@@ -8,6 +8,7 @@ import { PartnerTopbar } from '@/components/partner/PartnerTopbar'
 import { useOrderNotifications } from '@/hooks/useOrderNotifications'
 import { useOrdersRealtime } from '@/hooks/useOrdersRealtime'
 import { useReviewsRealtime } from '@/hooks/useReviewsRealtime'
+import { useUnreadMessagesRealtime } from '@/hooks/useUnreadMessagesRealtime'
 import { usePartnerAuth } from '@/hooks/usePartnerAuth'
 import { usePartnerDashboard } from '@/hooks/usePartnerDashboard'
 import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
@@ -31,6 +32,7 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
     productsByStoreId,
     reviewsByStoreId,
     newReviewsCountByStoreId,
+    unreadMessagesCountByStoreId,
     setStoreOpen,
     hydrateStore,
     hydrateStoreOpen,
@@ -43,6 +45,7 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
     hydrateProducts,
     hydrateReviews,
     addReview,
+    incrementUnreadMessages,
   } = usePartnerDraftStore()
 
   useEffect(() => {
@@ -90,6 +93,12 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
       toast('Nova avaliacao recebida!', { icon: '⭐' })
     }
   })
+  useUnreadMessagesRealtime(data?.store.id ?? '', () => {
+    if (data?.store.id) {
+      incrementUnreadMessages(data.store.id)
+      toast('Nova mensagem de cliente!', { icon: '💬', duration: 3000 })
+    }
+  })
 
   if (loading) {
     return <LoadingScreen />
@@ -118,6 +127,7 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
   const draftProducts = productsByStoreId[data.store.id] ?? data.products
   const draftReviews = reviewsByStoreId[data.store.id] ?? data.reviews
   const newReviewsCount = newReviewsCountByStoreId[data.store.id] ?? 0
+  const unreadMessagesCount = unreadMessagesCountByStoreId[data.store.id] ?? 0
   const today = new Date()
   const validOrders = draftOrders.filter((order) => order.status !== 'cancelado')
   const todayOrders = validOrders.filter((order) => isSameUtcDate(order.createdAt, today))
@@ -189,7 +199,7 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
         )}
       >
         <div className="space-y-4">
-          <PartnerTopbar data={displayData} />
+          <PartnerTopbar data={displayData} unreadMessages={unreadMessagesCount} />
 
           <div className="panel-card flex items-center justify-between px-4 py-3 lg:hidden">
             <span className="text-sm font-bold text-ink-900">{displayData.store.name}</span>

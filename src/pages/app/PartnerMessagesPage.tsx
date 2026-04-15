@@ -2,6 +2,7 @@ import { MessageCircle, Send, ShoppingBag } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast'
 import { useAllChatsRealtime } from '@/hooks/useAllChatsRealtime'
+import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
 import {
   countUnread,
   fetchAllChatSessions,
@@ -57,6 +58,7 @@ function ChatAvatar({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' | 
 export function PartnerMessagesPage() {
   const { data } = usePartnerPageData()
   const storeId = data.store.id
+  const { clearUnreadMessages } = usePartnerDraftStore()
 
   const [sessions, setSessions] = useState<ChatSession[]>([])
   const [activeChatId, setActiveChatId] = useState<string | null>(null)
@@ -76,8 +78,9 @@ export function PartnerMessagesPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [activeSession?.messages.length])
 
-  // Load all sessions on mount
+  // Load all sessions on mount + clear badge
   useEffect(() => {
+    clearUnreadMessages(storeId)
     let active = true
     setLoading(true)
 
