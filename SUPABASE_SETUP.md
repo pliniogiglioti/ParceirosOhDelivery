@@ -57,7 +57,7 @@ Todos os projetos compartilham o **mesmo banco Supabase**. Para evitar conflito,
 ### Como clonar o repo de migrations
 
 ```bash
-git clone https://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@github.com/pliniogiglioti/migrationsohdelivery.git
+git clone https://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@github.com/pliniogiglioti/migrationsohdelivery.git
 ```
 
 ### Regra importante
@@ -104,7 +104,7 @@ jobs:
 
 | Nome | Valor |
 |------|-------|
-| `SUPABASE_ACCESS_TOKEN` | `sbp_c9c70fc3f4d73fbdf99f226b89d1e933be40edad` |
+| `SUPABASE_ACCESS_TOKEN` | `sbp_ed84c308304f0c5f9219e2950fc1e9a31a4c60d6` |
 
 Para adicionar: **Settings > Secrets and variables > Actions > New repository secret**
 
