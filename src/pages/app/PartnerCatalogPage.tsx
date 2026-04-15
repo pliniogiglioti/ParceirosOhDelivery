@@ -1707,10 +1707,13 @@ const normalizedSearch = search.trim().toLowerCase()
                       draggable
                       onDragStart={(e) => {
                         setDraggingCategoryId(category.id)
-                        // Prevent ghost transparency — use a clone
-                        const el = e.currentTarget
                         e.dataTransfer.effectAllowed = 'move'
-                        e.dataTransfer.setDragImage(el, el.offsetWidth / 2, 20)
+                        // Use a 1x1 transparent pixel as ghost — we show our own visual via opacity
+                        const ghost = document.createElement('div')
+                        ghost.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;'
+                        document.body.appendChild(ghost)
+                        e.dataTransfer.setDragImage(ghost, 0, 0)
+                        setTimeout(() => document.body.removeChild(ghost), 0)
                       }}
                       onDragEnd={() => {
                         setDraggingCategoryId(null)
@@ -1723,25 +1726,41 @@ const normalizedSearch = search.trim().toLowerCase()
                           setDragOverCategoryId(category.id)
                         }
                       }}
-                      onDragLeave={() => {
-                        setDragOverCategoryId(null)
+                      onDragLeave={(e) => {
+                        // Only clear if leaving to outside this element
+                        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                          setDragOverCategoryId(null)
+                        }
                       }}
                       onDrop={(e) => {
                         e.preventDefault()
                         if (!draggingCategoryId || draggingCategoryId === category.id) return
-                        setCategoryOrderIds((current) =>
-                          reorderCategoryIds(current, draggingCategoryId, category.id)
-                        )
+                        const nextOrder = reorderCategoryIds(categoryOrderIds, draggingCategoryId, category.id)
+                        setCategoryOrderIds(nextOrder)
                         setDraggingCategoryId(null)
                         setDragOverCategoryId(null)
+                        // Persist to DB
+                        if (data) {
+                          import('@/lib/supabase').then(({ supabase }) => {
+                            if (!supabase) return
+                            Promise.all(
+                              nextOrder.map((catId, idx) =>
+                                supabase.from('product_categories')
+                                  .update({ sort_order: idx })
+                                  .eq('id', catId)
+                                  .eq('store_id', data.store.id)
+                              )
+                            ).catch(() => toast.error('Nao foi possivel salvar a ordem.'))
+                          })
+                        }
                       }}
                       className={cn(
-                        'rounded-xl border bg-white transition-all duration-200',
+                        'rounded-xl border bg-white transition-all duration-150',
                         draggingCategoryId === category.id
-                          ? 'border-coral-300 shadow-lg ring-2 ring-coral-200 cursor-grabbing'
+                          ? 'opacity-0'
                           : dragOverCategoryId === category.id
-                            ? 'border-coral-400 shadow-md translate-y-1'
-                            : 'border-ink-100 cursor-grab'
+                            ? 'border-coral-400 shadow-md scale-[1.01]'
+                            : 'border-ink-100'
                       )}
                     >
                       <div
