@@ -193,6 +193,9 @@ export function PartnerOrdersPage() {
   const [statusEvents, setStatusEvents] = useState<OrderStatusEvent[]>([])
   const [statusEventsLoading, setStatusEventsLoading] = useState(false)
   const [orderModalTab, setOrderModalTab] = useState<'detalhes' | 'chat'>('detalhes')
+  const [cancelTarget, setCancelTarget] = useState<PartnerOrder | null>(null)
+  const [cancelReason, setCancelReason] = useState('')
+  const [cancelling, setCancelling] = useState(false)
   const orderSettings = {
     ...defaultOrderSettings,
     ...(orderSettingsByStoreId[data.store.id] ?? {}),
@@ -456,8 +459,15 @@ export function PartnerOrdersPage() {
 
     if (currentColumn === targetColumn) return
 
-    if (targetColumn === 'cancelado' || currentColumn === 'cancelado') {
+    if (currentColumn === 'cancelado') {
       toast.error('Pedidos cancelados nao podem ser movidos.')
+      return
+    }
+
+    // Arrastar para cancelado → abre modal de motivo
+    if (targetColumn === 'cancelado') {
+      setCancelTarget(order)
+      setCancelReason('')
       return
     }
 
@@ -474,6 +484,25 @@ export function PartnerOrdersPage() {
     })
     toast.success(`Pedido ${order.code} movido com sucesso.`)
     void updateOrderStatus(order.id, next).catch(() => undefined)
+  }
+
+  async function handleConfirmCancel() {
+    if (!cancelTarget || !cancelReason.trim() || cancelling) return
+
+    setCancelling(true)
+    try {
+      updateOrder(data.store.id, cancelTarget.id, { status: 'cancelado' })
+      await cancelOrder(cancelTarget.id, cancelReason.trim())
+      toast.success(`Pedido ${cancelTarget.code} cancelado.`)
+      setCancelTarget(null)
+      setCancelReason('')
+    } catch {
+      toast.error('Nao foi possivel cancelar o pedido.')
+      // Reverte
+      updateOrder(data.store.id, cancelTarget.id, { status: cancelTarget.status })
+    } finally {
+      setCancelling(false)
+    }
   }
 
   function handleAdvanceOrder(order: PartnerOrder) {
@@ -1212,6 +1241,74 @@ export function PartnerOrdersPage() {
               className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-6 text-sm font-semibold text-white transition hover:bg-coral-600"
             >
               Salvar
+            </button>
+          </div>
+        </AnimatedModal>
+
+        {/* Modal de cancelamento com motivo obrigatório */}
+        <AnimatedModal
+          open={Boolean(cancelTarget)}
+          onClose={() => { if (!cancelling) { setCancelTarget(null); setCancelReason('') } }}
+          panelClassName="panel-card w-full max-w-md p-5 sm:p-6"
+          ariaLabelledby="cancel-order-title"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">Cancelar pedido</p>
+              <h4 id="cancel-order-title" className="mt-2 text-xl font-bold text-ink-900">
+                {cancelTarget?.code}
+              </h4>
+              <p className="mt-1 text-sm text-ink-500">{cancelTarget?.customerName}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => { if (!cancelling) { setCancelTarget(null); setCancelReason('') } }}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-ink-100 bg-ink-50 text-ink-700 transition hover:border-coral-200 hover:text-coral-600"
+              aria-label="Fechar"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-coral-100 bg-coral-50 px-4 py-3">
+            <p className="text-sm text-coral-700">
+              Esta acao nao pode ser desfeita. O cliente sera notificado do cancelamento.
+            </p>
+          </div>
+
+          <label className="mt-5 block">
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">
+              Motivo do cancelamento <span className="text-coral-500">*</span>
+            </span>
+            <textarea
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              rows={3}
+              placeholder="Ex: Cliente solicitou cancelamento, item indisponivel, endereco invalido..."
+              className="w-full resize-none rounded-2xl border border-ink-100 bg-white px-4 py-3 text-sm text-ink-900 outline-none placeholder:text-ink-300 focus:border-coral-400 transition"
+              autoFocus
+            />
+            {cancelReason.trim().length === 0 && (
+              <p className="mt-1.5 text-xs text-ink-400">Campo obrigatorio para cancelar o pedido.</p>
+            )}
+          </label>
+
+          <div className="mt-5 flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => { setCancelTarget(null); setCancelReason('') }}
+              disabled={cancelling}
+              className="inline-flex h-11 items-center justify-center rounded-2xl border border-ink-100 px-5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50 disabled:opacity-50"
+            >
+              Voltar
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleConfirmCancel()}
+              disabled={!cancelReason.trim() || cancelling}
+              className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-6 text-sm font-semibold text-white transition hover:bg-coral-600 disabled:opacity-40"
+            >
+              {cancelling ? 'Cancelando...' : 'Confirmar cancelamento'}
             </button>
           </div>
         </AnimatedModal>
