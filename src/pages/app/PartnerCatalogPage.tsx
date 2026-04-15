@@ -425,13 +425,20 @@ export function PartnerCatalogPage({
     fetchIndustrializados()
       .then(setIndustrializedCatalogItems)
       .catch((err) => console.error('[industrializados]', err))
-    // Pre-load pizza size counts for existing pizza categories
-    catalogCategories.filter((c) => getCategoryTemplate(c) === 'pizza').forEach((c) => {
+  }, [])
+
+  // Load pizza sizes and flavors whenever pizza categories change
+  useEffect(() => {
+    const pizzaCats = catalogCategories.filter((c) => getCategoryTemplate(c) === 'pizza')
+    pizzaCats.forEach((c) => {
       fetchPizzaSizes(c.id).then((sizes) => {
         setSizeCountByCategory((prev) => ({ ...prev, [c.id]: sizes.length }))
       }).catch(() => {})
+      fetchPizzaFlavors(c.id).then((flavors) => {
+        setFlavorsByCategory((prev) => ({ ...prev, [c.id]: flavors }))
+      }).catch(() => {})
     })
-  }, [])
+  }, [catalogCategories])
   const [expandedByCategoryId, setExpandedByCategoryId] = useState<Record<string, boolean>>({})
   const [activeByCategoryId, setActiveByCategoryId] = useState<Record<string, boolean>>({})
   const [activeByProductId, setActiveByProductId] = useState<Record<string, boolean>>({})
@@ -1774,10 +1781,6 @@ const normalizedSearch = search.trim().toLowerCase()
                               onChange={(nextValue) => {
                                 if (nextValue && !hasAtLeastOneActiveProduct && !isPizza) {
                                   toast.error('Ative ao menos 1 produto da categoria antes de ativar a categoria.')
-                                  return
-                                }
-                                if (nextValue && isPizza && !hasAtLeastOneActiveProduct) {
-                                  toast.error('Ative ao menos 1 sabor antes de ativar a categoria pizza.')
                                   return
                                 }
                                 setActiveByCategoryId((current) => ({
