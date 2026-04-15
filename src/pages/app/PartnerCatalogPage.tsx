@@ -1924,7 +1924,7 @@ const normalizedSearch = search.trim().toLowerCase()
                               <p className="text-sm font-semibold text-ink-700">Nenhum item nesta categoria</p>
                               <p className="mt-2 text-sm text-ink-500">Adicione produtos para preencher esta secao do cardapio.</p>
                             </div>
-                          ) : null}
+                          )}
                         </div>
                         </div>
                       </div>
