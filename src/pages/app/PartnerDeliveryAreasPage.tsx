@@ -218,16 +218,18 @@ export function PartnerDeliveryAreasPage() {
               </button>
             </div>
 
-            <RadiusDeliveryMap
-              lat={mapLat}
-              lng={mapLng}
-              zones={zones}
-              onZonesChange={setZones}
-              onLocationChange={(lat, lng) => {
-                setMapLat(lat)
-                setMapLng(lng)
-              }}
-            />
+            <div style={locationModalOpen ? { visibility: 'hidden', pointerEvents: 'none' } : undefined}>
+              <RadiusDeliveryMap
+                lat={mapLat}
+                lng={mapLng}
+                zones={zones}
+                onZonesChange={setZones}
+                onLocationChange={(lat, lng) => {
+                  setMapLat(lat)
+                  setMapLng(lng)
+                }}
+              />
+            </div>
 
             <div className="flex justify-end">
               <button

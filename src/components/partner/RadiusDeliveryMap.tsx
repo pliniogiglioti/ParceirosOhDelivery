@@ -212,19 +212,6 @@ export function RadiusDeliveryMap({
           className="pointer-events-none absolute rounded-full bg-white border-2 border-[#ff3600]"
           style={{ left: '50%', top: '50%', width: 8, height: 8, transform: 'translate(-50%, -50%)', zIndex: 9999 }}
         />
-        <button
-          type="button"
-          onClick={goToMyLocation}
-          disabled={locating}
-          className="absolute right-3 top-3 z-[9999] flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-[12px] font-semibold text-ink-700 shadow-md transition hover:bg-ink-50 disabled:opacity-70"
-        >
-          {locating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LocateFixed className="h-3.5 w-3.5 text-[#ff3600]" />}
-          Minha localizacao
-        </button>
-
-        <p className="absolute bottom-2 left-3 z-[9999] rounded-xl bg-white/80 px-2.5 py-1 text-[11px] text-ink-400 backdrop-blur-sm">
-          Use "Minha localizacao" para centralizar o mapa
-        </p>
       </div>
 
       <div className="space-y-3">
