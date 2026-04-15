@@ -309,6 +309,7 @@ export function PartnerCatalogPage({
   const [pizzaTab, setPizzaTab] = useState<PizzaTab>('detalhes')
   const [pizzaMaxTab, setPizzaMaxTab] = useState(0)
   const [pizzaCategoryName, setPizzaCategoryName] = useState('')
+  const [pizzaPricePolicy, setPizzaPricePolicy] = useState<'maior' | 'media' | 'menor'>('maior')
   const [pizzaSizes, setPizzaSizes] = useState<PizzaSizeDraft[]>([])
   const [pizzaCrusts, setPizzaCrusts] = useState<Record<string, PizzaCrustDraft[]>>({})
   const [pizzaEdges, setPizzaEdges] = useState<Record<string, PizzaEdgeDraft[]>>({})
@@ -344,6 +345,7 @@ export function PartnerCatalogPage({
   const [flavorLibItems, setFlavorLibItems] = useState<import('@/types').PizzaFlavor[]>([])
   const [flavorLibSearch, setFlavorLibSearch] = useState('')
   const [flavorLibCategoryId, setFlavorLibCategoryId] = useState<string | null>(null)
+  const [flavorPickerOpen, setFlavorPickerOpen] = useState(false) // picker inside flavor modal
 
   // Edit product modal (same flow as industrialized: preco → classificacao → revisao)
   const [editProductModalOpen, setEditProductModalOpen] = useState(false)
@@ -759,6 +761,7 @@ const normalizedSearch = search.trim().toLowerCase()
     if (selectedTemplate.id === 'pizza') {
       // Abre o modal de pizza em vez de criar direto
       setPizzaCategoryName(trimmedName)
+      setPizzaPricePolicy('maior')
       setPizzaTab('detalhes')
       setPizzaMaxTab(0)
       setPizzaSizes([])
@@ -1294,7 +1297,8 @@ const normalizedSearch = search.trim().toLowerCase()
         name: pizzaCategoryName.trim(),
         icon: 'PZ',
         template: 'pizza',
-      })
+        pricePolicy: pizzaPricePolicy,
+      } as Parameters<typeof createProductCategory>[1] & { pricePolicy: string })
 
       await savePizzaCategory(data.store.id, saved.id, pizzaSizes.map((s, i) => ({
         name: s.name,
@@ -1620,9 +1624,10 @@ const normalizedSearch = search.trim().toLowerCase()
               <div className="space-y-3">
                 {visibleCategories.map((category) => {
                   const products = catalogProducts.filter((product) => product.categoryId === category.id)
-                  const hasAtLeastOneActiveProduct = products.some(
-                    (product) => activeByProductId[product.id] ?? product.active
-                  )
+                  const isPizza = getCategoryTemplate(category) === 'pizza'
+                  const hasAtLeastOneActiveProduct = isPizza
+                    ? (flavorsByCategory[category.id] ?? []).some((f) => f.active)
+                    : products.some((product) => activeByProductId[product.id] ?? product.active)
                   const isExpanded = expandedByCategoryId[category.id] ?? false
                   const isActive = activeByCategoryId[category.id] ?? true
 
@@ -1676,11 +1681,14 @@ const normalizedSearch = search.trim().toLowerCase()
                             <ThemeSwitch
                               checked={isActive}
                               onChange={(nextValue) => {
-                                if (nextValue && !hasAtLeastOneActiveProduct) {
+                                if (nextValue && !hasAtLeastOneActiveProduct && !isPizza) {
                                   toast.error('Ative ao menos 1 produto da categoria antes de ativar a categoria.')
                                   return
                                 }
-
+                                if (nextValue && isPizza && !hasAtLeastOneActiveProduct) {
+                                  toast.error('Ative ao menos 1 sabor antes de ativar a categoria pizza.')
+                                  return
+                                }
                                 setActiveByCategoryId((current) => ({
                                   ...current,
                                   [category.id]: nextValue,
@@ -2230,6 +2238,27 @@ const normalizedSearch = search.trim().toLowerCase()
                       className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400" />
                     <p className="mt-1 text-right text-xs text-ink-400">{pizzaCategoryName.length}/40</p>
                   </label>
+
+                  <div>
+                    <p className="mb-2 text-sm font-semibold text-ink-900">Política de preço com múltiplos sabores</p>
+                    <p className="mb-3 text-xs text-ink-500">Define como calcular o preço quando o cliente escolhe mais de um sabor.</p>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      {([
+                        { id: 'maior', label: 'Maior preço', description: 'Cobra o preço do sabor mais caro.' },
+                        { id: 'media', label: 'Média', description: 'Cobra a média dos preços dos sabores.' },
+                        { id: 'menor', label: 'Menor preço', description: 'Cobra o preço do sabor mais barato.' },
+                      ] as const).map((policy) => (
+                        <button key={policy.id} type="button" onClick={() => setPizzaPricePolicy(policy.id)}
+                          className={cn('rounded-xl border p-4 text-left transition',
+                            pizzaPricePolicy === policy.id
+                              ? 'border-coral-300 bg-coral-50 text-coral-700'
+                              : 'border-ink-100 bg-white text-ink-900 hover:bg-ink-50')}>
+                          <p className="text-sm font-bold">{policy.label}</p>
+                          <p className={cn('mt-1 text-xs', pizzaPricePolicy === policy.id ? 'text-coral-600' : 'text-ink-500')}>{policy.description}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               ) : null}
 
@@ -2443,7 +2472,50 @@ const normalizedSearch = search.trim().toLowerCase()
 
             {/* ── DETALHES ── */}
             {flavorTab === 'detalhes' ? (
-              <div className="grid gap-5 md:grid-cols-[180px_minmax(0,1fr)]">
+              <div className="space-y-4">
+                {/* Botão escolher da biblioteca */}
+                {(flavorsByCategory[flavorModalCategoryId ?? ''] ?? []).length > 0 ? (
+                  <div>
+                    {flavorPickerOpen ? (
+                      <div className="rounded-xl border border-coral-200 bg-coral-50 p-3 space-y-2">
+                        <p className="text-xs font-semibold text-ink-700">Escolher da biblioteca</p>
+                        <div className="relative">
+                          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
+                          <input type="text" value={flavorLibSearch} onChange={(e) => setFlavorLibSearch(e.target.value)}
+                            placeholder="Buscar sabor..."
+                            className="h-9 w-full rounded-xl border border-ink-100 bg-white pl-9 pr-3 text-sm outline-none focus:border-coral-400" />
+                        </div>
+                        <div className="max-h-44 space-y-1 overflow-y-auto">
+                          {(flavorsByCategory[flavorModalCategoryId ?? ''] ?? [])
+                            .filter((f) => f.name.toLowerCase().includes(flavorLibSearch.toLowerCase()))
+                            .map((f) => (
+                              <button key={f.id} type="button"
+                                onClick={() => {
+                                  setFlavorName(f.name)
+                                  setFlavorDescription(f.description)
+                                  setFlavorImage(f.imageUrl ?? '')
+                                  setFlavorPickerOpen(false)
+                                  setFlavorLibSearch('')
+                                }}
+                                className="flex w-full items-center gap-2 rounded-xl border border-ink-100 bg-white p-2 text-left hover:bg-ink-50">
+                                {f.imageUrl ? <img src={f.imageUrl} alt={f.name} className="h-8 w-8 rounded-lg object-cover shrink-0" /> : null}
+                                <p className="truncate text-sm font-semibold text-ink-900">{f.name}</p>
+                              </button>
+                            ))}
+                        </div>
+                        <button type="button" onClick={() => setFlavorPickerOpen(false)}
+                          className="h-8 w-full rounded-xl border border-ink-100 text-xs font-semibold text-ink-600 hover:bg-white">Fechar</button>
+                      </div>
+                    ) : (
+                      <button type="button" onClick={() => { setFlavorPickerOpen(true); setFlavorLibSearch('') }}
+                        className="inline-flex h-9 items-center gap-2 rounded-xl border border-coral-200 px-3 text-sm font-semibold text-coral-600 hover:bg-coral-50">
+                        Escolher da biblioteca
+                      </button>
+                    )}
+                  </div>
+                ) : null}
+
+                <div className="grid gap-5 md:grid-cols-[180px_minmax(0,1fr)]">
                 {/* Imagem */}
                 <div className="flex flex-col gap-2">
                   <span className="block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Imagem do item</span>
@@ -2482,6 +2554,7 @@ const normalizedSearch = search.trim().toLowerCase()
                     <p className="mt-1 text-right text-xs text-ink-400">{flavorDescription.length}/100</p>
                   </label>
                 </div>
+              </div>
               </div>
             ) : null}
 

@@ -605,6 +605,7 @@ export async function createProductCategory(
       store_id: storeId,
       name: input.name,
       template: input.template ?? 'padrao',
+      price_policy: (input as { pricePolicy?: string }).pricePolicy ?? 'maior',
       active: true,
       sort_order: 0,
     })
