@@ -1738,36 +1738,92 @@ const normalizedSearch = search.trim().toLowerCase()
                               const flavors = flavorsByCategory[category.id] ?? []
                               return flavors.length > 0 ? (
                                 <div className="overflow-hidden rounded-xl border border-ink-100 bg-white">
-                                  <div className="hidden grid-cols-[88px_minmax(0,1.8fr)_minmax(0,1fr)_44px] items-center gap-4 border-b border-ink-100 bg-ink-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-ink-500 lg:grid">
-                                    <span>Foto</span>
-                                    <span>Sabor</span>
-                                    <span>Precos</span>
+                                  {/* Header */}
+                                  <div className="hidden grid-cols-[44px_88px_minmax(0,1fr)_160px_140px_100px_44px] items-center gap-4 border-b border-ink-100 bg-ink-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-ink-500 lg:grid">
+                                    <span />
+                                    <span>Sabores</span>
+                                    <span />
+                                    <span>Tamanho</span>
+                                    <span>Preço</span>
+                                    <span>Ativo</span>
                                     <span />
                                   </div>
                                   <div className="divide-y divide-ink-100">
-                                    {flavors.map((flavor) => (
-                                      <div key={flavor.id} className="grid gap-4 px-4 py-4 lg:grid-cols-[88px_minmax(0,1.8fr)_minmax(0,1fr)_44px] lg:items-center">
-                                        <div>
-                                          <img src={flavor.imageUrl ?? DEFAULT_PRODUCT_IMAGE} alt={flavor.name}
-                                            className="h-16 w-16 rounded-xl object-cover" />
+                                    {flavors.map((flavor) => {
+                                      const sizeCount = Object.keys(flavor.prices).length
+                                      const prices = Object.values(flavor.prices).filter((p) => p > 0)
+                                      const minPrice = prices.length > 0 ? Math.min(...prices) : null
+                                      const isActive = flavor.active
+
+                                      return (
+                                        <div key={flavor.id} className="grid gap-4 px-4 py-4 lg:grid-cols-[44px_88px_minmax(0,1fr)_160px_140px_100px_44px] lg:items-center">
+                                          {/* Drag handle placeholder */}
+                                          <div className="hidden lg:flex items-center justify-center text-ink-300">
+                                            <GripVertical className="h-4 w-4" />
+                                          </div>
+                                          {/* Foto */}
+                                          <div>
+                                            <img src={flavor.imageUrl ?? DEFAULT_PRODUCT_IMAGE} alt={flavor.name}
+                                              className="h-16 w-16 rounded-xl object-cover" />
+                                          </div>
+                                          {/* Nome e descrição */}
+                                          <div className="min-w-0">
+                                            <p className="truncate text-sm font-bold text-ink-900">{flavor.name}</p>
+                                            {flavor.description ? <p className="mt-1 line-clamp-2 text-sm text-ink-500">{flavor.description}</p> : null}
+                                          </div>
+                                          {/* Tamanho */}
+                                          <div>
+                                            <p className="text-xs text-ink-400">Disponível em</p>
+                                            <p className="text-sm font-bold text-ink-900">{sizeCount} tamanho{sizeCount !== 1 ? 's' : ''}</p>
+                                          </div>
+                                          {/* Preço */}
+                                          <div>
+                                            {minPrice !== null ? (
+                                              <>
+                                                <p className="text-xs text-ink-400">A partir de</p>
+                                                <p className="text-sm font-bold text-ink-900">{formatCurrency(minPrice)}</p>
+                                              </>
+                                            ) : (
+                                              <p className="text-sm text-ink-400">Sem preço</p>
+                                            )}
+                                          </div>
+                                          {/* Ativo */}
+                                          <div>
+                                            <ThemeSwitch
+                                              checked={isActive}
+                                              onChange={(next) => {
+                                                setFlavorsByCategory((prev) => ({
+                                                  ...prev,
+                                                  [category.id]: (prev[category.id] ?? []).map((f) =>
+                                                    f.id === flavor.id ? { ...f, active: next } : f
+                                                  ),
+                                                }))
+                                                // Persist
+                                                if (data) {
+                                                  savePizzaFlavor(data.store.id, {
+                                                    id: flavor.id,
+                                                    categoryId: flavor.categoryId,
+                                                    name: flavor.name,
+                                                    description: flavor.description,
+                                                    imageUrl: flavor.imageUrl,
+                                                    active: next,
+                                                    prices: flavor.prices,
+                                                  }).catch(() => toast.error('Nao foi possivel atualizar.'))
+                                                }
+                                              }}
+                                              ariaLabel={`Ativo ${flavor.name}`}
+                                            />
+                                          </div>
+                                          {/* Editar */}
+                                          <div className="flex justify-end">
+                                            <button type="button" onClick={() => openFlavorModal(category.id, flavor)}
+                                              className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50">
+                                              <PencilLine className="h-4 w-4" />
+                                            </button>
+                                          </div>
                                         </div>
-                                        <div className="min-w-0">
-                                          <p className="truncate text-sm font-bold text-ink-900">{flavor.name}</p>
-                                          {flavor.description ? <p className="mt-1 line-clamp-2 text-sm text-ink-500">{flavor.description}</p> : null}
-                                        </div>
-                                        <div className="text-sm text-ink-500">
-                                          {Object.keys(flavor.prices).length > 0
-                                            ? Object.values(flavor.prices).map((p) => formatCurrency(p)).join(' / ')
-                                            : 'Sem preço'}
-                                        </div>
-                                        <div className="flex justify-end">
-                                          <button type="button" onClick={() => openFlavorModal(category.id, flavor)}
-                                            className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50">
-                                            <PencilLine className="h-4 w-4" />
-                                          </button>
-                                        </div>
-                                      </div>
-                                    ))}
+                                      )
+                                    })}
                                   </div>
                                 </div>
                               ) : (
