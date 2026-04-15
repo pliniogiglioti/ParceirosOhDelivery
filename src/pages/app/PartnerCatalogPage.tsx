@@ -271,6 +271,8 @@ export function PartnerCatalogPage({
   const [categoryOrderIds, setCategoryOrderIds] = useState<string[]>([])
   const [draggingCategoryId, setDraggingCategoryId] = useState<string | null>(null)
   const [dragOverCategoryId, setDragOverCategoryId] = useState<string | null>(null)
+  const dragCloneRef = useRef<HTMLDivElement | null>(null)
+  const dragWidthRef = useRef(0)
   const [createCategoryModalOpen, setCreateCategoryModalOpen] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
   const [newCategoryTemplate, setNewCategoryTemplate] = useState<CategoryTemplate>('padrao')
@@ -1708,14 +1710,35 @@ const normalizedSearch = search.trim().toLowerCase()
                       onDragStart={(e) => {
                         setDraggingCategoryId(category.id)
                         e.dataTransfer.effectAllowed = 'move'
-                        // Use a 1x1 transparent pixel as ghost — we show our own visual via opacity
+                        const el = e.currentTarget
+                        dragWidthRef.current = el.offsetWidth
+                        // Create opaque clone that follows cursor
+                        const clone = el.cloneNode(true) as HTMLDivElement
+                        clone.style.cssText = `
+                          position:fixed;top:${e.clientY - 20}px;left:${e.clientX - el.offsetWidth / 2}px;
+                          width:${el.offsetWidth}px;pointer-events:none;z-index:9999;opacity:1;
+                          box-shadow:0 8px 32px rgba(0,0,0,0.18);border-radius:12px;background:white;
+                          transform:rotate(1.5deg) scale(1.02);
+                        `
+                        document.body.appendChild(clone)
+                        dragCloneRef.current = clone
+                        // Hide browser ghost
                         const ghost = document.createElement('div')
                         ghost.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;'
                         document.body.appendChild(ghost)
                         e.dataTransfer.setDragImage(ghost, 0, 0)
                         setTimeout(() => document.body.removeChild(ghost), 0)
                       }}
+                      onDrag={(e) => {
+                        if (!dragCloneRef.current || e.clientX === 0) return
+                        dragCloneRef.current.style.top = `${e.clientY - 20}px`
+                        dragCloneRef.current.style.left = `${e.clientX - dragWidthRef.current / 2}px`
+                      }}
                       onDragEnd={() => {
+                        if (dragCloneRef.current) {
+                          document.body.removeChild(dragCloneRef.current)
+                          dragCloneRef.current = null
+                        }
                         setDraggingCategoryId(null)
                         setDragOverCategoryId(null)
                       }}
@@ -1757,7 +1780,7 @@ const normalizedSearch = search.trim().toLowerCase()
                       className={cn(
                         'rounded-xl border bg-white transition-all duration-150',
                         draggingCategoryId === category.id
-                          ? 'opacity-0'
+                          ? 'border-dashed border-coral-300 bg-coral-50/50 opacity-40'
                           : dragOverCategoryId === category.id
                             ? 'border-coral-400 shadow-md scale-[1.01]'
                             : 'border-ink-100'
