@@ -135,6 +135,7 @@ interface ComplementGroup {
   required: boolean
   minQty: number
   maxQty: number
+  maxItemQty: number
   items: ComplementItem[]
 }
 
@@ -390,6 +391,7 @@ export function PartnerCatalogPage({
   const [addingGroupRequired, setAddingGroupRequired] = useState(false)
   const [addingGroupMin, setAddingGroupMin] = useState('1')
   const [addingGroupMax, setAddingGroupMax] = useState('1')
+  const [addingGroupMaxItemQty, setAddingGroupMaxItemQty] = useState('1')
   const [showAddGroupForm, setShowAddGroupForm] = useState(false)
   // complement item picker per group
   const [complementPickerGroupId, setComplementPickerGroupId] = useState<string | null>(null)
@@ -424,6 +426,7 @@ export function PartnerCatalogPage({
   const [editingGroupRequired, setEditingGroupRequired] = useState(false)
   const [editingGroupMin, setEditingGroupMin] = useState('0')
   const [editingGroupMax, setEditingGroupMax] = useState('1')
+  const [editingGroupMaxItemQty, setEditingGroupMaxItemQty] = useState('1')
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
   const [editingItemPrice, setEditingItemPrice] = useState('')
 
@@ -663,6 +666,7 @@ const [showMaxFeaturedModal, setShowMaxFeaturedModal] = useState(false)
           required: g.required,
           minQty: g.minQty,
           maxQty: g.maxQty,
+          maxItemQty: g.items[0]?.maxQty ?? 1,
           items: g.items.map((item) => ({
             id: item.id,
             name: item.name,
@@ -1007,7 +1011,7 @@ const normalizedSearch = search.trim().toLowerCase()
             name: item.name,
             description: item.description,
             price: item.price,
-            maxQty: item.maxQty ?? 1,
+            maxQty: g.maxItemQty ?? 1,
             imageUrl: item.imageUrl,
             libraryItemId: item.source === 'biblioteca' && item.sourceId && !item.sourceId.startsWith('lib-') ? item.sourceId : undefined,
             industrializedId: item.source === 'industrializado' ? item.sourceId : undefined,
@@ -1036,6 +1040,7 @@ const normalizedSearch = search.trim().toLowerCase()
       required: Number(addingGroupMin) >= 1,
       minQty: min,
       maxQty: max,
+      maxItemQty: Math.max(1, Number(addingGroupMaxItemQty) || 1),
       items: [],
     }
     setPrepComplementGroups((c) => [...c, group])
@@ -1043,6 +1048,7 @@ const normalizedSearch = search.trim().toLowerCase()
     setAddingGroupRequired(false)
     setAddingGroupMin('1')
     setAddingGroupMax('1')
+    setAddingGroupMaxItemQty('1')
     setShowAddGroupForm(false)
   }
 
@@ -1188,6 +1194,7 @@ const normalizedSearch = search.trim().toLowerCase()
     if (!editingGroupId || !editingGroupName.trim()) return
     const min = Number(editingGroupMin)
     const max = Number(editingGroupMax) || 1
+    const maxItemQty = Math.max(1, Number(editingGroupMaxItemQty) || 1)
     if (min > max) { toast.error('O minimo nao pode ser maior que o maximo.'); return }
     setPrepComplementGroups((groups) =>
       groups.map((g) => g.id === editingGroupId ? {
@@ -1196,6 +1203,7 @@ const normalizedSearch = search.trim().toLowerCase()
         required: Number(editingGroupMin) >= 1,
         minQty: min,
         maxQty: max,
+        maxItemQty,
       } : g)
     )
     setEditingGroupId(null)
@@ -3252,7 +3260,7 @@ const normalizedSearch = search.trim().toLowerCase()
                             <div className="space-y-2">
                               <input type="text" value={editingGroupName} onChange={(e) => setEditingGroupName(e.target.value)} placeholder="Nome do grupo *"
                                 className="h-9 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
-                              <div className="grid grid-cols-2 gap-2">
+                              <div className="grid grid-cols-3 gap-2">
                                 <label className="block">
                                   <span className="mb-1 block text-xs font-semibold text-ink-500">Min de itens</span>
                                   <input type="number" min={0} value={editingGroupMin} onChange={(e) => {
@@ -3263,6 +3271,11 @@ const normalizedSearch = search.trim().toLowerCase()
                                 <label className="block">
                                   <span className="mb-1 block text-xs font-semibold text-ink-500">Max de itens</span>
                                   <input type="number" min={1} value={editingGroupMax} onChange={(e) => setEditingGroupMax(e.target.value)}
+                                    className="h-9 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
+                                </label>
+                                <label className="block">
+                                  <span className="mb-1 block text-xs font-semibold text-ink-500">Qtd máx/item</span>
+                                  <input type="number" min={1} value={editingGroupMaxItemQty} onChange={(e) => setEditingGroupMaxItemQty(e.target.value)}
                                     className="h-9 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
                                 </label>
                               </div>
@@ -3286,7 +3299,7 @@ const normalizedSearch = search.trim().toLowerCase()
                             <div className="flex items-center justify-between gap-3">
                               <div>
                                 <p className="text-sm font-bold text-ink-900">{group.name}</p>
-                                <p className="mt-0.5 text-xs text-ink-500">{group.required ? 'Obrigatorio' : 'Opcional'} · min {group.minQty} / max {group.maxQty} itens</p>
+                                <p className="mt-0.5 text-xs text-ink-500">{group.required ? 'Obrigatorio' : 'Opcional'} · min {group.minQty} / max {group.maxQty} itens{group.maxItemQty > 1 ? ` · até ${group.maxItemQty}x por item` : ''}</p>
                               </div>
                               <div className="flex items-center gap-1">
                                 <button type="button" onClick={() => {
@@ -3295,6 +3308,7 @@ const normalizedSearch = search.trim().toLowerCase()
                                   setEditingGroupRequired(group.required)
                                   setEditingGroupMin(String(group.minQty))
                                   setEditingGroupMax(String(group.maxQty))
+                                  setEditingGroupMaxItemQty(String(group.maxItemQty ?? 1))
                                 }}
                                   className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-ink-100 text-ink-500 hover:bg-ink-50">
                                   <PencilLine className="h-3.5 w-3.5" />
@@ -3529,7 +3543,7 @@ const normalizedSearch = search.trim().toLowerCase()
                           <p className="text-sm font-bold text-ink-900">Novo grupo</p>
                           <input type="text" value={addingGroupName} onChange={(e) => setAddingGroupName(e.target.value)} placeholder="Nome do grupo *"
                             className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid grid-cols-3 gap-3">
                             <label className="block">
                               <span className="mb-1 block text-xs font-semibold text-ink-500">Min de itens</span>
                               <input type="number" min={0} value={addingGroupMin} onChange={(e) => setAddingGroupMin(e.target.value)}
@@ -3538,6 +3552,11 @@ const normalizedSearch = search.trim().toLowerCase()
                             <label className="block">
                               <span className="mb-1 block text-xs font-semibold text-ink-500">Max de itens</span>
                               <input type="number" min={1} value={addingGroupMax} onChange={(e) => setAddingGroupMax(e.target.value)}
+                                className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
+                            </label>
+                            <label className="block">
+                              <span className="mb-1 block text-xs font-semibold text-ink-500">Qtd máx/item</span>
+                              <input type="number" min={1} value={addingGroupMaxItemQty} onChange={(e) => setAddingGroupMaxItemQty(e.target.value)}
                                 className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
                             </label>
                           </div>
