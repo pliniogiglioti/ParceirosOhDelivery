@@ -453,7 +453,7 @@ export function PartnerOverviewPage() {
           icon={Clock} iconBg="bg-ink-50" iconColor="text-ink-500" />
       </div>
 
-      {/* Funil de vendas */}
+      {/* Funil de vendas — cards lado a lado */}
       <div className="panel-card p-5">
         <div className="flex items-center justify-between gap-3 mb-5">
           <div>
@@ -462,25 +462,58 @@ export function PartnerOverviewPage() {
           </div>
           <BarChart2 className="h-5 w-5 text-ink-300" />
         </div>
-        <div className="flex items-end gap-3">
+        <div className="grid grid-cols-5 gap-3">
           {funnelSteps.map((step, i) => {
-            const pct = Math.round((step.value / funnelMax) * 100)
-            const conv = i > 0 && funnelSteps[i - 1].value > 0
+            const pct = funnelSteps[0].value > 0
+              ? Math.round((step.value / funnelSteps[0].value) * 100)
+              : 0
+            const stepPct = i > 0 && funnelSteps[i - 1].value > 0
               ? Math.round((step.value / funnelSteps[i - 1].value) * 100)
               : null
+
+            // Cores por etapa
+            const colors: Record<string, { bg: string; light: string; text: string }> = {
+              'Visitas':      { bg: '#3b82f6', light: '#eff6ff', text: '#1d4ed8' },
+              'Visualizacao': { bg: '#8b5cf6', light: '#f5f3ff', text: '#6d28d9' },
+              'Sacola':       { bg: '#f59e0b', light: '#fffbeb', text: '#b45309' },
+              'Revisao':      { bg: '#f97316', light: '#fff7ed', text: '#c2410c' },
+              'Vendas':       { bg: '#22c55e', light: '#f0fdf4', text: '#15803d' },
+            }
+            const c = colors[step.label] ?? { bg: '#6b7280', light: '#f9fafb', text: '#374151' }
+
             return (
-              <div key={step.label} className="flex flex-1 flex-col items-center gap-2">
-                {conv !== null ? (
-                  <span className="text-xs font-semibold text-ink-400">{conv}%</span>
-                ) : <span className="text-xs text-transparent">-</span>}
-                <div className="w-full rounded-2xl bg-ink-50 overflow-hidden" style={{ height: 120 }}>
-                  <div
-                    className={cn('w-full rounded-2xl transition-all duration-700', step.color)}
-                    style={{ height: `${pct}%`, marginTop: `${100 - pct}%` }}
-                  />
+              <div key={step.label} className="flex flex-col overflow-hidden rounded-2xl border border-ink-100">
+                {/* Topo — info */}
+                <div className="flex-1 p-3.5">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <span
+                      className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold text-white"
+                      style={{ backgroundColor: c.bg }}
+                    >
+                      {i + 1}
+                    </span>
+                    <p className="text-xs font-semibold text-ink-700 leading-tight">{step.label}</p>
+                  </div>
+                  <p className="text-xl font-bold text-ink-900 leading-none">
+                    {step.value.toLocaleString('pt-BR')}
+                  </p>
+                  <p className="mt-1 text-[11px] text-ink-400">clientes</p>
+                  {stepPct !== null && (
+                    <span
+                      className="mt-2 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold"
+                      style={{ backgroundColor: c.light, color: c.text }}
+                    >
+                      ↑ {stepPct}% acima
+                    </span>
+                  )}
                 </div>
-                <p className="text-lg font-bold text-ink-900">{loading ? '--' : step.value.toLocaleString('pt-BR')}</p>
-                <p className="text-xs font-semibold text-ink-500">{step.label}</p>
+                {/* Rodapé colorido — % do topo */}
+                <div
+                  className="px-3.5 py-3 text-center"
+                  style={{ backgroundColor: c.bg }}
+                >
+                  <p className="text-lg font-bold text-white">{pct}%</p>
+                </div>
               </div>
             )
           })}

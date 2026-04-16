@@ -1469,7 +1469,7 @@ export async function loadPartnerDashboard(storeId: string): Promise<{
       const profile = row.profiles as { name?: string } | null
       return {
         id: String(row.id),
-        author: profile?.name ?? String(row.profile_id ?? 'Cliente'),
+        author: profile?.name ?? 'Cliente',
         rating: Number(row.rating ?? 0),
         comment: String(row.comment ?? ''),
         createdAt: String(row.created_at ?? ''),
