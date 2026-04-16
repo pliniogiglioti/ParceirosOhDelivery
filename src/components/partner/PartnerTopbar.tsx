@@ -134,11 +134,11 @@ export function PartnerTopbar({ data, unreadMessages = 0 }: { data: PartnerDashb
           <button
             type="button"
             onClick={() => navigate('/app/horarios')}
-            className="flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100"
-            title="Loja aberta fora do horario configurado"
+            className="flex items-center gap-2 rounded-2xl border border-coral-200 bg-coral-50 px-3 py-1.5 text-xs font-semibold text-coral-700 transition hover:bg-coral-100"
+            title="A loja esta aberta fora do horario de abertura"
           >
-            <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-500" />
-            <span className="hidden sm:inline">Fora do horario</span>
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-coral-500" />
+            <span className="hidden sm:inline">A loja esta aberta fora do horario de abertura</span>
           </button>
         )}
 
