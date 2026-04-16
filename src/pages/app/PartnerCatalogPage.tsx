@@ -16,6 +16,10 @@
   Sparkles,
   X,
 } from 'lucide-react'
+import { CatalogSkeleton } from '@/components/partner/catalog/CatalogSkeleton'
+import { CatalogHeader } from '@/components/partner/catalog/CatalogHeader'
+import { CatalogFilters } from '@/components/partner/catalog/CatalogFilters'
+import { CategoryCard } from '@/components/partner/catalog/CategoryCard'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import toast from 'react-hot-toast'
@@ -1608,569 +1612,194 @@ const normalizedSearch = search.trim().toLowerCase()
           : true
   const industrializedCurrentStepIndex = industrializedMaxStepIndex
 
+  const isInitialLoad = catalogCategories.length === 0 && data.categories.length === 0
+
   const catalogCard = (
     <div className={embedded ? 'rounded-2xl bg-white shadow-sm overflow-hidden' : 'panel-card overflow-hidden'}>
-          <div className="border-b border-ink-100 bg-white px-5 py-5 sm:px-6">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <p className="flex items-center gap-2 text-xs text-ink-400">
-                <GripVertical className="h-4 w-4" />
-                Arraste as categorias para reordenar
-              </p>
+      <CatalogHeader
+        hasPizzaCategory={catalogCategories.some((c) => c.template === 'pizza')}
+        onOpenLibModal={() => { setLibModalOpen(true); setLibModalSearch('') }}
+        onOpenFlavorLib={() => {
+          const pizzaCats = catalogCategories.filter((c) => c.template === 'pizza')
+          if (pizzaCats.length > 0) openFlavorLibModal(pizzaCats[0].id)
+        }}
+        onOpenCreateCategory={openCreateCategoryModal}
+      />
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                <button
-                  type="button"
-                  onClick={() => { setLibModalOpen(true); setLibModalSearch('') }}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-coral-200 bg-white px-4 text-sm font-semibold text-coral-600 transition hover:bg-coral-50"
-                >
-                  Biblioteca de Complementos
-                </button>
-                {catalogCategories.some((c) => getCategoryTemplate(c) === 'pizza') ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const pizzaCats = catalogCategories.filter((c) => getCategoryTemplate(c) === 'pizza')
-                      openFlavorLibModal(pizzaCats[0].id)
+      <div className="space-y-5 px-5 py-5 sm:px-6">
+        <CatalogFilters
+          categories={orderedCategories}
+          selectedCategoryId={selectedCategoryId}
+          search={search}
+          onCategoryChange={setSelectedCategoryId}
+          onSearchChange={setSearch}
+          onClear={handleClearFilters}
+        />
+
+        {isInitialLoad ? (
+          <CatalogSkeleton />
+        ) : (
+          <div className="rounded-xl border border-ink-100 bg-ink-50 p-3 sm:p-4">
+            <div className="space-y-3">
+              {visibleCategories.map((category) => {
+                const products = catalogProducts.filter((product) => product.categoryId === category.id)
+                const isExpanded = expandedByCategoryId[category.id] ?? false
+                const isActive = activeByCategoryId[category.id] ?? true
+
+                return (
+                  <CategoryCard
+                    key={category.id}
+                    category={category}
+                    products={products}
+                    isExpanded={isExpanded}
+                    isActive={isActive}
+                    dragOverCategoryId={dragOverCategoryId}
+                    draggingCategoryId={draggingCategoryId}
+                    menuOpenCategoryId={menuOpenCategoryId}
+                    activeByProductId={activeByProductId}
+                    featuredByProductId={featuredByProductId}
+                    menuOpenProductId={menuOpenProductId}
+                    flavorsByCategory={flavorsByCategory}
+                    sizeCountByCategory={sizeCountByCategory}
+                    featuredCount={featuredCount}
+                    storeId={data.store.id}
+                    storeData={data.store}
+                    setFlavorsByCategory={setFlavorsByCategory}
+                    onDragOver={(e) => {
+                      e.preventDefault()
+                      if (category.id !== dragSourceRef.current) {
+                        setDragOverCategoryId(category.id)
+                      }
                     }}
-                    className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-coral-200 bg-white px-4 text-sm font-semibold text-coral-600 transition hover:bg-coral-50"
-                  >
-                    Biblioteca de Sabores
-                  </button>
-                ) : null}
-                <button
-                  type="button"
-                  onClick={openCreateCategoryModal}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
-                >
-                  <Plus className="h-4 w-4" />
-                  Adicionar categoria
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-5 px-5 py-5 sm:px-6">
-            <div className="grid gap-3 xl:grid-cols-[220px_minmax(0,1fr)_auto]">
-              <label className="block">
-                <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Categorias</span>
-                <select
-                  value={selectedCategoryId}
-                  onChange={(event) => setSelectedCategoryId(event.target.value)}
-                  className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm font-medium text-ink-900 outline-none transition focus:border-coral-400"
-                >
-                  <option value="all">Todas as categorias</option>
-                  {orderedCategories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="block">
-                <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Buscar produto</span>
-                <div className="relative">
-                  <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-400" />
-                  <input
-                    type="text"
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Buscar produto ou categoria"
-                    className="h-12 w-full rounded-2xl border border-ink-100 bg-white pl-11 pr-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400"
-                  />
-                </div>
-              </label>
-
-              <div className="flex items-end">
-                <button
-                  type="button"
-                  onClick={handleClearFilters}
-                  className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-coral-200 bg-white px-5 text-sm font-semibold text-coral-600 transition hover:bg-coral-50"
-                >
-                  <X className="h-4 w-4" />
-                  Limpar filtros
-                </button>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-ink-100 bg-ink-50 p-3 sm:p-4">
-              <div className="space-y-3">
-                {visibleCategories.map((category) => {
-                  const products = catalogProducts.filter((product) => product.categoryId === category.id)
-                  const isPizza = getCategoryTemplate(category) === 'pizza'
-                  const hasAtLeastOneActiveProduct = isPizza
-                    ? (flavorsByCategory[category.id] ?? []).some((f) => f.active)
-                    : products.some((product) => activeByProductId[product.id] ?? product.active)
-                  const isExpanded = expandedByCategoryId[category.id] ?? false
-                  const isActive = activeByCategoryId[category.id] ?? true
-
-                  return (
-                    <article
-                      key={category.id}
-                      onDragOver={(e) => {
-                        e.preventDefault()
-                        if (category.id !== dragSourceRef.current) {
-                          setDragOverCategoryId(category.id)
-                        }
-                      }}
-                      onDragLeave={(e) => {
-                        if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                          setDragOverCategoryId(null)
-                        }
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault()
-                        const from = dragSourceRef.current
-                        if (!from || from === category.id) return
-                        const nextOrder = reorderCategoryIds(categoryOrderIds, from, category.id)
-                        setCategoryOrderIds(nextOrder)
-                        setDraggingCategoryId(null)
+                    onDragLeave={(e) => {
+                      if (!e.currentTarget.contains(e.relatedTarget as Node)) {
                         setDragOverCategoryId(null)
-                        dragSourceRef.current = null
-                        if (dragCloneRef.current) {
-                          document.body.removeChild(dragCloneRef.current)
-                          dragCloneRef.current = null
-                        }
-                        // Persist to DB
-                        if (data) {
-                          import('@/lib/supabase').then(({ supabase }) => {
-                            if (!supabase) return
-                            Promise.all(
-                              nextOrder.map((catId, idx) =>
-                                supabase.from('product_categories')
-                                  .update({ sort_order: idx })
-                                  .eq('id', catId)
-                                  .eq('store_id', data.store.id)
-                              )
-                            ).catch(() => toast.error('Nao foi possivel salvar a ordem.'))
-                          })
-                        }
-                      }}
-                      className={cn(
-                        'rounded-xl border bg-white transition-colors duration-150',
-                        dragOverCategoryId === category.id && draggingCategoryId !== category.id
-                          ? 'border-coral-400 ring-2 ring-coral-200'
-                          : 'border-ink-100'
-                      )}
-                    >
-                      <div
-                        className="flex cursor-grab flex-col gap-4 px-4 py-4 lg:flex-row lg:items-center lg:justify-between lg:px-5"
-                        onClick={() => {
-                          setExpandedByCategoryId((current) => ({
-                            ...current,
-                            [category.id]: !isExpanded,
-                          }))
-                          // Load pizza flavors when expanding a pizza category
-                          if (!isExpanded && getCategoryTemplate(category) === 'pizza') {
-                            loadFlavorsForCategory(category.id)
-                          }
-                        }}
-                      >
-                        <div className="flex min-w-0 items-center gap-3">
-                          <div
-                            draggable
-                            onDragStart={(e) => {
-                              dragSourceRef.current = category.id
-                              setDraggingCategoryId(category.id)
-                              e.dataTransfer.effectAllowed = 'move'
-                              // Use the article as drag image — full opacity
-                              const article = e.currentTarget.closest('article') as HTMLElement
-                              if (article) {
-                                e.dataTransfer.setDragImage(article, article.offsetWidth / 2, 30)
+                      }
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault()
+                      const from = dragSourceRef.current
+                      if (!from || from === category.id) return
+                      const nextOrder = reorderCategoryIds(categoryOrderIds, from, category.id)
+                      setCategoryOrderIds(nextOrder)
+                      setDraggingCategoryId(null)
+                      setDragOverCategoryId(null)
+                      dragSourceRef.current = null
+                      if (dragCloneRef.current) {
+                        document.body.removeChild(dragCloneRef.current)
+                        dragCloneRef.current = null
+                      }
+                      if (data) {
+                        import('@/lib/supabase').then(({ supabase }) => {
+                          if (!supabase) return
+                          Promise.all(
+                            nextOrder.map((catId, idx) =>
+                              supabase.from('product_categories')
+                                .update({ sort_order: idx })
+                                .eq('id', catId)
+                                .eq('store_id', data.store.id)
+                            )
+                          ).catch(() => toast.error('Nao foi possivel salvar a ordem.'))
+                        })
+                      }
+                    }}
+                    onDragStart={(e) => {
+                      dragSourceRef.current = category.id
+                      setDraggingCategoryId(category.id)
+                      e.dataTransfer.effectAllowed = 'move'
+                      const article = e.currentTarget.closest('article') as HTMLElement
+                      if (article) {
+                        e.dataTransfer.setDragImage(article, article.offsetWidth / 2, 30)
+                      }
+                    }}
+                    onDragEnd={() => {
+                      setDraggingCategoryId(null)
+                      setDragOverCategoryId(null)
+                      dragSourceRef.current = null
+                    }}
+                    onToggleExpand={() => {
+                      setExpandedByCategoryId((current) => ({
+                        ...current,
+                        [category.id]: !isExpanded,
+                      }))
+                      if (!isExpanded && category.template === 'pizza') {
+                        loadFlavorsForCategory(category.id)
+                      }
+                    }}
+                    onToggleCategoryActive={(nextValue) => {
+                      setActiveByCategoryId((current) => ({
+                        ...current,
+                        [category.id]: nextValue,
+                      }))
+                      if (data) {
+                        import('@/lib/supabase').then(({ supabase }) => {
+                          supabase?.from('product_categories')
+                            .update({ active: nextValue })
+                            .eq('id', category.id)
+                            .eq('store_id', data.store.id)
+                            .then(({ error }) => {
+                              if (error) {
+                                setActiveByCategoryId((current) => ({ ...current, [category.id]: !nextValue }))
+                                toast.error('Nao foi possivel atualizar a categoria.')
                               }
-                            }}
-                            onDragEnd={() => {
-                              setDraggingCategoryId(null)
-                              setDragOverCategoryId(null)
-                              dragSourceRef.current = null
-                            }}
-                            className="cursor-grab active:cursor-grabbing touch-none shrink-0 p-1 text-ink-300 hover:text-ink-500"
-                          >
-                            <GripVertical className="h-5 w-5" />
-                          </div>
-                          <div className="min-w-0">
-                          <div className="flex min-w-0 flex-wrap items-center gap-2">
-                            <p className="truncate text-lg font-bold text-ink-900">{category.name}</p>
-                            {getCategoryTemplate(category) === 'pizza' ? (
-                              <>
-                                <span className="shrink-0 rounded-full bg-ink-100 px-2 py-0.5 text-xs font-semibold text-ink-600">
-                                  {(flavorsByCategory[category.id] ?? []).length} sabores
-                                </span>
-                                <span className="shrink-0 rounded-full bg-ink-100 px-2 py-0.5 text-xs font-semibold text-ink-600">
-                                  {sizeCountByCategory[category.id] ?? 0} tamanhos
-                                </span>
-                              </>
-                            ) : (
-                              <span className="shrink-0 rounded-full bg-ink-100 px-2 py-0.5 text-xs font-semibold text-ink-600">
-                                {products.length} {products.length === 1 ? 'item' : 'itens'}
-                              </span>
-                            )}
-                          </div>
-                          </div>
-                        </div>
+                            })
+                        })
+                      }
+                    }}
+                    onOpenCategoryMenu={(event) => {
+                      if (menuOpenCategoryId === category.id) {
+                        setMenuOpenCategoryId(null)
+                        setCategoryMenuPosition(null)
+                      } else {
+                        const rect = event.currentTarget.getBoundingClientRect()
+                        setCategoryMenuPosition({
+                          top: rect.bottom + window.scrollY + 4,
+                          right: window.innerWidth - rect.right,
+                        })
+                        setMenuOpenCategoryId(category.id)
+                      }
+                    }}
+                    onAddItem={() => openAddItemModal(category)}
+                    onAddFlavor={() => openFlavorModal(category.id)}
+                    onToggleProductActive={(productId, nextValue) =>
+                      setActiveByProductId((current) => ({ ...current, [productId]: nextValue }))
+                    }
+                    onToggleProductFeatured={(productId, nextValue) => {
+                      if (nextValue && featuredCount >= 6) {
+                        setShowMaxFeaturedModal(true)
+                        return
+                      }
+                      setFeaturedByProductId((current) => ({ ...current, [productId]: nextValue }))
+                    }}
+                    onOpenProductMenu={(event, productId) => {
+                      if (menuOpenProductId === productId) {
+                        setMenuOpenProductId(null)
+                        setProductMenuPosition(null)
+                      } else {
+                        const rect = event.currentTarget.getBoundingClientRect()
+                        setProductMenuPosition({
+                          top: rect.bottom + window.scrollY + 4,
+                          right: window.innerWidth - rect.right,
+                        })
+                        setMenuOpenProductId(productId)
+                      }
+                    }}
+                    onEditFlavor={(flavor) => openFlavorModal(category.id, flavor)}
+                  />
+                )
+              })}
 
-                        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-                          {getCategoryTemplate(category) === 'pizza' ? (
-                            <button
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); openFlavorModal(category.id) }}
-                              className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-coral-200 bg-white px-4 text-sm font-semibold text-coral-600 transition hover:bg-coral-50"
-                            >
-                              <Plus className="h-4 w-4" />
-                              Adicionar sabor
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); openAddItemModal(category) }}
-                              className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-coral-200 bg-white px-4 text-sm font-semibold text-coral-600 transition hover:bg-coral-50"
-                            >
-                              <Plus className="h-4 w-4" />
-                              Adicionar item
-                            </button>
-                          )}
-
-<div onClick={(e) => e.stopPropagation()} className="flex items-center justify-between gap-3 rounded-2xl border border-ink-100 bg-white px-4 py-2">
-                            <span className="text-sm font-semibold text-ink-700">Ativo</span>
-                            <ThemeSwitch
-                              checked={isActive}
-                              onChange={(nextValue) => {
-                                if (nextValue && !hasAtLeastOneActiveProduct && !isPizza) {
-                                  toast.error('Ative ao menos 1 produto da categoria antes de ativar a categoria.')
-                                  return
-                                }
-                                setActiveByCategoryId((current) => ({
-                                  ...current,
-                                  [category.id]: nextValue,
-                                }))
-                                // Persiste no banco
-                                if (data) {
-                                  import('@/lib/supabase').then(({ supabase }) => {
-                                    supabase?.from('product_categories')
-                                      .update({ active: nextValue })
-                                      .eq('id', category.id)
-                                      .eq('store_id', data.store.id)
-                                      .then(({ error }) => {
-                                        if (error) {
-                                          setActiveByCategoryId((current) => ({ ...current, [category.id]: !nextValue }))
-                                          toast.error('Nao foi possivel atualizar a categoria.')
-                                        }
-                                      })
-                                  })
-                                }
-                              }}
-                              ariaLabel={`Alternar categoria ${category.name}`}
-                            />
-                          </div>
-
-                          <div onClick={(e) => e.stopPropagation()} className="flex items-center gap-2 self-end lg:self-auto">
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                if (menuOpenCategoryId === category.id) {
-                                  setMenuOpenCategoryId(null)
-                                  setCategoryMenuPosition(null)
-                                } else {
-                                  const rect = event.currentTarget.getBoundingClientRect()
-                                  setCategoryMenuPosition({
-                                    top: rect.bottom + window.scrollY + 4,
-                                    right: window.innerWidth - rect.right,
-                                  })
-                                  setMenuOpenCategoryId(category.id)
-                                }
-                              }}
-                              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50"
-                              aria-label={`Abrir menu da categoria ${category.name}`}
-                            >
-                              <EllipsisVertical className="h-4 w-4" />
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setExpandedByCategoryId((current) => ({
-                                  ...current,
-                                  [category.id]: !isExpanded,
-                                }))
-                              }
-                              className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50"
-                              aria-label={isExpanded ? `Recolher ${category.name}` : `Expandir ${category.name}`}
-                            >
-                              <ChevronDown className={cn('h-4 w-4 transition-transform', isExpanded && 'rotate-180')} />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className={cn('grid transition-all duration-300 ease-in-out', isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]')}>
-                        <div className="overflow-hidden">
-                        <div className="border-t border-ink-100 px-4 py-4 lg:px-5">
-                          {getCategoryTemplate(category) === 'pizza' ? (
-                            // Pizza category — show flavors
-                            (() => {
-                              const flavors = flavorsByCategory[category.id] ?? []
-                              return flavors.length > 0 ? (
-                                <div className="overflow-hidden rounded-xl border border-ink-100 bg-white">
-                                  {/* Header */}
-                                  <div className="hidden grid-cols-[44px_88px_minmax(0,1fr)_160px_140px_100px_44px] items-center gap-4 border-b border-ink-100 bg-ink-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-ink-500 lg:grid">
-                                    <span />
-                                    <span>Sabores</span>
-                                    <span />
-                                    <span>Tamanho</span>
-                                    <span>Preço</span>
-                                    <span>Ativo</span>
-                                    <span />
-                                  </div>
-                                  <div className="divide-y divide-ink-100">
-                                    {flavors.map((flavor) => {
-                                      const sizeCount = Object.keys(flavor.prices).length
-                                      const prices = Object.values(flavor.prices).filter((p) => p > 0)
-                                      const minPrice = prices.length > 0 ? Math.min(...prices) : null
-                                      const isActive = flavor.active
-
-                                      return (
-                                        <div key={flavor.id} className="grid gap-4 px-4 py-4 lg:grid-cols-[44px_88px_minmax(0,1fr)_160px_140px_100px_44px] lg:items-center">
-                                          {/* Drag handle placeholder */}
-                                          <div className="hidden lg:flex items-center justify-center text-ink-300">
-                                            <GripVertical className="h-4 w-4" />
-                                          </div>
-                                          {/* Foto */}
-                                          <div>
-                                            <img src={flavor.imageUrl ?? DEFAULT_PRODUCT_IMAGE} alt={flavor.name}
-                                              className="h-16 w-16 rounded-xl object-cover" />
-                                          </div>
-                                          {/* Nome e descrição */}
-                                          <div className="min-w-0">
-                                            <p className="truncate text-sm font-bold text-ink-900">{flavor.name}</p>
-                                            {flavor.description ? <p className="mt-1 line-clamp-2 text-sm text-ink-500">{flavor.description}</p> : null}
-                                          </div>
-                                          {/* Tamanho */}
-                                          <div>
-                                            <p className="text-xs text-ink-400">Disponível em</p>
-                                            <p className="text-sm font-bold text-ink-900">{sizeCount} tamanho{sizeCount !== 1 ? 's' : ''}</p>
-                                          </div>
-                                          {/* Preço */}
-                                          <div>
-                                            {minPrice !== null ? (
-                                              <>
-                                                <p className="text-xs text-ink-400">A partir de</p>
-                                                <p className="text-sm font-bold text-ink-900">{formatCurrency(minPrice)}</p>
-                                              </>
-                                            ) : (
-                                              <p className="text-sm text-ink-400">Sem preço</p>
-                                            )}
-                                          </div>
-                                          {/* Ativo */}
-                                          <div>
-                                            <ThemeSwitch
-                                              checked={isActive}
-                                              onChange={(next) => {
-                                                setFlavorsByCategory((prev) => ({
-                                                  ...prev,
-                                                  [category.id]: (prev[category.id] ?? []).map((f) =>
-                                                    f.id === flavor.id ? { ...f, active: next } : f
-                                                  ),
-                                                }))
-                                                // Persist
-                                                if (data) {
-                                                  savePizzaFlavor(data.store.id, {
-                                                    id: flavor.id,
-                                                    categoryId: flavor.categoryId,
-                                                    name: flavor.name,
-                                                    description: flavor.description,
-                                                    imageUrl: flavor.imageUrl,
-                                                    active: next,
-                                                    prices: flavor.prices,
-                                                  }).catch(() => toast.error('Nao foi possivel atualizar.'))
-                                                }
-                                              }}
-                                              ariaLabel={`Ativo ${flavor.name}`}
-                                            />
-                                          </div>
-                                          {/* Editar */}
-                                          <div className="flex justify-end">
-                                            <button type="button" onClick={() => openFlavorModal(category.id, flavor)}
-                                              className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50">
-                                              <PencilLine className="h-4 w-4" />
-                                            </button>
-                                          </div>
-                                        </div>
-                                      )
-                                    })}
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="rounded-xl border border-dashed border-ink-200 bg-ink-50 px-5 py-8 text-center">
-                                  <p className="text-sm font-semibold text-ink-700">Nenhum sabor cadastrado</p>
-                                  <p className="mt-2 text-sm text-ink-500">Clique em "Adicionar sabor" para comecar.</p>
-                                </div>
-                              )
-                            })()
-                          ) : products.length > 0 ? (
-                            <div className="overflow-hidden rounded-xl border border-ink-100 bg-white">
-                              <div className="hidden grid-cols-[88px_minmax(0,1.8fr)_140px_160px_128px_120px_44px] items-center gap-4 border-b border-ink-100 bg-ink-50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.14em] text-ink-500 lg:grid">
-                                <span>Foto</span>
-                                <span>Nome</span>
-                                <span>Preco</span>
-                                <span>Estoque</span>
-                                <span>Destaque</span>
-                                <span>Ativo</span>
-                                <span />
-                              </div>
-
-                              <div className="divide-y divide-ink-100">
-                                {products.map((product) => {
-                                  const productIsActive = activeByProductId[product.id] ?? product.active
-                                  const productIsFeatured = featuredByProductId[product.id] ?? product.featured
-
-                                  return (
-                                    <div
-                                      key={product.id}
-                                      className="grid gap-4 px-4 py-4 lg:grid-cols-[88px_minmax(0,1.8fr)_140px_160px_128px_120px_44px] lg:items-center"
-                                    >
-                                      <div className="flex items-center gap-3 lg:block">
-                                        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-400 lg:hidden">
-                                          Foto
-                                        </span>
-                                        <img
-                                          src={
-                                            product.imageUrl ??
-                                            DEFAULT_PRODUCT_IMAGE
-                                          }
-                                          alt={product.name}
-                                          className="h-16 w-16 rounded-xl object-cover"
-                                        />
-                                      </div>
-
-                                      <div className="min-w-0">
-                                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-400 lg:hidden">
-                                          Nome
-                                        </p>
-                                        <div className="flex flex-wrap items-center gap-2">
-                                          <p className="truncate text-sm font-bold text-ink-900">{product.name}</p>
-                                          {productIsFeatured ? (
-                                            <span className="inline-flex items-center gap-1 rounded-full bg-coral-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-coral-700">
-                                              <Sparkles className="h-3 w-3" />
-                                              Destaque
-                                            </span>
-                                          ) : null}
-                                          {product.gelada ? (
-                                            <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-sky-700">
-                                              <Snowflake className="h-3 w-3" />
-                                              Gelada
-                                            </span>
-                                          ) : null}
-                                          {!productIsActive ? (
-                                            <span className="rounded-full bg-ink-200 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-600">
-                                              Inativo
-                                            </span>
-                                          ) : null}
-                                        </div>
-                                        <p className="mt-1 line-clamp-2 text-sm text-ink-500">{product.description}</p>
-                                      </div>
-
-                                      <div>
-                                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-400 lg:hidden">
-                                          Preco
-                                        </p>
-                                        <p className="text-sm font-bold text-ink-900">{formatCurrency(product.price)}</p>
-                                      </div>
-
-                                      <div>
-                                        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-400 lg:hidden">
-                                          Estoque
-                                        </p>
-                                        <p className="text-sm font-semibold text-ink-900">
-                                          {product.manageStock ? product.stockQuantity ?? 0 : 'Sem controle'}
-                                        </p>
-                                      </div>
-
-                                      <div className="flex items-center justify-between gap-3 lg:justify-start">
-                                        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-400 lg:hidden">
-                                          Destaque
-                                        </span>
-                                        <ThemeSwitch
-                                          checked={productIsFeatured}
-                                          onChange={(nextValue) => {
-                                            if (nextValue && featuredCount >= 6) {
-                                              setShowMaxFeaturedModal(true)
-                                              return
-                                            }
-                                            setFeaturedByProductId((current) => ({
-                                              ...current,
-                                              [product.id]: nextValue,
-                                            }))
-                                          }}
-                                          ariaLabel={`Alternar destaque do produto ${product.name}`}
-                                        />
-                                      </div>
-
-                                      <div className="flex items-center justify-between gap-3 lg:justify-start">
-                                        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-400 lg:hidden">
-                                          Ativo
-                                        </span>
-                                        <ThemeSwitch
-                                          checked={productIsActive}
-                                          onChange={(nextValue) =>
-                                            setActiveByProductId((current) => ({
-                                              ...current,
-                                              [product.id]: nextValue,
-                                            }))
-                                          }
-                                          ariaLabel={`Alternar status do produto ${product.name}`}
-                                        />
-                                      </div>
-
-                                      <div className="flex items-center justify-end lg:justify-center">
-                                        <button
-                                          type="button"
-                                          onClick={(event) => {
-                                            if (menuOpenProductId === product.id) {
-                                              setMenuOpenProductId(null)
-                                              setProductMenuPosition(null)
-                                            } else {
-                                              const rect = event.currentTarget.getBoundingClientRect()
-                                              setProductMenuPosition({
-                                                top: rect.bottom + window.scrollY + 4,
-                                                right: window.innerWidth - rect.right,
-                                              })
-                                              setMenuOpenProductId(product.id)
-                                            }
-                                          }}
-                                          className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50"
-                                          aria-label={`Acoes do produto ${product.name}`}
-                                        >
-                                          <EllipsisVertical className="h-4 w-4" />
-                                        </button>
-                                      </div>
-                                    </div>
-                                  )
-                                })}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="rounded-xl border border-dashed border-ink-200 bg-ink-50 px-5 py-8 text-center">
-                              <p className="text-sm font-semibold text-ink-700">Nenhum item nesta categoria</p>
-                              <p className="mt-2 text-sm text-ink-500">Adicione produtos para preencher esta secao do cardapio.</p>
-                            </div>
-                          )}
-                        </div>
-                        </div>
-                      </div>
-                    </article>
-                  )
-                })}
-
-                {visibleCategories.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-coral-200 bg-white px-5 py-10 text-center">
-                    <p className="text-base font-semibold text-ink-800">Você ainda não tem nenhuma categoria cadastrada.</p>
-                    <p className="mt-2 text-sm text-ink-500">Comece clicando em "Adicionar categoria" para começar.</p>
-                  </div>
-                ) : null}
-              </div>
+              {visibleCategories.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-coral-200 bg-white px-5 py-10 text-center">
+                  <p className="text-base font-semibold text-ink-800">Você ainda não tem nenhuma categoria cadastrada.</p>
+                  <p className="mt-2 text-sm text-ink-500">Comece clicando em "Adicionar categoria" para começar.</p>
+                </div>
+              ) : null}
             </div>
           </div>
-        </div>
+        )}
+      </div>
+    </div>
   )
 
   return (
