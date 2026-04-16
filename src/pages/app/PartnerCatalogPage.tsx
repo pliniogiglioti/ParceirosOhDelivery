@@ -3338,12 +3338,11 @@ const normalizedSearch = search.trim().toLowerCase()
                                       {/* Max por item — só exibe quando o grupo permite múltiplos */}
                                       {group.maxQty > 1 && (
                                         <div className="flex items-center gap-2 rounded-lg border border-ink-100 bg-white px-3 py-2">
-                                          <span className="flex-1 text-xs font-semibold text-ink-600">Max por item</span>
-                                          <span className="text-xs text-ink-400">Qtd máx que o cliente pode pedir deste item</span>
+                                          <span className="flex-1 text-xs font-semibold text-ink-600">Qtd máx deste item</span>
+                                          <span className="text-xs text-ink-400">Quantas unidades o cliente pode pedir</span>
                                           <input
                                             type="number"
                                             min={1}
-                                            max={group.maxQty}
                                             value={editingItemMaxQty}
                                             onChange={(e) => setEditingItemMaxQty(e.target.value)}
                                             className="h-7 w-16 rounded-lg border border-ink-200 bg-white px-2 text-center text-xs outline-none focus:border-coral-400"
