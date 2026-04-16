@@ -456,6 +456,9 @@ export function PartnerCatalogPage({
   const productMenuRef = useRef<HTMLDivElement>(null)
   const [categoryMenuPosition, setCategoryMenuPosition] = useState<{ top: number; right: number } | null>(null)
   const categoryMenuRef = useRef<HTMLDivElement>(null)
+  const [renamingCategory, setRenamingCategory] = useState<{ id: string; name: string } | null>(null)
+  const [renameCategoryInput, setRenameCategoryInput] = useState('')
+  const [savingRenameCategory, setSavingRenameCategory] = useState(false)
 const [showMaxFeaturedModal, setShowMaxFeaturedModal] = useState(false)
   const [catalogProducts, setCatalogProducts] = useState(data.products)
 
@@ -1761,8 +1764,13 @@ const normalizedSearch = search.trim().toLowerCase()
                         setCategoryMenuPosition(null)
                       } else {
                         const rect = event.currentTarget.getBoundingClientRect()
+                        const menuHeight = 120
+                        const spaceBelow = window.innerHeight - rect.bottom
+                        const top = spaceBelow >= menuHeight
+                          ? rect.bottom + 4
+                          : rect.top - menuHeight - 4
                         setCategoryMenuPosition({
-                          top: rect.bottom + window.scrollY + 4,
+                          top,
                           right: window.innerWidth - rect.right,
                         })
                         setMenuOpenCategoryId(category.id)
@@ -1786,8 +1794,13 @@ const normalizedSearch = search.trim().toLowerCase()
                         setProductMenuPosition(null)
                       } else {
                         const rect = event.currentTarget.getBoundingClientRect()
+                        const menuHeight = 160
+                        const spaceBelow = window.innerHeight - rect.bottom
+                        const top = spaceBelow >= menuHeight
+                          ? rect.bottom + 4
+                          : rect.top - menuHeight - 4
                         setProductMenuPosition({
-                          top: rect.bottom + window.scrollY + 4,
+                          top,
                           right: window.innerWidth - rect.right,
                         })
                         setMenuOpenProductId(productId)
@@ -3959,6 +3972,75 @@ const normalizedSearch = search.trim().toLowerCase()
       </AnimatedModal>
 
 
+      {/* ── Modal renomear categoria ── */}
+      <AnimatedModal
+        open={renamingCategory !== null}
+        onClose={() => { if (!savingRenameCategory) setRenamingCategory(null) }}
+        panelClassName="panel-card w-full max-w-sm p-6"
+        ariaLabelledby="rename-category-title"
+      >
+        <div className="flex items-center justify-between gap-4">
+          <h3 id="rename-category-title" className="text-lg font-bold text-ink-900">Renomear categoria</h3>
+          <button
+            type="button"
+            onClick={() => setRenamingCategory(null)}
+            disabled={savingRenameCategory}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-ink-100 bg-white text-ink-600 transition hover:bg-ink-50"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-ink-700 mb-1.5">Nome</label>
+          <input
+            autoFocus
+            type="text"
+            value={renameCategoryInput}
+            onChange={(e) => setRenameCategoryInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') e.currentTarget.form?.requestSubmit()
+            }}
+            className="w-full rounded-xl border border-ink-200 bg-white px-3.5 py-2.5 text-sm text-ink-900 outline-none focus:border-coral-400 focus:ring-2 focus:ring-coral-100"
+          />
+        </div>
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => setRenamingCategory(null)}
+            disabled={savingRenameCategory}
+            className="inline-flex h-10 items-center justify-center rounded-xl border border-ink-200 bg-white px-4 text-sm font-medium text-ink-700 transition hover:bg-ink-50"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            disabled={savingRenameCategory || !renameCategoryInput.trim() || renameCategoryInput.trim() === renamingCategory?.name}
+            onClick={async () => {
+              if (!renamingCategory) return
+              const newName = renameCategoryInput.trim()
+              if (!newName || newName === renamingCategory.name) return
+              setSavingRenameCategory(true)
+              const { supabase } = await import('@/lib/supabase')
+              const { error } = await supabase!.from('product_categories')
+                .update({ name: newName })
+                .eq('id', renamingCategory.id)
+                .eq('store_id', data.store.id)
+              setSavingRenameCategory(false)
+              if (error) {
+                toast.error('Nao foi possivel atualizar.')
+              } else {
+                setCatalogCategories((prev) => prev.map((c) => c.id === renamingCategory.id ? { ...c, name: newName } : c))
+                toast.success('Categoria atualizada.')
+                setRenamingCategory(null)
+              }
+            }}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600 disabled:bg-ink-300"
+          >
+            {savingRenameCategory ? <><Loader2 className="h-4 w-4 animate-spin" /> Salvando...</> : 'Salvar'}
+          </button>
+        </div>
+      </AnimatedModal>
+
       {menuOpenCategoryId !== null && categoryMenuPosition !== null &&
         createPortal(
           <div
@@ -3977,8 +4059,10 @@ const normalizedSearch = search.trim().toLowerCase()
                       if (getCategoryTemplate(category) === 'pizza') {
                         openPizzaEditModal(category)
                       } else {
-                        toast.success(`Edicao da categoria ${category.name} em preparacao.`)
+                        setRenamingCategory({ id: category.id, name: category.name })
+                        setRenameCategoryInput(category.name)
                         setMenuOpenCategoryId(null)
+                        setCategoryMenuPosition(null)
                       }
                     }}
                     className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-ink-700 transition hover:bg-ink-50"
@@ -3997,6 +4081,35 @@ const normalizedSearch = search.trim().toLowerCase()
                     <Copy className="h-4 w-4 text-ink-400" />
                     Duplicar
                   </button>
+                  {category.productCount === 0 && (flavorsByCategory[category.id] ?? []).length === 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (confirm(`Deletar a categoria "${category.name}"?`)) {
+                          import('@/lib/supabase').then(({ supabase }) => {
+                            supabase?.from('product_categories')
+                              .delete()
+                              .eq('id', category.id)
+                              .eq('store_id', data.store.id)
+                              .then(({ error }) => {
+                                if (error) {
+                                  toast.error('Nao foi possivel deletar.')
+                                } else {
+                                  setCatalogCategories((prev) => prev.filter((c) => c.id !== category.id))
+                                  setCategoryOrderIds((prev) => prev.filter((id) => id !== category.id))
+                                  toast.success('Categoria deletada.')
+                                }
+                              })
+                          })
+                          setMenuOpenCategoryId(null)
+                        }
+                      }}
+                      className="flex w-full items-center gap-2 border-t border-ink-100 px-4 py-2.5 text-sm text-red-600 transition hover:bg-red-50"
+                    >
+                      <X className="h-4 w-4" />
+                      Deletar
+                    </button>
+                  ) : null}
                 </>
               )
             })()}
