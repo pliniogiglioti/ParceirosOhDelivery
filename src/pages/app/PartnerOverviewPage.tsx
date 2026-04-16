@@ -483,6 +483,18 @@ export function PartnerOverviewPage() {
             // Altura do rodapé colorido: mínimo 56px, máximo 160px, proporcional ao pct
             const footerH = Math.max(56, Math.round((pct / 100) * 160))
 
+            // Próximo pct para a curva (se não houver próximo, usa o mesmo)
+            const nextPct = i < funnelSteps.length - 1 && funnelSteps[0].value > 0
+              ? Math.round((funnelSteps[i + 1].value / funnelSteps[0].value) * 100)
+              : pct
+
+            // Curva: topo esquerdo baseado no pct atual, topo direito no próximo pct
+            // Quanto maior o pct, mais baixo o topo (mais cor)
+            // leftY = 0 quando pct=100, leftY = 60 quando pct=0 (dentro do viewBox 0-100)
+            const leftY = Math.round((1 - pct / 100) * 60)
+            const rightY = Math.round((1 - nextPct / 100) * 60)
+            const cpY = Math.round((leftY + rightY) / 2)
+
             return (
               <div key={step.label} className="flex flex-col overflow-hidden rounded-2xl border border-ink-100" style={{ minHeight: 200 }}>
                 {/* Topo — info (cresce para preencher o espaço restante) */}
@@ -509,16 +521,19 @@ export function PartnerOverviewPage() {
                     </span>
                   )}
                 </div>
-                {/* Rodapé colorido — topo arredondado + altura proporcional */}
-                <div
-                  className="flex items-center justify-center transition-all duration-700"
-                  style={{
-                    backgroundColor: c.bg,
-                    height: footerH,
-                    borderRadius: '16px 16px 0 0',
-                  }}
-                >
-                  <p className="text-lg font-bold text-white">{pct}%</p>
+                {/* Rodapé colorido — curva SVG proporcional */}
+                <div className="relative overflow-hidden" style={{ height: footerH }}>
+                  <svg
+                    viewBox="0 0 100 100"
+                    preserveAspectRatio="none"
+                    className="absolute inset-0 w-full h-full"
+                  >
+                    <path
+                      d={`M0,${leftY} C40,${cpY} 60,${cpY} 100,${rightY} L100,100 L0,100 Z`}
+                      fill={c.bg}
+                    />
+                  </svg>
+                  <p className="absolute bottom-3 left-0 right-0 text-center text-lg font-bold text-white">{pct}%</p>
                 </div>
               </div>
             )

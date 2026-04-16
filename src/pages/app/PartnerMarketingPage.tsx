@@ -168,8 +168,13 @@ export function PartnerMarketingPage() {
               const prevVal = i > 0 ? funnel[FUNNEL_STEPS[i - 1].key] : null
               const pctPrev = prevVal !== null ? stepPct(prevVal, val) : null
 
-              // Altura do rodapé proporcional ao % do topo: mín 56px, máx 160px
+              const nextVal = i < FUNNEL_STEPS.length - 1 ? funnel[FUNNEL_STEPS[i + 1].key] : val
+              const nextPctTop = topValue > 0 ? Math.round((nextVal / topValue) * 100) : pctTop
+
               const footerH = Math.max(56, Math.round((pctTop / 100) * 160))
+              const leftY = Math.round((1 - pctTop / 100) * 60)
+              const rightY = Math.round((1 - nextPctTop / 100) * 60)
+              const cpY = Math.round((leftY + rightY) / 2)
 
               return (
                 <div key={step.key} className="flex flex-col overflow-hidden rounded-2xl border border-ink-100" style={{ minHeight: 200 }}>
@@ -197,16 +202,19 @@ export function PartnerMarketingPage() {
                       </span>
                     )}
                   </div>
-                  {/* Rodapé colorido — topo arredondado + altura proporcional */}
-                  <div
-                    className="flex items-center justify-center transition-all duration-700"
-                    style={{
-                      backgroundColor: step.bg,
-                      height: footerH,
-                      borderRadius: '16px 16px 0 0',
-                    }}
-                  >
-                    <p className="text-lg font-bold text-white">{pctTop}%</p>
+                  {/* Rodapé colorido — curva SVG proporcional */}
+                  <div className="relative overflow-hidden" style={{ height: footerH }}>
+                    <svg
+                      viewBox="0 0 100 100"
+                      preserveAspectRatio="none"
+                      className="absolute inset-0 w-full h-full"
+                    >
+                      <path
+                        d={`M0,${leftY} C40,${cpY} 60,${cpY} 100,${rightY} L100,100 L0,100 Z`}
+                        fill={step.bg}
+                      />
+                    </svg>
+                    <p className="absolute bottom-3 left-0 right-0 text-center text-lg font-bold text-white">{pctTop}%</p>
                   </div>
                 </div>
               )
