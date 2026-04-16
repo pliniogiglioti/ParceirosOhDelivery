@@ -480,11 +480,11 @@ export function PartnerOverviewPage() {
             }
             const c = colors[step.label] ?? { bg: '#6b7280', light: '#f9fafb', text: '#374151' }
 
-            // Altura do rodapé colorido: mínimo 48px, máximo 120px, proporcional ao pct
-            const footerH = Math.max(48, Math.round((pct / 100) * 120))
+            // Altura do rodapé colorido: mínimo 56px, máximo 160px, proporcional ao pct
+            const footerH = Math.max(56, Math.round((pct / 100) * 160))
 
             return (
-              <div key={step.label} className="flex flex-col overflow-hidden rounded-2xl border border-ink-100" style={{ minHeight: 180 }}>
+              <div key={step.label} className="flex flex-col overflow-hidden rounded-2xl border border-ink-100" style={{ minHeight: 200 }}>
                 {/* Topo — info (cresce para preencher o espaço restante) */}
                 <div className="flex-1 p-3.5">
                   <div className="flex items-center gap-1.5 mb-2">
@@ -509,10 +509,14 @@ export function PartnerOverviewPage() {
                     </span>
                   )}
                 </div>
-                {/* Rodapé colorido — altura proporcional ao % do topo */}
+                {/* Rodapé colorido — topo arredondado + altura proporcional */}
                 <div
                   className="flex items-center justify-center transition-all duration-700"
-                  style={{ backgroundColor: c.bg, height: footerH }}
+                  style={{
+                    backgroundColor: c.bg,
+                    height: footerH,
+                    borderRadius: '16px 16px 0 0',
+                  }}
                 >
                   <p className="text-lg font-bold text-white">{pct}%</p>
                 </div>
