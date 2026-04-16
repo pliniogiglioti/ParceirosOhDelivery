@@ -123,6 +123,8 @@ export function PartnerFinancePage() {
   const { data } = usePartnerPageData()
   const [period, setPeriod] = useState<Period>('semana')
   const [txFilter, setTxFilter] = useState<TxFilter>('todas')
+  const [txPage, setTxPage] = useState(1)
+  const TX_PER_PAGE = 10
   const [orders, setOrders] = useState<FinanceOrder[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -229,6 +231,7 @@ export function PartnerFinancePage() {
   }, [financeOrders, canceledOrders, repassePercentual])
 
   const filteredTxs = useMemo(() => {
+    setTxPage(1)
     return transactions.filter((tx) => {
       if (txFilter === 'pedidos') return tx.type === 'pedido'
       if (txFilter === 'cancelados') return tx.type === 'cancelado'
@@ -277,6 +280,9 @@ export function PartnerFinancePage() {
   const averageTicket = financeOrders.length ? totalEntradas / financeOrders.length : 0
   const latestMovementAt = transactions[0]?.date ?? null
   const tableGridClass = 'grid grid-cols-[minmax(0,1.6fr)_140px_140px] items-center gap-x-4'
+
+  const totalPages = Math.max(1, Math.ceil(filteredTxs.length / TX_PER_PAGE))
+  const pagedTxs = filteredTxs.slice((txPage - 1) * TX_PER_PAGE, txPage * TX_PER_PAGE)
 
   return (
     <SectionFrame eyebrow="Financeiro" title="Saude financeira">
@@ -407,7 +413,7 @@ export function PartnerFinancePage() {
             </div>
           ) : (
             <ul className="divide-y divide-ink-100">
-              {filteredTxs.map((tx) => (
+              {pagedTxs.map((tx) => (
                 <li
                   key={tx.id}
                   className={cn(
@@ -456,7 +462,61 @@ export function PartnerFinancePage() {
             </ul>
           )}
 
-          <div className="flex items-center justify-between border-t border-ink-100 bg-ink-50 px-5 py-3.5">
+          {/* Paginação */}
+          {!loading && filteredTxs.length > TX_PER_PAGE && (
+            <div className="flex items-center justify-between border-t border-ink-100 px-5 py-3">
+              <p className="text-xs text-ink-400">
+                {(txPage - 1) * TX_PER_PAGE + 1}–{Math.min(txPage * TX_PER_PAGE, filteredTxs.length)} de {filteredTxs.length}
+              </p>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setTxPage((p) => Math.max(1, p - 1))}
+                  disabled={txPage === 1}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-ink-100 text-xs font-semibold text-ink-700 transition hover:bg-ink-50 disabled:opacity-40"
+                >
+                  ‹
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((p) => p === 1 || p === totalPages || Math.abs(p - txPage) <= 1)
+                  .reduce<(number | '...')[]>((acc, p, i, arr) => {
+                    if (i > 0 && (p as number) - (arr[i - 1] as number) > 1) acc.push('...')
+                    acc.push(p)
+                    return acc
+                  }, [])
+                  .map((p, i) =>
+                    p === '...' ? (
+                      <span key={`ellipsis-${i}`} className="px-1 text-xs text-ink-400">…</span>
+                    ) : (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setTxPage(p as number)}
+                        className={cn(
+                          'inline-flex h-8 w-8 items-center justify-center rounded-xl text-xs font-semibold transition',
+                          txPage === p
+                            ? 'bg-ink-900 text-white'
+                            : 'border border-ink-100 text-ink-700 hover:bg-ink-50'
+                        )}
+                      >
+                        {p}
+                      </button>
+                    )
+                  )}
+                <button
+                  type="button"
+                  onClick={() => setTxPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={txPage === totalPages}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-ink-100 text-xs font-semibold text-ink-700 transition hover:bg-ink-50 disabled:opacity-40"
+                >
+                  ›
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Rodapé saldo */}
+          <div className="flex items-center justify-between border-t border-ink-100 px-5 py-3.5">
             <p className="text-sm font-semibold text-ink-700">Saldo liquido do periodo</p>
             <p className={cn('text-sm font-bold', saldoLiquido >= 0 ? 'text-green-600' : 'text-coral-500')}>
               {saldoLiquido >= 0 ? '+' : '-'}
