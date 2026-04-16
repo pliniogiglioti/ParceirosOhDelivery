@@ -201,6 +201,17 @@ export function PartnerReviewsPage() {
   const withoutReply = reviews.filter((r) => !r.ownerReply).length
   const responseRate = total > 0 ? Math.round(((total - withoutReply) / total) * 100) : 0
 
+  // Contagem de tags
+  const tagCounts = reviews
+    .flatMap((r) => r.tags ?? [])
+    .reduce<Record<string, number>>((acc, tag) => {
+      acc[tag] = (acc[tag] ?? 0) + 1
+      return acc
+    }, {})
+  const topTags = Object.entries(tagCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+
   const dist = [5, 4, 3, 2, 1].map((star) => ({
     star,
     count: reviews.filter((r) => r.rating === star).length,
@@ -419,6 +430,27 @@ export function PartnerReviewsPage() {
               </div>
             </div>
           </div>
+
+          {/* Tags mais mencionadas */}
+          {topTags.length > 0 && (
+            <div className="panel-card p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-ink-400">Tags mais mencionadas</p>
+              <div className="mt-4 space-y-2">
+                {topTags.map(([tag, count]) => (
+                  <div key={tag} className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                      <div
+                        className="h-1.5 rounded-full bg-coral-400 transition-all duration-500"
+                        style={{ width: `${Math.round((count / (topTags[0]?.[1] ?? 1)) * 100)}%`, minWidth: '8px' }}
+                      />
+                      <span className="truncate text-xs text-ink-700">{tag}</span>
+                    </div>
+                    <span className="shrink-0 text-xs font-semibold text-ink-500">{count}x</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
       </div>
