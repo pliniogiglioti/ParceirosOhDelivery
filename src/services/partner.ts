@@ -1350,7 +1350,6 @@ export async function loadPartnerDashboard(storeId: string): Promise<{
     orderResult.error ??
     chatResult.error ??
     deliveryAreaResult.error ??
-    reviewResult.error ??
     paymentMethodResult.error ??
     courierResult.error
 
@@ -1364,7 +1363,7 @@ export async function loadPartnerDashboard(storeId: string): Promise<{
   const orderRows = orderResult.data
   const chatRows = chatResult.data
   const deliveryAreaRows = deliveryAreaResult.data
-  const reviewRows = reviewResult.data
+  const reviewRows = reviewResult.error ? [] : reviewResult.data
   const paymentMethodRows = paymentMethodResult.data
   const courierRows = courierResult.data
 
