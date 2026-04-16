@@ -863,6 +863,7 @@ export async function saveProductComplements(
       name: string
       description: string
       price: number
+      maxQty: number
       imageUrl?: string
       libraryItemId?: string
       industrializedId?: string
@@ -919,6 +920,7 @@ export async function saveProductComplements(
           name: item.name,
           description: item.description || null,
           price: item.price,
+          max_qty: item.maxQty ?? 1,
           image_url: item.imageUrl ?? null,
           sort_order: j,
         })
@@ -938,6 +940,7 @@ export async function fetchProductComplements(productId: string): Promise<Array<
     name: string
     description: string
     price: number
+    maxQty: number
     source: 'biblioteca' | 'industrializado'
     imageUrl?: string
   }>
@@ -960,7 +963,7 @@ export async function fetchProductComplements(productId: string): Promise<Array<
 
   const { data: items, error: itemsError } = await supabase
     .from('product_complement_items')
-    .select('id, group_id, name, description, price, source, image_url, sort_order')
+    .select('id, group_id, name, description, price, source, image_url, max_qty, sort_order')
     .in('group_id', groupIds)
     .order('sort_order', { ascending: true })
 
@@ -981,6 +984,7 @@ export async function fetchProductComplements(productId: string): Promise<Array<
         name: String(i.name),
         description: String(i.description ?? ''),
         price: Number(i.price ?? 0),
+        maxQty: Number(i.max_qty ?? 1),
         source: (i.source === 'industrializado' ? 'industrializado' : 'biblioteca') as 'biblioteca' | 'industrializado',
         imageUrl: i.image_url ? String(i.image_url) : undefined,
       })),
