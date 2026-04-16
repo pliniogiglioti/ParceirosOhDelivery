@@ -20,19 +20,21 @@ export function useReviewsRealtime(
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'store_reviews',
+          table: 'order_reviews',
           filter: `store_id=eq.${storeId}`,
         },
         (payload) => {
           const row = payload.new as Record<string, unknown>
           const review: ReviewItem = {
             id: String(row.id),
-            author: String(row.author_name ?? ''),
+            author: 'Cliente',
             rating: Number(row.rating ?? 0),
             comment: String(row.comment ?? ''),
             createdAt: String(row.created_at ?? new Date().toISOString()),
             ownerReply: null,
             ownerRepliedAt: null,
+            tags: Array.isArray(row.tags) ? (row.tags as string[]) : [],
+            orderId: row.order_id ? String(row.order_id) : null,
           }
           callbackRef.current(review)
         }

@@ -1285,7 +1285,7 @@ export async function replyToReview(reviewId: string, reply: string): Promise<vo
   if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
 
   const { error } = await supabase
-    .from('store_reviews')
+    .from('order_reviews')
     .update({
       owner_reply: reply.trim() || null,
       owner_replied_at: reply.trim() ? new Date().toISOString() : null,
@@ -1338,7 +1338,7 @@ export async function loadPartnerDashboard(storeId: string): Promise<{
     supabase.from('orders').select('*').eq('store_id', storeRow.id).order('created_at', { ascending: false }),
     supabase.from('chat_sessions').select('*').eq('store_id', storeRow.id).order('updated_at', { ascending: false }).limit(20),
     supabase.from('delivery_areas').select('*').eq('store_id', storeRow.id).order('sort_order', { ascending: true }),
-    supabase.from('store_reviews').select('*').eq('store_id', storeRow.id).order('created_at', { ascending: false }).limit(50),
+    supabase.from('order_reviews').select('*, profiles(name)').eq('store_id', storeRow.id).order('created_at', { ascending: false }).limit(50),
     supabase.from('store_payment_methods').select('*').eq('store_id', storeRow.id).order('sort_order', { ascending: true }),
     supabase.from('store_couriers').select('*').eq('store_id', storeRow.id).order('created_at', { ascending: false }),
   ])
@@ -1465,15 +1465,20 @@ export async function loadPartnerDashboard(storeId: string): Promise<{
     })) ?? []
 
   const reviews: ReviewItem[] =
-    reviewRows?.map((row) => ({
-      id: String(row.id),
-      author: String(row.author_name ?? ''),
-      rating: Number(row.rating ?? 0),
-      comment: String(row.comment ?? ''),
-      createdAt: String(row.created_at ?? ''),
-      ownerReply: row.owner_reply ? String(row.owner_reply) : null,
-      ownerRepliedAt: row.owner_replied_at ? String(row.owner_replied_at) : null,
-    })) ?? []
+    reviewRows?.map((row) => {
+      const profile = row.profiles as { name?: string } | null
+      return {
+        id: String(row.id),
+        author: profile?.name ?? String(row.profile_id ?? 'Cliente'),
+        rating: Number(row.rating ?? 0),
+        comment: String(row.comment ?? ''),
+        createdAt: String(row.created_at ?? ''),
+        ownerReply: row.owner_reply ? String(row.owner_reply) : null,
+        ownerRepliedAt: row.owner_replied_at ? String(row.owner_replied_at) : null,
+        tags: Array.isArray(row.tags) ? row.tags.map(String) : [],
+        orderId: row.order_id ? String(row.order_id) : null,
+      }
+    }) ?? []
 
   const brandRowsByMethodId = new Map<string, Array<Record<string, unknown>>>()
 

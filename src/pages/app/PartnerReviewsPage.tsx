@@ -342,6 +342,16 @@ export function PartnerReviewsPage() {
                     <p className="mt-3 text-sm leading-relaxed text-ink-600">{review.comment}</p>
                   )}
 
+                  {review.tags && review.tags.length > 0 && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      {review.tags.map((tag) => (
+                        <span key={tag} className="rounded-full bg-ink-100 px-2.5 py-0.5 text-[11px] font-medium text-ink-600">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
                   <ReplyBox
                     review={review}
                     storeId={storeId}

@@ -212,6 +212,8 @@ export interface ReviewItem {
   createdAt: string
   ownerReply: string | null
   ownerRepliedAt: string | null
+  tags: string[]
+  orderId: string | null
 }
 
 export interface LogisticsSnapshot {
