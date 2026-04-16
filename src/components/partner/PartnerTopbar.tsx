@@ -1,10 +1,28 @@
-import { Bell, ChevronDown, HelpCircle, MessageCircle, Store } from 'lucide-react'
+import { AlertTriangle, Bell, ChevronDown, HelpCircle, MessageCircle, Store } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { usePartnerAuth } from '@/hooks/usePartnerAuth'
 import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
 import { getStoresByEmail } from '@/services/partner'
-import type { PartnerDashboardData, PartnerStoreCard } from '@/types'
+import type { PartnerDashboardData, PartnerHour, PartnerStoreCard } from '@/types'
+
+/** Verifica se o horário atual está dentro do horário configurado para hoje */
+function isWithinSchedule(hours: PartnerHour[]): boolean {
+  const now = new Date()
+  const weekDay = now.getDay() // 0=Dom, 1=Seg...
+  const todayHour = hours.find((h) => h.weekDay === weekDay)
+
+  if (!todayHour || todayHour.isClosed) return false
+
+  const [openH, openM] = todayHour.opensAt.split(':').map(Number)
+  const [closeH, closeM] = todayHour.closesAt.split(':').map(Number)
+
+  const nowMinutes = now.getHours() * 60 + now.getMinutes()
+  const openMinutes = openH * 60 + openM
+  const closeMinutes = closeH * 60 + closeM
+
+  return nowMinutes >= openMinutes && nowMinutes < closeMinutes
+}
 
 export function PartnerTopbar({ data, unreadMessages = 0 }: { data: PartnerDashboardData; unreadMessages?: number }) {
   const [open, setOpen] = useState(false)
@@ -43,6 +61,9 @@ export function PartnerTopbar({ data, unreadMessages = 0 }: { data: PartnerDashb
   }
 
   const currentStoreName = data.store.name
+
+  // Aviso: loja aberta fora do horário configurado
+  const isOpenOutsideSchedule = data.store.isOpen && data.hours.length > 0 && !isWithinSchedule(data.hours)
 
   return (
     <div className="panel-card sticky top-4 z-30 mb-6 flex items-center justify-between gap-4 px-4 py-2.5">
@@ -108,6 +129,19 @@ export function PartnerTopbar({ data, unreadMessages = 0 }: { data: PartnerDashb
 
       {/* Actions */}
       <div className="flex items-center gap-1">
+        {/* Aviso: loja aberta fora do horário */}
+        {isOpenOutsideSchedule && (
+          <button
+            type="button"
+            onClick={() => navigate('/app/horarios')}
+            className="flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-100"
+            title="Loja aberta fora do horario configurado"
+          >
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+            <span className="hidden sm:inline">Fora do horario</span>
+          </button>
+        )}
+
         <a
           href="/ajuda"
           target="_blank"
