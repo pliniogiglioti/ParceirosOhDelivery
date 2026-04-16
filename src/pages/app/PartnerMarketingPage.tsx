@@ -171,13 +171,13 @@ export function PartnerMarketingPage() {
               const nextVal = i < FUNNEL_STEPS.length - 1 ? funnel[FUNNEL_STEPS[i + 1].key] : val
               const nextPctTop = topValue > 0 ? Math.round((nextVal / topValue) * 100) : pctTop
 
-              const footerH = Math.max(56, Math.round((pctTop / 100) * 160))
+              const footerH = Math.max(56, Math.round((pctTop / 100) * 200))
               const leftY = Math.round((1 - pctTop / 100) * 60)
               const rightY = Math.round((1 - nextPctTop / 100) * 60)
               const cpY = Math.round((leftY + rightY) / 2)
 
               return (
-                <div key={step.key} className="flex flex-col overflow-hidden rounded-2xl border border-ink-100" style={{ minHeight: 200 }}>
+                <div key={step.key} className="flex flex-col overflow-hidden rounded-2xl border border-ink-100" style={{ minHeight: 260 }}>
                   {/* Topo */}
                   <div className="flex-1 p-3.5">
                     <div className="flex items-center gap-1.5 mb-2.5">

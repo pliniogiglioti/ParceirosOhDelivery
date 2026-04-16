@@ -480,8 +480,8 @@ export function PartnerOverviewPage() {
             }
             const c = colors[step.label] ?? { bg: '#6b7280', light: '#f9fafb', text: '#374151' }
 
-            // Altura do rodapé colorido: mínimo 56px, máximo 160px, proporcional ao pct
-            const footerH = Math.max(56, Math.round((pct / 100) * 160))
+            // Altura do rodapé colorido: mínimo 56px, máximo 200px, proporcional ao pct
+            const footerH = Math.max(56, Math.round((pct / 100) * 200))
 
             // Próximo pct para a curva (se não houver próximo, usa o mesmo)
             const nextPct = i < funnelSteps.length - 1 && funnelSteps[0].value > 0
@@ -496,7 +496,7 @@ export function PartnerOverviewPage() {
             const cpY = Math.round((leftY + rightY) / 2)
 
             return (
-              <div key={step.label} className="flex flex-col overflow-hidden rounded-2xl border border-ink-100" style={{ minHeight: 200 }}>
+              <div key={step.label} className="flex flex-col overflow-hidden rounded-2xl border border-ink-100" style={{ minHeight: 260 }}>
                 {/* Topo — info (cresce para preencher o espaço restante) */}
                 <div className="flex-1 p-3.5">
                   <div className="flex items-center gap-1.5 mb-2">
