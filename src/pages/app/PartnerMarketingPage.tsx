@@ -168,8 +168,11 @@ export function PartnerMarketingPage() {
               const prevVal = i > 0 ? funnel[FUNNEL_STEPS[i - 1].key] : null
               const pctPrev = prevVal !== null ? stepPct(prevVal, val) : null
 
+              // Altura do rodapé proporcional ao % do topo: mín 48px, máx 120px
+              const footerH = Math.max(48, Math.round((pctTop / 100) * 120))
+
               return (
-                <div key={step.key} className="flex flex-col overflow-hidden rounded-2xl border border-ink-100">
+                <div key={step.key} className="flex flex-col overflow-hidden rounded-2xl border border-ink-100" style={{ minHeight: 180 }}>
                   {/* Topo */}
                   <div className="flex-1 p-3.5">
                     <div className="flex items-center gap-1.5 mb-2.5">
@@ -194,10 +197,10 @@ export function PartnerMarketingPage() {
                       </span>
                     )}
                   </div>
-                  {/* Rodapé colorido */}
+                  {/* Rodapé colorido — altura proporcional */}
                   <div
-                    className="px-3.5 py-3 text-center"
-                    style={{ backgroundColor: step.bg }}
+                    className="flex items-center justify-center transition-all duration-700"
+                    style={{ backgroundColor: step.bg, height: footerH }}
                   >
                     <p className="text-lg font-bold text-white">{pctTop}%</p>
                   </div>

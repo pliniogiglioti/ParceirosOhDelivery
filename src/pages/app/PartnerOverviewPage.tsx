@@ -471,7 +471,6 @@ export function PartnerOverviewPage() {
               ? Math.round((step.value / funnelSteps[i - 1].value) * 100)
               : null
 
-            // Cores por etapa
             const colors: Record<string, { bg: string; light: string; text: string }> = {
               'Visitas':      { bg: '#3b82f6', light: '#eff6ff', text: '#1d4ed8' },
               'Visualizacao': { bg: '#8b5cf6', light: '#f5f3ff', text: '#6d28d9' },
@@ -481,9 +480,12 @@ export function PartnerOverviewPage() {
             }
             const c = colors[step.label] ?? { bg: '#6b7280', light: '#f9fafb', text: '#374151' }
 
+            // Altura do rodapé colorido: mínimo 48px, máximo 120px, proporcional ao pct
+            const footerH = Math.max(48, Math.round((pct / 100) * 120))
+
             return (
-              <div key={step.label} className="flex flex-col overflow-hidden rounded-2xl border border-ink-100">
-                {/* Topo — info */}
+              <div key={step.label} className="flex flex-col overflow-hidden rounded-2xl border border-ink-100" style={{ minHeight: 180 }}>
+                {/* Topo — info (cresce para preencher o espaço restante) */}
                 <div className="flex-1 p-3.5">
                   <div className="flex items-center gap-1.5 mb-2">
                     <span
@@ -507,10 +509,10 @@ export function PartnerOverviewPage() {
                     </span>
                   )}
                 </div>
-                {/* Rodapé colorido — % do topo */}
+                {/* Rodapé colorido — altura proporcional ao % do topo */}
                 <div
-                  className="px-3.5 py-3 text-center"
-                  style={{ backgroundColor: c.bg }}
+                  className="flex items-center justify-center transition-all duration-700"
+                  style={{ backgroundColor: c.bg, height: footerH }}
                 >
                   <p className="text-lg font-bold text-white">{pct}%</p>
                 </div>
