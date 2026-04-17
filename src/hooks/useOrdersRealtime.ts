@@ -6,6 +6,7 @@ import type { PartnerOrder, PartnerOrderItem, OrderStatus } from '@/types'
 function mapStatus(value: unknown): OrderStatus {
   const status = String(value ?? 'aguardando')
   if (
+    status === 'aguardando_pagamento' ||
     status === 'aguardando' ||
     status === 'confirmado' ||
     status === 'preparo' ||
@@ -53,6 +54,10 @@ export function useOrdersRealtime(storeId: string) {
         },
         async (payload) => {
           const row = payload.new as Record<string, unknown>
+
+          // Ignora pedidos aguardando pagamento — loja não deve ver
+          if (String(row.status) === 'aguardando_pagamento') return
+
           const orderId = String(row.id)
 
           const { data: itemRows } = await supabase!
@@ -79,10 +84,40 @@ export function useOrdersRealtime(storeId: string) {
           table: 'orders',
           filter: `store_id=eq.${storeId}`,
         },
-        (payload) => {
+        async (payload) => {
           const row = payload.new as Record<string, unknown>
+          const oldRow = payload.old as Record<string, unknown>
+          const newStatus = mapStatus(row.status)
+
+          // Pagamento confirmado: pedido passa de aguardando_pagamento → aguardando
+          // Neste caso adiciona o pedido ao store (a loja vê pela primeira vez)
+          if (
+            String(oldRow.status) === 'aguardando_pagamento' &&
+            newStatus === 'aguardando'
+          ) {
+            const orderId = String(row.id)
+            const { data: itemRows } = await supabase!
+              .from('order_items')
+              .select('*')
+              .eq('order_id', orderId)
+
+            const items: PartnerOrderItem[] = (itemRows ?? []).map((item) => ({
+              id: String(item.id),
+              name: String(item.product_name ?? 'Produto'),
+              quantity: Number(item.quantity ?? 0),
+              unitPrice: Number(item.unit_price ?? 0),
+              totalPrice: Number(item.total_price ?? 0),
+            }))
+
+            addOrder(storeId, rowToOrder(row, items))
+            return
+          }
+
+          // Ignora updates de pedidos que ainda estão aguardando pagamento
+          if (newStatus === 'aguardando_pagamento') return
+
           updateOrder(storeId, String(row.id), {
-            status: mapStatus(row.status),
+            status: newStatus,
             paymentMethod: String(row.payment_method ?? 'Pix'),
           })
         }

@@ -1,4 +1,5 @@
 export type OrderStatus =
+  | 'aguardando_pagamento'
   | 'aguardando'
   | 'confirmado'
   | 'preparo'
