@@ -1,10 +1,11 @@
-import { Menu, X } from 'lucide-react'
-import { useEffect } from 'react'
+import { Menu, X, Clock, AlertTriangle } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { LoadingScreen } from '@/components/partner/LoadingScreen'
 import { PartnerSidebar } from '@/components/partner/PartnerSidebar'
 import { PartnerTopbar } from '@/components/partner/PartnerTopbar'
+import { AnimatedModal } from '@/components/partner/AnimatedModal'
 import { useOrderNotifications } from '@/hooks/useOrderNotifications'
 import { useOrdersRealtime } from '@/hooks/useOrdersRealtime'
 import { useReviewsRealtime } from '@/hooks/useReviewsRealtime'
@@ -15,11 +16,30 @@ import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
 import { usePartnerUiStore } from '@/hooks/usePartnerUiStore'
 import { cn, isSameUtcDate } from '@/lib/utils'
 import { saveStore } from '@/services/partner'
+import type { PartnerHour } from '@/types'
+
+function isWithinSchedule(hours: PartnerHour[]): boolean {
+  const now = new Date()
+  const weekDay = now.getDay()
+  const todayHour = hours.find((h) => h.weekDay === weekDay)
+  if (!todayHour || todayHour.isClosed) return false
+  const [openH, openM] = todayHour.opensAt.split(':').map(Number)
+  const [closeH, closeM] = todayHour.closesAt.split(':').map(Number)
+  const nowMinutes = now.getHours() * 60 + now.getMinutes()
+  return nowMinutes >= openH * 60 + openM && nowMinutes < closeH * 60 + closeM
+}
+
+function getOutsideScheduleKey(storeId: string): string {
+  // Chave única por loja + dia — reseta no dia seguinte automaticamente
+  const today = new Date().toISOString().slice(0, 10)
+  return `oh-outside-schedule-dismissed:${storeId}:${today}`
+}
 
 export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
   const { selectedStoreId } = usePartnerAuth()
   const { data, loading, error, source } = usePartnerDashboard(selectedStoreId)
   const { sidebarOpen, setSidebarOpen, sidebarCollapsed, setSidebarCollapsed } = usePartnerUiStore()
+  const [outsideScheduleModalOpen, setOutsideScheduleModalOpen] = useState(false)
   const {
     storeOpen,
     storeByStoreId,
@@ -99,6 +119,21 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
       toast('Nova mensagem de cliente!', { icon: '💬', duration: 3000 })
     }
   })
+
+  // Modal de aviso: loja aberta fora do horário
+  useEffect(() => {
+    if (!data?.store.id) return
+    const isOpen = storeOpen ?? data.store.isOpen
+    if (!isOpen) return
+    if (data.hours.length === 0) return
+    if (isWithinSchedule(data.hours)) return
+
+    // Verifica se o usuário já dispensou hoje
+    const key = getOutsideScheduleKey(data.store.id)
+    if (localStorage.getItem(key) === 'dismissed') return
+
+    setOutsideScheduleModalOpen(true)
+  }, [data?.store.id, data?.store.isOpen, data?.hours, storeOpen])
 
   if (loading) {
     return <LoadingScreen />
@@ -241,6 +276,68 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
           </div>
         </div>
       ) : null}
+
+      {/* Modal: loja aberta fora do horário */}
+      <AnimatedModal
+        open={outsideScheduleModalOpen}
+        onClose={() => setOutsideScheduleModalOpen(false)}
+        panelClassName="panel-card w-full max-w-md p-6"
+        ariaLabelledby="outside-schedule-title"
+      >
+        <div className="flex items-start gap-4">
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-coral-50">
+            <AlertTriangle className="h-6 w-6 text-coral-500" />
+          </span>
+          <div>
+            <h4 id="outside-schedule-title" className="text-lg font-bold text-ink-900">
+              Loja aberta fora do horario
+            </h4>
+            <p className="mt-1.5 text-sm leading-relaxed text-ink-500">
+              Sua loja esta marcada como <strong className="text-ink-700">aberta</strong>, mas o horario configurado indica que ela deveria estar fechada agora.
+            </p>
+            <p className="mt-2 text-sm text-ink-500">
+              Deseja fechar a loja ou continuar aberta?
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            onClick={() => {
+              // Fecha a loja
+              setStoreOpen(false)
+              saveStore(displayData.store.id, { isOpen: false }).catch(() => {
+                setStoreOpen(true)
+                toast.error('Nao foi possivel fechar a loja.')
+              })
+              toast.success('Loja fechada com sucesso.')
+              setOutsideScheduleModalOpen(false)
+            }}
+            className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-5 text-sm font-semibold text-white transition hover:bg-coral-600"
+          >
+            Fechar a loja agora
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              // Salva no localStorage para não exibir mais hoje
+              if (data?.store.id) {
+                localStorage.setItem(getOutsideScheduleKey(data.store.id), 'dismissed')
+              }
+              setOutsideScheduleModalOpen(false)
+            }}
+            className="inline-flex h-11 items-center justify-center rounded-2xl border border-ink-100 px-5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
+          >
+            Continuar aberta
+          </button>
+        </div>
+
+        <p className="mt-3 flex items-center gap-1.5 text-xs text-ink-400">
+          <Clock className="h-3.5 w-3.5 shrink-0" />
+          Se clicar em "Continuar aberta", este aviso nao aparecera mais hoje.
+        </p>
+      </AnimatedModal>
     </div>
   )
 }
