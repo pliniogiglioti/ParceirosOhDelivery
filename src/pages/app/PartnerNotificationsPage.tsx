@@ -61,13 +61,15 @@ export function PartnerNotificationsPage() {
     if (!isSupabaseConfigured || !supabase) { setLoadingMessages(false); return }
     let active = true
 
-    supabase
-      .from('chat_sessions')
-      .select('id, order_code')
-      .eq('store_id', storeId)
-      .order('updated_at', { ascending: false })
-      .limit(30)
-      .then(async ({ data: sessions }) => {
+    void (async () => {
+      try {
+        const { data: sessions } = await supabase!
+          .from('chat_sessions')
+          .select('id, order_code')
+          .eq('store_id', storeId)
+          .order('updated_at', { ascending: false })
+          .limit(30)
+
         if (!active || !sessions?.length) { setLoadingMessages(false); return }
         const sessionIds = sessions.map((s) => s.id)
         const { data: msgs } = await supabase!
@@ -87,9 +89,12 @@ export function PartnerNotificationsPage() {
           body: String(m.body ?? ''),
           createdAt: String(m.created_at),
         })))
-        setLoadingMessages(false)
-      })
-      .catch(() => setLoadingMessages(false))
+      } catch {
+        // silently ignore
+      } finally {
+        if (active) setLoadingMessages(false)
+      }
+    })()
 
     return () => { active = false }
   }, [storeId])
