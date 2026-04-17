@@ -935,6 +935,7 @@ export async function fetchProductComplements(productId: string): Promise<Array<
   required: boolean
   minQty: number
   maxQty: number
+  canRepeat: boolean
   items: Array<{
     id: string
     name: string
@@ -977,6 +978,9 @@ export async function fetchProductComplements(productId: string): Promise<Array<
     required: Boolean(g.required),
     minQty: Number(g.min_qty ?? 0),
     maxQty: Number(g.max_qty ?? 1),
+    canRepeat: (items ?? [])
+      .filter((i) => String(i.group_id) === String(g.id))
+      .some((i) => Number(i.max_qty ?? 1) > 1),
     items: (items ?? [])
       .filter((i) => String(i.group_id) === String(g.id))
       .map((i) => ({
