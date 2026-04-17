@@ -117,11 +117,13 @@ function ImageLibrary({ storeId }: { storeId: string }) {
 
       {/* Grid */}
       {loading ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="panel-card p-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
           {[1,2,3,4,5].map((i) => (
             <div key={i} className="aspect-square animate-pulse rounded-2xl bg-ink-100" />
           ))}
         </div>
+      </div>
       ) : images.length === 0 ? (
         <div className="panel-card flex flex-col items-center gap-3 py-16 text-center">
           <ImagePlus className="h-10 w-10 text-ink-200" />
@@ -129,7 +131,8 @@ function ImageLibrary({ storeId }: { storeId: string }) {
           <p className="text-xs text-ink-300">Clique em "Enviar imagem" para adicionar fotos de produtos e da loja.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div className="panel-card p-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
           {images.map((img) => (
             <div key={img.path} className="group relative aspect-square overflow-hidden rounded-2xl border border-ink-100 bg-ink-50">
               <img
@@ -170,6 +173,7 @@ function ImageLibrary({ storeId }: { storeId: string }) {
               </div>
             </div>
           ))}
+          </div>
         </div>
       )}
     </div>
