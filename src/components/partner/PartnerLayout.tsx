@@ -105,7 +105,7 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
     hydrateReviews,
   ])
 
-  useOrderNotifications(data?.store.id ?? '')
+  useOrderNotifications(data?.store.id ?? '', data?.store)
   useOrdersRealtime(data?.store.id ?? '')
   useReviewsRealtime(data?.store.id ?? '', (review) => {
     if (data?.store.id) {

@@ -1,0 +1,45 @@
+{
+  "name": "ohdelivery-parceiros-desktop",
+  "version": "1.0.0",
+  "description": "OhDelivery Parceiros — App Desktop para impressão de pedidos",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "concurrently \"vite\" \"electron .\"",
+    "build": "tsc -p tsconfig.electron.json && vite build",
+    "electron:build": "npm run build && electron-builder",
+    "preview": "vite preview"
+  },
+  "build": {
+    "appId": "com.ohdelivery.parceiros",
+    "productName": "OhDelivery Parceiros",
+    "win": {
+      "target": "nsis",
+      "icon": "public/favico.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "public/favico.png",
+      "uninstallerIcon": "public/favico.png"
+    },
+    "files": [
+      "dist/**/*",
+      "dist-electron/**/*",
+      "public/**/*"
+    ],
+    "directories": {
+      "output": "release"
+    }
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "electron-store": "^8.1.0"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "electron": "^29.0.0",
+    "electron-builder": "^24.9.1",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.0"
+  }
+}

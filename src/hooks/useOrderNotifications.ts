@@ -5,7 +5,8 @@ import { createElement } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { playOrderSound } from '@/lib/orderSound'
 import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
-import type { PartnerOrder, PartnerOrderSettings } from '@/types'
+import { isElectron, printOrder, getSavedPrinter, getAutoPrint } from '@/hooks/usePrint'
+import type { PartnerOrder, PartnerOrderSettings, PartnerStore } from '@/types'
 
 const REPEAT_MS = 10_000
 const STAGE_LIMIT_MS = 5 * 60 * 1000
@@ -30,7 +31,7 @@ function isLateOrder(order: PartnerOrder, settings?: PartnerOrderSettings, now =
   return new Date(startedAt).getTime() + getLateStageLimitMs(order, settings) <= now
 }
 
-export function useOrderNotifications(storeId: string) {
+export function useOrderNotifications(storeId: string, store?: PartnerStore) {
   const navigate = useNavigate()
   const { ordersByStoreId, orderSettingsByStoreId } = usePartnerDraftStore()
 
@@ -65,6 +66,16 @@ export function useOrderNotifications(storeId: string) {
 
     newOrders.forEach((order) => {
       if (soundEnabled) playOrderSound(model)
+
+      // Impressão automática no Electron
+      if (isElectron && store) {
+        void (async () => {
+          const [autoPrint, printer] = await Promise.all([getAutoPrint(), getSavedPrinter()])
+          if (autoPrint && printer) {
+            await printOrder(order, store, printer)
+          }
+        })()
+      }
 
       if (notifEnabled) {
         toast.custom(

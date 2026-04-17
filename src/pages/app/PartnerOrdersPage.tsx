@@ -1,6 +1,6 @@
 import type { DragEvent, MouseEvent as ReactMouseEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
-import { ArrowRight, ChevronDown, GripVertical, Info, Maximize2, MessageCircle, Minimize2, Search, Settings, X } from 'lucide-react'
+import { ArrowRight, ChevronDown, GripVertical, Info, Maximize2, MessageCircle, Minimize2, Printer, Search, Settings, X } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import type { OrderStatus, OrderStatusEvent, PartnerOrder, PartnerOrderSettings } from '@/types'
@@ -10,6 +10,7 @@ import { OrderChatPanel } from '@/components/partner/OrderChatPanel'
 import { SectionFrame } from '@/components/partner/PartnerUi'
 import { usePartnerPageData } from '@/hooks/usePartnerPageData'
 import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
+import { isElectron, printOrder, getSavedPrinter } from '@/hooks/usePrint'
 import { cn, formatCurrency, formatDateTime } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 
@@ -860,6 +861,27 @@ export function PartnerOrdersPage() {
                                     <MessageCircle className="h-4 w-4 text-coral-500" />
                                     Mensagem ao cliente
                                   </button>
+                                  {isElectron && (
+                                    <button
+                                      type="button"
+                                      data-prevent-board-pan="true"
+                                      onClick={async (event) => {
+                                        event.stopPropagation()
+                                        const printer = await getSavedPrinter()
+                                        if (!printer) {
+                                          toast.error('Nenhuma impressora configurada. Acesse Configuracoes.')
+                                          return
+                                        }
+                                        const result = await printOrder(order, data.store, printer)
+                                        if (!result.success) toast.error('Erro ao imprimir: ' + (result.error ?? 'desconhecido'))
+                                        else toast.success('Imprimindo...')
+                                      }}
+                                      className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-2xl border border-ink-100 bg-white px-3 text-[13px] font-semibold text-ink-800 transition hover:border-coral-200 hover:text-coral-600"
+                                    >
+                                      <Printer className="h-4 w-4 text-ink-500" />
+                                      Imprimir pedido
+                                    </button>
+                                  )}
                                 </div>
                               </div>
                             </div>
