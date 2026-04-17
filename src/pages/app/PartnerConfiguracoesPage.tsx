@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Copy, ImagePlus, Printer, RefreshCw, Trash2 } from 'lucide-react'
+import { ImagePlus, Printer, RefreshCw, Trash2 } from 'lucide-react'
 import { PartnerOrderSettingsPanel } from '@/components/partner/PartnerOrderSettingsPanel'
 import { SectionFrame } from '@/components/partner/PartnerUi'
 import { isElectron, getPrinters, getSavedPrinter, savePrinter, getAutoPrint, saveAutoPrint } from '@/hooks/usePrint'
@@ -20,7 +20,6 @@ function ImageLibrary({ storeId }: { storeId: string }) {
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
   const [deletingPath, setDeletingPath] = useState<string | null>(null)
-  const [copiedPath, setCopiedPath] = useState<string | null>(null)
 
   useEffect(() => {
     setLoading(true)
@@ -71,14 +70,6 @@ function ImageLibrary({ storeId }: { storeId: string }) {
     } finally {
       setDeletingPath(null)
     }
-  }
-
-  function handleCopy(img: StoreImageItem) {
-    navigator.clipboard.writeText(img.publicUrl).then(() => {
-      setCopiedPath(img.path)
-      toast.success('URL copiada!')
-      setTimeout(() => setCopiedPath(null), 2000)
-    })
   }
 
   return (
@@ -133,15 +124,6 @@ function ImageLibrary({ storeId }: { storeId: string }) {
               <div key={img.path} className="group relative aspect-square overflow-hidden rounded-2xl border border-ink-100 bg-ink-50">
                 <img src={img.publicUrl} alt={img.name} className="h-full w-full object-cover transition group-hover:scale-105" />
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/0 opacity-0 transition-all group-hover:bg-black/40 group-hover:opacity-100">
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(img)}
-                    className={cn('inline-flex h-7 items-center gap-1 rounded-xl px-2.5 text-[11px] font-semibold text-white transition',
-                      copiedPath === img.path ? 'bg-green-500' : 'bg-white/20 hover:bg-white/30')}
-                  >
-                    <Copy className="h-3 w-3" />
-                    {copiedPath === img.path ? 'Copiado!' : 'Copiar'}
-                  </button>
                   <button
                     type="button"
                     onClick={() => void handleDelete(img)}
