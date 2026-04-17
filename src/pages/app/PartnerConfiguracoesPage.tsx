@@ -82,100 +82,86 @@ function ImageLibrary({ storeId }: { storeId: string }) {
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header com upload */}
-      <div className="panel-card p-5">
-        <div className="flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-ink-900">Biblioteca de Imagens</p>
-            <p className="mt-0.5 text-xs text-ink-500">
-              {images.length} imagem{images.length !== 1 ? 's' : ''} · Maximo 5 MB por arquivo · JPG, PNG, WebP
-            </p>
-          </div>
-          <input
-            ref={uploadInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={(e) => void handleUpload(e)}
-            className="hidden"
-          />
-          <button
-            type="button"
-            onClick={() => !uploading && uploadInputRef.current?.click()}
-            disabled={uploading}
-            className="inline-flex h-10 items-center gap-2 rounded-2xl bg-coral-500 px-4 text-sm font-semibold text-white transition hover:bg-coral-600 disabled:opacity-50"
-          >
-            {uploading ? (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-            ) : (
-              <ImagePlus className="h-4 w-4" />
-            )}
-            {uploading ? 'Enviando...' : 'Enviar imagem'}
-          </button>
+    <div className="panel-card overflow-hidden">
+      {/* Header + upload */}
+      <div className="flex items-center justify-between gap-4 border-b border-ink-100 px-5 py-4">
+        <div>
+          <p className="text-sm font-semibold text-ink-900">Biblioteca de Imagens</p>
+          <p className="mt-0.5 text-xs text-ink-500">
+            {images.length} imagem{images.length !== 1 ? 's' : ''} · Maximo 5 MB · JPG, PNG, WebP
+          </p>
         </div>
+        <input
+          ref={uploadInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={(e) => void handleUpload(e)}
+          className="hidden"
+        />
+        <button
+          type="button"
+          onClick={() => !uploading && uploadInputRef.current?.click()}
+          disabled={uploading}
+          className="inline-flex h-10 items-center gap-2 rounded-2xl bg-coral-500 px-4 text-sm font-semibold text-white transition hover:bg-coral-600 disabled:opacity-50"
+        >
+          {uploading ? (
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+          ) : (
+            <ImagePlus className="h-4 w-4" />
+          )}
+          {uploading ? 'Enviando...' : 'Enviar imagem'}
+        </button>
       </div>
 
-      {/* Grid */}
-      {loading ? (
-        <div className="panel-card p-4">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
-          {[1,2,3,4,5].map((i) => (
-            <div key={i} className="aspect-square animate-pulse rounded-2xl bg-ink-100" />
-          ))}
-        </div>
-      </div>
-      ) : images.length === 0 ? (
-        <div className="panel-card flex flex-col items-center gap-3 py-16 text-center">
-          <ImagePlus className="h-10 w-10 text-ink-200" />
-          <p className="text-sm text-ink-400">Nenhuma imagem ainda.</p>
-          <p className="text-xs text-ink-300">Clique em "Enviar imagem" para adicionar fotos de produtos e da loja.</p>
-        </div>
-      ) : (
-        <div className="panel-card p-4">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8">
-          {images.map((img) => (
-            <div key={img.path} className="group relative aspect-square overflow-hidden rounded-2xl border border-ink-100 bg-ink-50">
-              <img
-                src={img.publicUrl}
-                alt={img.name}
-                className="h-full w-full object-cover transition group-hover:scale-105"
-              />
-              {/* Overlay com ações */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/0 opacity-0 transition-all group-hover:bg-black/40 group-hover:opacity-100">
-                <button
-                  type="button"
-                  onClick={() => handleCopy(img)}
-                  className={cn(
-                    'inline-flex h-8 items-center gap-1.5 rounded-xl px-3 text-xs font-semibold text-white transition',
-                    copiedPath === img.path ? 'bg-green-500' : 'bg-white/20 hover:bg-white/30'
-                  )}
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                  {copiedPath === img.path ? 'Copiado!' : 'Copiar URL'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleDelete(img)}
-                  disabled={deletingPath === img.path}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-coral-500/80 px-3 text-xs font-semibold text-white transition hover:bg-coral-500 disabled:opacity-50"
-                >
-                  {deletingPath === img.path ? (
-                    <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-                  ) : (
-                    <Trash2 className="h-3.5 w-3.5" />
-                  )}
-                  Remover
-                </button>
-              </div>
-              {/* Nome */}
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-2 py-1.5 opacity-0 transition group-hover:opacity-100">
-                <p className="truncate text-[10px] text-white/90">{img.name}</p>
-              </div>
-            </div>
-          ))}
+      {/* Grid com altura fixa 4 linhas + scroll */}
+      <div className="hide-scrollbar overflow-y-auto p-4" style={{ maxHeight: '420px' }}>
+        {loading ? (
+          <div className="grid grid-cols-4 gap-3 sm:grid-cols-6 xl:grid-cols-8">
+            {[1,2,3,4,5,6,7,8].map((i) => (
+              <div key={i} className="aspect-square animate-pulse rounded-2xl bg-ink-100" />
+            ))}
           </div>
-        </div>
-      )}
+        ) : images.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 py-12 text-center">
+            <ImagePlus className="h-10 w-10 text-ink-200" />
+            <p className="text-sm text-ink-400">Nenhuma imagem ainda.</p>
+            <p className="text-xs text-ink-300">Clique em "Enviar imagem" para adicionar fotos.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-4 gap-3 sm:grid-cols-6 xl:grid-cols-8">
+            {images.map((img) => (
+              <div key={img.path} className="group relative aspect-square overflow-hidden rounded-2xl border border-ink-100 bg-ink-50">
+                <img src={img.publicUrl} alt={img.name} className="h-full w-full object-cover transition group-hover:scale-105" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-black/0 opacity-0 transition-all group-hover:bg-black/40 group-hover:opacity-100">
+                  <button
+                    type="button"
+                    onClick={() => handleCopy(img)}
+                    className={cn('inline-flex h-7 items-center gap-1 rounded-xl px-2.5 text-[11px] font-semibold text-white transition',
+                      copiedPath === img.path ? 'bg-green-500' : 'bg-white/20 hover:bg-white/30')}
+                  >
+                    <Copy className="h-3 w-3" />
+                    {copiedPath === img.path ? 'Copiado!' : 'Copiar'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleDelete(img)}
+                    disabled={deletingPath === img.path}
+                    className="inline-flex h-7 items-center gap-1 rounded-xl bg-coral-500/80 px-2.5 text-[11px] font-semibold text-white transition hover:bg-coral-500 disabled:opacity-50"
+                  >
+                    {deletingPath === img.path
+                      ? <span className="h-3 w-3 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                      : <Trash2 className="h-3 w-3" />}
+                    Remover
+                  </button>
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent px-1.5 py-1 opacity-0 transition group-hover:opacity-100">
+                  <p className="truncate text-[9px] text-white/90">{img.name}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
