@@ -163,6 +163,22 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
   const draftReviews = reviewsByStoreId[data.store.id] ?? data.reviews
   const newReviewsCount = newReviewsCountByStoreId[data.store.id] ?? 0
   const unreadMessagesCount = unreadMessagesCountByStoreId[data.store.id] ?? 0
+
+  // Calcula notificações não lidas (pedidos + mensagens de clientes)
+  const unreadNotificationsCount = (() => {
+    try {
+      const key = `oh-notif-read:${data.store.id}`
+      const raw = localStorage.getItem(key)
+      const readIds: Set<string> = new Set(raw ? JSON.parse(raw) : [])
+      const recentOrders = draftOrders
+        .filter((o) => o.status !== 'cancelado' && o.status !== 'aguardando_pagamento')
+        .slice(0, 30)
+      const unreadOrders = recentOrders.filter((o) => !readIds.has(`order-${o.id}`)).length
+      return unreadOrders
+    } catch {
+      return 0
+    }
+  })()
   const today = new Date()
   const validOrders = draftOrders.filter((order) => order.status !== 'cancelado')
   const todayOrders = validOrders.filter((order) => isSameUtcDate(order.createdAt, today))
@@ -234,7 +250,7 @@ export function PartnerLayout({ onSignOut }: { onSignOut: () => void }) {
         )}
       >
         <div className="space-y-4">
-          <PartnerTopbar data={displayData} unreadMessages={unreadMessagesCount} />
+          <PartnerTopbar data={displayData} unreadMessages={unreadMessagesCount} unreadNotifications={unreadNotificationsCount} />
 
           <div className="panel-card flex items-center justify-between px-4 py-3 lg:hidden">
             <span className="text-sm font-bold text-ink-900">{displayData.store.name}</span>

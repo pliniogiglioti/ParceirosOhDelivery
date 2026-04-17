@@ -24,7 +24,7 @@ function isWithinSchedule(hours: PartnerHour[]): boolean {
   return nowMinutes >= openMinutes && nowMinutes < closeMinutes
 }
 
-export function PartnerTopbar({ data, unreadMessages = 0 }: { data: PartnerDashboardData; unreadMessages?: number }) {
+export function PartnerTopbar({ data, unreadMessages = 0, unreadNotifications = 0 }: { data: PartnerDashboardData; unreadMessages?: number; unreadNotifications?: number }) {
   const [open, setOpen] = useState(false)
   const [stores, setStores] = useState<PartnerStoreCard[]>([])
   const ref = useRef<HTMLDivElement>(null)
@@ -179,7 +179,11 @@ export function PartnerTopbar({ data, unreadMessages = 0 }: { data: PartnerDashb
           title="Notificacoes"
         >
           <Bell className="h-5 w-5" />
-          <span className="absolute right-1.5 top-1.5 flex h-2 w-2 rounded-full bg-coral-500" />
+          {unreadNotifications > 0 && (
+            <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-coral-500 px-1 text-[9px] font-bold text-white">
+              {unreadNotifications > 99 ? '99+' : unreadNotifications}
+            </span>
+          )}
         </button>
       </div>
     </div>
