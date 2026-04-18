@@ -318,7 +318,6 @@ export function PartnerCatalogPage({
   const [pizzaTab, setPizzaTab] = useState<PizzaTab>('detalhes')
   const [pizzaMaxTab, setPizzaMaxTab] = useState(0)
   const [pizzaCategoryName, setPizzaCategoryName] = useState('')
-  const [pizzaCategoryImage, setPizzaCategoryImage] = useState('')
   const [pizzaPricePolicy, setPizzaPricePolicy] = useState<'maior' | 'media' | 'menor'>('maior')
   const [pizzaSizes, setPizzaSizes] = useState<PizzaSizeDraft[]>([])
   const [pizzaCrusts, setPizzaCrusts] = useState<Record<string, PizzaCrustDraft[]>>({})
@@ -341,7 +340,6 @@ export function PartnerCatalogPage({
   const [flavorPrices, setFlavorPrices] = useState<Record<string, string>>({})
   const [flavorSizes, setFlavorSizes] = useState<import('@/types').PizzaSize[]>([])
   const [flavorImagePickerOpen, setFlavorImagePickerOpen] = useState(false)
-  const [pizzaCategoryImagePickerOpen, setPizzaCategoryImagePickerOpen] = useState(false)
   const [savingFlavor, setSavingFlavor] = useState(false)
   const [editingFlavorId, setEditingFlavorId] = useState<string | null>(null)
   // Pizza flavors per category
@@ -795,7 +793,6 @@ const normalizedSearch = search.trim().toLowerCase()
     if (selectedTemplate.id === 'pizza') {
       // Abre o modal de pizza em vez de criar direto
       setPizzaCategoryName(trimmedName)
-      setPizzaCategoryImage('')
       setPizzaPricePolicy('maior')
       setPizzaTab('detalhes')
       setPizzaMaxTab(0)
@@ -1269,7 +1266,6 @@ const normalizedSearch = search.trim().toLowerCase()
   function openPizzaEditModal(category: PartnerCategory) {
     setPizzaEditingCategoryId(category.id)
     setPizzaCategoryName(category.name)
-    setPizzaCategoryImage(category.imageUrl ?? '')
     setPizzaPricePolicy('maior')
     setPizzaTab('detalhes')
     setPizzaMaxTab(3) // all tabs unlocked for editing
@@ -1382,7 +1378,7 @@ const normalizedSearch = search.trim().toLowerCase()
         // Update existing category name
         const { error } = await (await import('@/lib/supabase')).supabase!
           .from('product_categories')
-          .update({ name: pizzaCategoryName.trim(), image_url: pizzaCategoryImage || null, updated_at: new Date().toISOString() })
+          .update({ name: pizzaCategoryName.trim(), updated_at: new Date().toISOString() })
           .eq('id', pizzaEditingCategoryId)
           .eq('store_id', data.store.id)
         if (error) throw error
@@ -1394,7 +1390,6 @@ const normalizedSearch = search.trim().toLowerCase()
           name: pizzaCategoryName.trim(),
           icon: 'PZ',
           template: 'pizza',
-          imageUrl: pizzaCategoryImage || undefined,
           pricePolicy: pizzaPricePolicy,
         } as Parameters<typeof createProductCategory>[1] & { pricePolicy: string })
         draftAddCategory(data.store.id, saved)
@@ -2089,7 +2084,7 @@ const normalizedSearch = search.trim().toLowerCase()
                         {pizzaCategoryImage && (
                           <button
                             type="button"
-                            onClick={() => setPizzaCategoryImage('')}
+                            onClick={() => }
                             className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-ink-200 bg-white text-ink-500 transition hover:bg-red-50 hover:border-red-200 hover:text-red-600"
                           >
                             <X className="h-4 w-4" />
@@ -2137,21 +2132,16 @@ const normalizedSearch = search.trim().toLowerCase()
                       <div className="grid grid-cols-2 gap-4">
                         {/* Coluna 1: Imagem */}
                         <div>
-                          <span className="mb-2 block text-xs font-semibold text-ink-500">Imagem do tamanho</span>
-                          <div className="flex items-center gap-3">
-                            <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-ink-100 bg-ink-50">
-                              <img 
-                                src={pizzaCategoryImage || '/error.png'} 
-                                alt="Preview" 
-                                className="h-full w-full object-cover"
-                                onError={(e) => { e.currentTarget.src = '/error.png' }}
-                              />
-                            </div>
-                            <div className="text-xs text-ink-500">
-                              <p>Usa a imagem da categoria</p>
-                              <p>Altere na aba "Detalhes"</p>
-                            </div>
+                          <span className="mb-2 block text-xs font-semibold text-ink-500">Imagem da categoria</span>
+                          <div className="h-20 w-20 overflow-hidden rounded-xl border border-ink-100 bg-ink-50">
+                            <img 
+                              src={pizzaCategoryImage || '/error.png'} 
+                              alt="Preview" 
+                              className="h-full w-full object-cover"
+                              onError={(e) => { e.currentTarget.src = '/error.png' }}
+                            />
                           </div>
+                          <p className="mt-1.5 text-xs text-ink-500">Mesma para todos os tamanhos</p>
                         </div>
 
                         {/* Coluna 2: Nome e detalhes */}
