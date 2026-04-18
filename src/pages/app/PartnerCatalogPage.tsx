@@ -5,6 +5,7 @@
   Copy,
   EllipsisVertical,
   GripVertical,
+  ImagePlus,
   LayoutGrid,
   Loader2,
   Package,
