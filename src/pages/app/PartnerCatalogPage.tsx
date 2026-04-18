@@ -1382,7 +1382,7 @@ const normalizedSearch = search.trim().toLowerCase()
         // Update existing category name
         const { error } = await (await import('@/lib/supabase')).supabase!
           .from('product_categories')
-          .update({ name: pizzaCategoryName.trim(), updated_at: new Date().toISOString() })
+          .update({ name: pizzaCategoryName.trim() })
           .eq('id', pizzaEditingCategoryId)
           .eq('store_id', data.store.id)
         if (error) throw error
@@ -2055,6 +2055,7 @@ const normalizedSearch = search.trim().toLowerCase()
               {/* -- DETALHES -- */}
               {pizzaTab === 'detalhes' ? (
                 <div className="space-y-5">
+                  {/* Modelo */}
                   <div className="rounded-xl border border-ink-100 bg-white p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Modelo</p>
                     <div className="mt-2 flex items-center justify-between gap-3 rounded-xl border border-ink-100 bg-ink-50 px-4 py-3">
@@ -2069,54 +2070,64 @@ const normalizedSearch = search.trim().toLowerCase()
                     </div>
                   </div>
 
-                  <label className="block">
-                    <span className="mb-2 block text-sm font-semibold text-ink-900">Nome da categoria</span>
-                    <input type="text" value={pizzaCategoryName} onChange={(e) => setPizzaCategoryName(e.target.value.slice(0, 40))}
-                      placeholder="Ex: Pizza Grande 8 pedacos"
-                      className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400" />
-                    <p className="mt-1 text-right text-xs text-ink-400">{pizzaCategoryName.length}/40</p>
-                  </label>
-
-                  <div>
-                    <span className="mb-2 block text-sm font-semibold text-ink-900">Imagem da categoria (opcional)</span>
-                    <div className="flex items-center gap-3">
-                      <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-ink-100 bg-ink-50">
+                  {/* Duas colunas: imagem | nome + politica */}
+                  <div className="grid gap-5 md:grid-cols-[180px_minmax(0,1fr)]">
+                    {/* Imagem */}
+                    <div className="flex flex-col gap-2">
+                      <span className="block text-sm font-semibold text-ink-900">Imagem (opcional)</span>
+                      <div className="relative h-40 w-full overflow-hidden rounded-2xl border border-ink-100 bg-ink-50">
                         <img src={pizzaCategoryImage || DEFAULT_PRODUCT_IMAGE} alt="Preview"
                           className="h-full w-full object-cover" />
+                        {pizzaCategoryImage ? (
+                          <button type="button" onClick={() => setPizzaCategoryImage('')}
+                            className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-lg bg-white/90 text-ink-500 shadow hover:bg-red-50 hover:text-red-600">
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        ) : null}
                       </div>
                       <button type="button" onClick={() => setPizzaCategoryImagePickerOpen(true)}
-                        className="inline-flex h-10 items-center gap-2 rounded-xl border border-ink-200 bg-white px-4 text-sm font-semibold text-ink-700 transition hover:bg-ink-50">
+                        className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-xl border border-ink-200 bg-white text-xs font-semibold text-ink-700 transition hover:bg-ink-50">
                         <Plus className="h-4 w-4" />
                         Selecionar imagem
                       </button>
-                      {pizzaCategoryImage ? (
-                        <button type="button" onClick={() => setPizzaCategoryImage('')}
-                          className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-ink-200 bg-white text-ink-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600">
-                          <X className="h-4 w-4" />
-                        </button>
-                      ) : null}
                     </div>
-                    <p className="mt-1.5 text-xs text-ink-500">A imagem aparecera no app do cliente.</p>
-                  </div>
 
-                  <div>
-                    <p className="mb-2 text-sm font-semibold text-ink-900">Politica de preco com multiplos sabores</p>
-                    <p className="mb-3 text-xs text-ink-500">Define como calcular o preco quando o cliente escolhe mais de um sabor.</p>
-                    <div className="grid gap-3 sm:grid-cols-3">
-                      {([
-                        { id: 'maior', label: 'Maior preco', description: 'Cobra o preco do sabor mais caro.' },
-                        { id: 'media', label: 'Media', description: 'Cobra a media dos precos dos sabores.' },
-                        { id: 'menor', label: 'Menor preco', description: 'Cobra o preco do sabor mais barato.' },
-                      ] as const).map((policy) => (
-                        <button key={policy.id} type="button" onClick={() => setPizzaPricePolicy(policy.id)}
-                          className={cn('rounded-xl border p-4 text-left transition',
-                            pizzaPricePolicy === policy.id
-                              ? 'border-coral-300 bg-coral-50 text-coral-700'
-                              : 'border-ink-100 bg-white text-ink-900 hover:bg-ink-50')}>
-                          <p className="text-sm font-bold">{policy.label}</p>
-                          <p className={cn('mt-1 text-xs', pizzaPricePolicy === policy.id ? 'text-coral-600' : 'text-ink-500')}>{policy.description}</p>
-                        </button>
-                      ))}
+                    {/* Nome + Politica */}
+                    <div className="flex flex-col gap-4">
+                      <label className="block">
+                        <span className="mb-2 block text-sm font-semibold text-ink-900">Nome da categoria</span>
+                        <input type="text" value={pizzaCategoryName} onChange={(e) => setPizzaCategoryName(e.target.value.slice(0, 40))}
+                          placeholder="Ex: Pizzas Especiais"
+                          className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400" />
+                        <p className="mt-1 text-right text-xs text-ink-400">{pizzaCategoryName.length}/40</p>
+                      </label>
+
+                      <div>
+                        <p className="mb-2 text-sm font-semibold text-ink-900">Politica de preco com multiplos sabores</p>
+                        <p className="mb-3 text-xs text-ink-500">Como calcular o preco quando o cliente escolhe mais de um sabor.</p>
+                        <div className="grid gap-2">
+                          {([
+                            { id: 'maior', label: 'Maior preco', description: 'Cobra o preco do sabor mais caro.' },
+                            { id: 'media', label: 'Media', description: 'Cobra a media dos precos dos sabores.' },
+                            { id: 'menor', label: 'Menor preco', description: 'Cobra o preco do sabor mais barato.' },
+                          ] as const).map((policy) => (
+                            <button key={policy.id} type="button" onClick={() => setPizzaPricePolicy(policy.id)}
+                              className={cn('flex items-center gap-3 rounded-xl border p-3 text-left transition',
+                                pizzaPricePolicy === policy.id
+                                  ? 'border-coral-300 bg-coral-50'
+                                  : 'border-ink-100 bg-white hover:bg-ink-50')}>
+                              <span className={cn('flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2',
+                                pizzaPricePolicy === policy.id ? 'border-coral-500 bg-coral-500' : 'border-ink-300')}>
+                                {pizzaPricePolicy === policy.id ? <span className="h-1.5 w-1.5 rounded-full bg-white" /> : null}
+                              </span>
+                              <div>
+                                <p className={cn('text-sm font-semibold', pizzaPricePolicy === policy.id ? 'text-coral-700' : 'text-ink-900')}>{policy.label}</p>
+                                <p className="text-xs text-ink-500">{policy.description}</p>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -2126,7 +2137,7 @@ const normalizedSearch = search.trim().toLowerCase()
                 <div className="space-y-4">
                   <div>
                     <p className="text-sm font-semibold text-ink-900">Tamanhos</p>
-                    <p className="mt-1 text-sm text-ink-500">Indique os tamanhos, peda�os e quantos sabores cada um aceita. Maximo 3 tamanhos.</p>
+                    <p className="mt-1 text-sm text-ink-500">Indique os tamanhos, pedacos e quantos sabores cada um aceita. Maximo 3 tamanhos.</p>
                   </div>
 
                   {pizzaSizes.map((size) => (
@@ -2173,12 +2184,12 @@ const normalizedSearch = search.trim().toLowerCase()
                   {/* Preview */}
                   {pizzaSizes.some((s) => s.name.trim()) ? (
                     <div>
-                      <p className="text-sm font-semibold text-ink-900">O que o cliente ver�</p>
+                      <p className="text-sm font-semibold text-ink-900">O que o cliente vera</p>
                       <div className="mt-3 flex flex-wrap gap-3">
                         {pizzaSizes.filter((s) => s.name.trim()).map((size) => (
                           <div key={size.id} className="flex h-28 w-28 flex-col items-center justify-center rounded-2xl border-2 border-ink-200 bg-white p-3 text-center">
                             <p className="text-sm font-bold text-ink-900">{size.name}</p>
-                            <p className="mt-1 text-xs text-ink-500">Cortada em {size.slices} peda�os</p>
+                            <p className="mt-1 text-xs text-ink-500">Cortada em {size.slices} pedacos</p>
                             <p className="text-xs text-ink-500">Aceita {size.maxFlavors} sabor{size.maxFlavors > 1 ? 'es' : ''}</p>
                           </div>
                         ))}
