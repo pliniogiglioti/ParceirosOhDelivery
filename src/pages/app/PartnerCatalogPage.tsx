@@ -2084,7 +2084,7 @@ const normalizedSearch = search.trim().toLowerCase()
                         {pizzaCategoryImage && (
                           <button
                             type="button"
-                            onClick={() => }
+                            onClick={() => setPizzaCategoryImage('')}
                             className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-ink-200 bg-white text-ink-500 transition hover:bg-red-50 hover:border-red-200 hover:text-red-600"
                           >
                             <X className="h-4 w-4" />
