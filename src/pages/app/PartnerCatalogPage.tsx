@@ -2134,34 +2134,63 @@ const normalizedSearch = search.trim().toLowerCase()
 
                   {pizzaSizes.map((size) => (
                     <div key={size.id} className="rounded-xl border border-ink-100 bg-white p-4">
-                      <div className="flex flex-wrap items-center gap-3">
-                        <label className="block w-36 shrink-0">
-                          <span className="mb-1 block text-xs font-semibold text-ink-500">Tamanho</span>
-                          <input type="text" value={size.name} onChange={(e) => updatePizzaSize(size.id, { name: e.target.value })}
-                            placeholder="Ex: Grande"
-                            className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
-                        </label>
-                        <label className="block w-20 shrink-0">
-                          <span className="mb-1 block text-xs font-semibold text-ink-500">Pedaços</span>
-                          <input type="number" min={1} value={size.slices} onChange={(e) => updatePizzaSize(size.id, { slices: Number(e.target.value) || 8 })}
-                            className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
-                        </label>
-                        <div className="flex-1">
-                          <span className="mb-1 block text-xs font-semibold text-ink-500">Sabores</span>
-                          <div className="flex gap-1">
-                            {([1, 2, 3, 4] as const).map((n) => (
-                              <button key={n} type="button" onClick={() => updatePizzaSize(size.id, { maxFlavors: n })}
-                                className={cn('h-10 w-10 rounded-xl border text-sm font-bold transition',
-                                  size.maxFlavors === n ? 'border-coral-400 bg-coral-50 text-coral-700' : 'border-ink-100 bg-white text-ink-600 hover:bg-ink-50')}>
-                                {n}
-                              </button>
-                            ))}
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* Coluna 1: Imagem */}
+                        <div>
+                          <span className="mb-2 block text-xs font-semibold text-ink-500">Imagem do tamanho</span>
+                          <div className="flex items-center gap-3">
+                            <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-ink-100 bg-ink-50">
+                              <img 
+                                src={pizzaCategoryImage || '/error.png'} 
+                                alt="Preview" 
+                                className="h-full w-full object-cover"
+                                onError={(e) => { e.currentTarget.src = '/error.png' }}
+                              />
+                            </div>
+                            <div className="text-xs text-ink-500">
+                              <p>Usa a imagem da categoria</p>
+                              <p>Altere na aba "Detalhes"</p>
+                            </div>
                           </div>
                         </div>
-                        <button type="button" onClick={() => removePizzaSize(size.id)}
-                          className="mt-4 inline-flex h-10 items-center gap-1.5 rounded-xl border border-red-100 px-3 text-xs font-semibold text-red-500 hover:bg-red-50">
-                          Excluir
-                        </button>
+
+                        {/* Coluna 2: Nome e detalhes */}
+                        <div className="space-y-3">
+                          <label className="block">
+                            <span className="mb-1 block text-xs font-semibold text-ink-500">Nome do tamanho</span>
+                            <input type="text" value={size.name} onChange={(e) => updatePizzaSize(size.id, { name: e.target.value })}
+                              placeholder="Ex: Grande"
+                              className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
+                          </label>
+                          
+                          <div className="grid grid-cols-2 gap-3">
+                            <label className="block">
+                              <span className="mb-1 block text-xs font-semibold text-ink-500">Pedaços</span>
+                              <input type="number" min={1} value={size.slices} onChange={(e) => updatePizzaSize(size.id, { slices: Number(e.target.value) || 8 })}
+                                className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
+                            </label>
+                            
+                            <div>
+                              <span className="mb-1 block text-xs font-semibold text-ink-500">Sabores</span>
+                              <div className="flex gap-1">
+                                {([1, 2, 3, 4] as const).map((n) => (
+                                  <button key={n} type="button" onClick={() => updatePizzaSize(size.id, { maxFlavors: n })}
+                                    className={cn('h-10 w-10 rounded-xl border text-sm font-bold transition',
+                                      size.maxFlavors === n ? 'border-coral-400 bg-coral-50 text-coral-700' : 'border-ink-100 bg-white text-ink-600 hover:bg-ink-50')}>
+                                    {n}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex justify-end">
+                            <button type="button" onClick={() => removePizzaSize(size.id)}
+                              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-red-100 px-3 text-xs font-semibold text-red-500 hover:bg-red-50">
+                              Excluir
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))}
