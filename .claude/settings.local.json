@@ -14,7 +14,8 @@
       "Bash(xargs grep:*)",
       "Bash(cmd /c \"cd /d c:\\\\Users\\\\plini\\\\Documents\\\\repositoriogit\\\\ParceirosOhDelivery && npx tsc --noEmit 2>&1\")",
       "Bash(cmd /c \"npx tsc --noEmit\")",
-      "Bash(npx --yes tsc --noEmit --project c:/Users/plini/Documents/repositoriogit/ParceirosOhDelivery/tsconfig.json)"
+      "Bash(npx --yes tsc --noEmit --project c:/Users/plini/Documents/repositoriogit/ParceirosOhDelivery/tsconfig.json)",
+      "mcp__supabase__list_projects"
     ]
   }
 }

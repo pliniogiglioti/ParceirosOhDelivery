@@ -115,6 +115,7 @@ export interface PizzaSize {
   slices: number
   maxFlavors: 1 | 2 | 3 | 4
   sortOrder: number
+  imageUrl?: string
   crusts: PizzaCrust[]
   edges: PizzaEdge[]
 }

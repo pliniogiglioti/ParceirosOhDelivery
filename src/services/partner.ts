@@ -1208,13 +1208,13 @@ export async function savePizzaCategory(
     slices: number
     maxFlavors: number
     sortOrder: number
+    imageUrl?: string
     crusts: Array<{ id?: string; name: string; price: number }>
     edges: Array<{ id?: string; name: string; price: number }>
   }>
 ): Promise<void> {
   if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
 
-  // Delete all existing sizes (cascade deletes crusts and edges)
   await supabase.from('pizza_sizes').delete().eq('category_id', categoryId).eq('store_id', storeId)
 
   for (let i = 0; i < sizes.length; i++) {
@@ -1228,6 +1228,7 @@ export async function savePizzaCategory(
         slices: size.slices,
         max_flavors: size.maxFlavors,
         sort_order: i,
+        image_url: size.imageUrl ?? null,
       })
       .select('id')
       .single()
@@ -1262,7 +1263,7 @@ export async function fetchPizzaSizes(categoryId: string): Promise<import('@/typ
 
   const { data: sizes, error } = await supabase
     .from('pizza_sizes')
-    .select('id, category_id, name, slices, max_flavors, sort_order')
+    .select('id, category_id, name, slices, max_flavors, sort_order, image_url')
     .eq('category_id', categoryId)
     .order('sort_order')
   if (error) { console.warn('[fetchPizzaSizes]', error.message); return [] }
@@ -1281,6 +1282,7 @@ export async function fetchPizzaSizes(categoryId: string): Promise<import('@/typ
     slices: Number(s.slices ?? 8),
     maxFlavors: (Number(s.max_flavors ?? 1)) as 1 | 2 | 3 | 4,
     sortOrder: Number(s.sort_order ?? 0),
+    imageUrl: s.image_url ? String(s.image_url) : undefined,
     crusts: (crusts ?? []).filter((c) => String(c.size_id) === String(s.id)).map((c) => ({
       id: String(c.id), sizeId: String(c.size_id), name: String(c.name), price: Number(c.price ?? 0),
     })),
