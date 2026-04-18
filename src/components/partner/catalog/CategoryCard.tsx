@@ -302,7 +302,7 @@ function PizzaFlavorsContent({
       </div>
       <div className="divide-y divide-ink-100">
         {flavors.map((flavor) => {
-          const sizeCount = Object.keys(flavor.prices).length
+          const sizeCount = sizeCountByCategory[category.id] ?? Object.keys(flavor.prices).length
           const prices = Object.values(flavor.prices).filter((p) => p > 0)
           const minPrice = prices.length > 0 ? Math.min(...prices) : null
 

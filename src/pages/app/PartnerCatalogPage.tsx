@@ -1420,8 +1420,11 @@ const normalizedSearch = search.trim().toLowerCase()
 
       setPizzaModalOpen(false)
       setPizzaEditingCategoryId(null)
-      // Refresh size count
+      // Refresh size count and reload flavors to get updated prices
       setSizeCountByCategory((prev) => ({ ...prev, [categoryId]: pizzaSizes.length }))
+      fetchPizzaFlavors(categoryId).then((flavors) => {
+        setFlavorsByCategory((prev) => ({ ...prev, [categoryId]: flavors }))
+      }).catch(() => {})
       toast.success(`Categoria ${pizzaCategoryName.trim()} ${pizzaEditingCategoryId ? 'atualizada' : 'criada'} com sucesso.`)
     } catch {
       toast.error('Nao foi possivel salvar a categoria pizza.')
