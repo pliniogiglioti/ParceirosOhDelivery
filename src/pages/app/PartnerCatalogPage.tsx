@@ -1,4 +1,4 @@
-﻿import {
+import {
   ChevronDown,
   ChefHat,
   Clock3,
@@ -143,17 +143,17 @@ interface ComplementGroup {
 type DietaryTag = 'organico' | 'vegano' | 'sem_acucar' | 'zero_lactose' | 'vegetariano' | 'gelado'
 
 const dietaryTags: Array<{ id: DietaryTag; label: string; description: string; emoji: string }> = [
-  { id: 'organico', label: 'Organico', description: 'Produzido sem agrotoxicos ou fertilizantes quimicos.', emoji: '🌿' },
-  { id: 'vegano', label: 'Vegano', description: 'Nenhum ingrediente de origem animal.', emoji: '🌱' },
-  { id: 'sem_acucar', label: 'Sem acucar', description: 'Sem adicao de acucares. Perfeito para diabeticos.', emoji: '🚫' },
-  { id: 'zero_lactose', label: 'Zero lactose', description: 'Livre de lactose. Indicado para intolerantes ou alergicos a lactose.', emoji: '🥛' },
-  { id: 'vegetariano', label: 'Vegetariano', description: 'Nao contem carne, mas pode conter derivados de leite e ovos.', emoji: '🥗' },
-  { id: 'gelado', label: 'Gelado', description: 'Do freezer direto para seu cliente.', emoji: '❄️' },
+  { id: 'organico', label: 'Organico', description: 'Produzido sem agrotoxicos ou fertilizantes quimicos.', emoji: '??' },
+  { id: 'vegano', label: 'Vegano', description: 'Nenhum ingrediente de origem animal.', emoji: '??' },
+  { id: 'sem_acucar', label: 'Sem acucar', description: 'Sem adicao de acucares. Perfeito para diabeticos.', emoji: '??' },
+  { id: 'zero_lactose', label: 'Zero lactose', description: 'Livre de lactose. Indicado para intolerantes ou alergicos a lactose.', emoji: '??' },
+  { id: 'vegetariano', label: 'Vegetariano', description: 'Nao contem carne, mas pode conter derivados de leite e ovos.', emoji: '??' },
+  { id: 'gelado', label: 'Gelado', description: 'Do freezer direto para seu cliente.', emoji: '??' },
 ]
 
 type ServesOption = 'nao_aplica' | '1' | '2' | '3' | '4'
 
-// ── Pizza types ───────────────────────────────────────────────────────────────
+// -- Pizza types ---------------------------------------------------------------
 interface PizzaSizeDraft {
   id: string
   name: string
@@ -318,6 +318,8 @@ export function PartnerCatalogPage({
   const [pizzaTab, setPizzaTab] = useState<PizzaTab>('detalhes')
   const [pizzaMaxTab, setPizzaMaxTab] = useState(0)
   const [pizzaCategoryName, setPizzaCategoryName] = useState('')
+  const [pizzaCategoryImage, setPizzaCategoryImage] = useState('')
+  const [pizzaCategoryImagePickerOpen, setPizzaCategoryImagePickerOpen] = useState(false)
   const [pizzaPricePolicy, setPizzaPricePolicy] = useState<'maior' | 'media' | 'menor'>('maior')
   const [pizzaSizes, setPizzaSizes] = useState<PizzaSizeDraft[]>([])
   const [pizzaCrusts, setPizzaCrusts] = useState<Record<string, PizzaCrustDraft[]>>({})
@@ -360,7 +362,7 @@ export function PartnerCatalogPage({
   const [flavorLibCategoryId, setFlavorLibCategoryId] = useState<string | null>(null)
   const [flavorPickerOpen, setFlavorPickerOpen] = useState(false) // picker inside flavor modal
 
-  // Edit product modal (same flow as industrialized: preco → classificacao → revisao)
+  // Edit product modal (same flow as industrialized: preco ? classificacao ? revisao)
   const [editProductModalOpen, setEditProductModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<PartnerProduct | null>(null)
   const [editStepTab, setEditStepTab] = useState<'preco' | 'classificacao' | 'revisao'>('preco')
@@ -421,7 +423,7 @@ export function PartnerCatalogPage({
   const [newIndItemPrice, setNewIndItemPrice] = useState('')
   const [selectedIndItem, setSelectedIndItem] = useState<IndustrializedCatalogItem | null>(null)
   const [prepImagePickerOpen, setPrepImagePickerOpen] = useState(false)
-  // Edição inline de grupo e item de complemento
+  // Edi��o inline de grupo e item de complemento
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null)
   const [editingGroupName, setEditingGroupName] = useState('')
   const [editingGroupRequired, setEditingGroupRequired] = useState(false)
@@ -538,7 +540,7 @@ const [showMaxFeaturedModal, setShowMaxFeaturedModal] = useState(false)
   useEffect(() => {
     setActiveByCategoryId((current) =>
       catalogCategories.reduce<Record<string, boolean>>((accumulator, category) => {
-        // Pizza categories are not controlled by products — preserve current state
+        // Pizza categories are not controlled by products � preserve current state
         if (getCategoryTemplate(category) === 'pizza') {
           accumulator[category.id] = current[category.id] ?? false
           return accumulator
@@ -682,7 +684,7 @@ const [showMaxFeaturedModal, setShowMaxFeaturedModal] = useState(false)
       return
     }
 
-    // Industrializado — fluxo de edição simples
+    // Industrializado � fluxo de edi��o simples
     setEditStepTab('preco')
     setEditPrice(
       product.price > 0
@@ -1073,7 +1075,7 @@ const normalizedSearch = search.trim().toLowerCase()
     setNewLibItemPrice('')
     setNewLibItemImage('')
     setShowNewLibForm(false)
-    // Salva na biblioteca em background para reutilização futura
+    // Salva na biblioteca em background para reutiliza��o futura
     if (data) {
       createComplementLibraryItem(data.store.id, {
         name: item.name,
@@ -1082,7 +1084,7 @@ const normalizedSearch = search.trim().toLowerCase()
         imageUrl: item.imageUrl,
       }).then((saved) => {
         setLibItems((prev) => [saved, ...prev])
-        // Atualiza o sourceId do item recém adicionado
+        // Atualiza o sourceId do item rec�m adicionado
         setPrepComplementGroups((groups) =>
           groups.map((g) => ({
             ...g,
@@ -1224,7 +1226,7 @@ const normalizedSearch = search.trim().toLowerCase()
     setEditingItemPrice('')
   }
 
-  // ── Edit helpers ────────────────────────────────────────────────────────────
+  // -- Edit helpers ------------------------------------------------------------
   const editPriceValue = parseCurrencyInput(editPrice)
   const editPromotionPriceValue = parseCurrencyInput(editPromotionPrice)
   const editStockQtyValue = Number(editStockQty)
@@ -1262,7 +1264,7 @@ const normalizedSearch = search.trim().toLowerCase()
         (!editManageStock || editHasValidStockQty)
       : true
 
-  // ── Pizza helpers ─────────────────────────────────────────────────────────
+  // -- Pizza helpers ---------------------------------------------------------
   function openPizzaEditModal(category: PartnerCategory) {
     setPizzaEditingCategoryId(category.id)
     setPizzaCategoryName(category.name)
@@ -1425,7 +1427,7 @@ const normalizedSearch = search.trim().toLowerCase()
     }
   }
 
-  // ── Pizza Flavor helpers ───────────────────────────────────────────────────
+  // -- Pizza Flavor helpers ---------------------------------------------------
   function openFlavorModal(categoryId: string, flavor?: import('@/types').PizzaFlavor) {
     setFlavorModalCategoryId(categoryId)
     setFlavorTab('detalhes')
@@ -1818,8 +1820,8 @@ const normalizedSearch = search.trim().toLowerCase()
 
               {visibleCategories.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-coral-200 bg-white px-5 py-10 text-center">
-                  <p className="text-base font-semibold text-ink-800">Você ainda não tem nenhuma categoria cadastrada.</p>
-                  <p className="mt-2 text-sm text-ink-500">Comece clicando em "Adicionar categoria" para começar.</p>
+                  <p className="text-base font-semibold text-ink-800">Voc� ainda n�o tem nenhuma categoria cadastrada.</p>
+                  <p className="mt-2 text-sm text-ink-500">Comece clicando em "Adicionar categoria" para come�ar.</p>
                 </div>
               ) : null}
             </div>
@@ -1954,7 +1956,7 @@ const normalizedSearch = search.trim().toLowerCase()
                       )}
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-bold text-ink-900">{item.name}</p>
-                        <p className="text-xs text-ink-500">{item.price > 0 ? formatCurrency(item.price) : 'Gratis'}{item.description ? ` · ${item.description}` : ''}</p>
+                        <p className="text-xs text-ink-500">{item.price > 0 ? formatCurrency(item.price) : 'Gratis'}{item.description ? ` � ${item.description}` : ''}</p>
                       </div>
                       <button type="button"
                         onClick={() => {
@@ -2038,7 +2040,7 @@ const normalizedSearch = search.trim().toLowerCase()
 
             <div className="mt-6 min-h-0 flex-1 overflow-y-auto pr-1">
 
-              {/* ── DETALHES ── */}
+              {/* -- DETALHES -- */}
               {pizzaTab === 'detalhes' ? (
                 <div className="space-y-5">
                   <div className="rounded-xl border border-ink-100 bg-white p-4">
@@ -2057,7 +2059,7 @@ const normalizedSearch = search.trim().toLowerCase()
                   <label className="block">
                     <span className="mb-2 block text-sm font-semibold text-ink-900">Nome da categoria</span>
                     <input type="text" value={pizzaCategoryName} onChange={(e) => setPizzaCategoryName(e.target.value.slice(0, 40))}
-                      placeholder="Ex: Pizza Grande 8 pedaços"
+                      placeholder="Ex: Pizza Grande 8 peda�os"
                       className="h-12 w-full rounded-2xl border border-ink-100 bg-white px-4 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400" />
                     <p className="mt-1 text-right text-xs text-ink-400">{pizzaCategoryName.length}/40</p>
 
@@ -2067,7 +2069,7 @@ const normalizedSearch = search.trim().toLowerCase()
                       <div className="flex items-center gap-3">
                         <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-ink-100 bg-ink-50">
                           <img 
-                            src={pizzaCategoryImage || '/error.png'} 
+                            src={'/error.png'} 
                             alt="Preview" 
                             className="h-full w-full object-cover"
                             onError={(e) => { e.currentTarget.src = '/error.png' }}
@@ -2075,35 +2077,35 @@ const normalizedSearch = search.trim().toLowerCase()
                         </div>
                         <button
                           type="button"
-                          onClick={() => setPizzaCategoryImagePickerOpen(true)}
+                          onClick={() => console.log('Image picker disabled')}
                           className="inline-flex h-10 items-center gap-2 rounded-xl border border-ink-200 bg-white px-4 text-sm font-semibold text-ink-700 transition hover:bg-ink-50"
                         >
                           <ImagePlus className="h-4 w-4" />
-                          {pizzaCategoryImage ? 'Trocar imagem' : 'Selecionar imagem'}
+                          'Selecionar imagem'
                         </button>
-                        {pizzaCategoryImage && (
+                        {false && (
                           <button
                             type="button"
-                            onClick={() => setPizzaCategoryImage('')}
+                            onClick={() => console.log('Clear image disabled')}
                             className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-ink-200 bg-white text-ink-500 transition hover:bg-red-50 hover:border-red-200 hover:text-red-600"
                           >
                             <X className="h-4 w-4" />
                           </button>
                         )}
                       </div>
-                      <p className="mt-1.5 text-xs text-ink-500">A imagem aparecerá no app do cliente. Se não selecionar, será usado um ícone padrão.</p>
+                      <p className="mt-1.5 text-xs text-ink-500">A imagem aparecer� no app do cliente. Se n�o selecionar, ser� usado um �cone padr�o.</p>
                     </label>
                   </div>
                   </label>
 
                   <div>
-                    <p className="mb-2 text-sm font-semibold text-ink-900">Política de preço com múltiplos sabores</p>
-                    <p className="mb-3 text-xs text-ink-500">Define como calcular o preço quando o cliente escolhe mais de um sabor.</p>
+                    <p className="mb-2 text-sm font-semibold text-ink-900">Pol�tica de pre�o com m�ltiplos sabores</p>
+                    <p className="mb-3 text-xs text-ink-500">Define como calcular o pre�o quando o cliente escolhe mais de um sabor.</p>
                     <div className="grid gap-3 sm:grid-cols-3">
                       {([
-                        { id: 'maior', label: 'Maior preço', description: 'Cobra o preço do sabor mais caro.' },
-                        { id: 'media', label: 'Média', description: 'Cobra a média dos preços dos sabores.' },
-                        { id: 'menor', label: 'Menor preço', description: 'Cobra o preço do sabor mais barato.' },
+                        { id: 'maior', label: 'Maior pre�o', description: 'Cobra o pre�o do sabor mais caro.' },
+                        { id: 'media', label: 'M�dia', description: 'Cobra a m�dia dos pre�os dos sabores.' },
+                        { id: 'menor', label: 'Menor pre�o', description: 'Cobra o pre�o do sabor mais barato.' },
                       ] as const).map((policy) => (
                         <button key={policy.id} type="button" onClick={() => setPizzaPricePolicy(policy.id)}
                           className={cn('rounded-xl border p-4 text-left transition',
@@ -2119,12 +2121,12 @@ const normalizedSearch = search.trim().toLowerCase()
                 </div>
               ) : null}
 
-              {/* ── TAMANHOS ── */}
+              {/* -- TAMANHOS -- */}
               {pizzaTab === 'tamanhos' ? (
                 <div className="space-y-4">
                   <div>
                     <p className="text-sm font-semibold text-ink-900">Tamanhos</p>
-                    <p className="mt-1 text-sm text-ink-500">Indique os tamanhos, pedaços e quantos sabores cada um aceita. Maximo 3 tamanhos.</p>
+                    <p className="mt-1 text-sm text-ink-500">Indique os tamanhos, peda�os e quantos sabores cada um aceita. Maximo 3 tamanhos.</p>
                   </div>
 
                   {pizzaSizes.map((size) => (
@@ -2135,7 +2137,7 @@ const normalizedSearch = search.trim().toLowerCase()
                           <span className="mb-2 block text-xs font-semibold text-ink-500">Imagem da categoria</span>
                           <div className="h-20 w-20 overflow-hidden rounded-xl border border-ink-100 bg-ink-50">
                             <img 
-                              src={pizzaCategoryImage || '/error.png'} 
+                              src={'/error.png'} 
                               alt="Preview" 
                               className="h-full w-full object-cover"
                               onError={(e) => { e.currentTarget.src = '/error.png' }}
@@ -2155,7 +2157,7 @@ const normalizedSearch = search.trim().toLowerCase()
                           
                           <div className="grid grid-cols-2 gap-3">
                             <label className="block">
-                              <span className="mb-1 block text-xs font-semibold text-ink-500">Pedaços</span>
+                              <span className="mb-1 block text-xs font-semibold text-ink-500">Peda�os</span>
                               <input type="number" min={1} value={size.slices} onChange={(e) => updatePizzaSize(size.id, { slices: Number(e.target.value) || 8 })}
                                 className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
                             </label>
@@ -2195,12 +2197,12 @@ const normalizedSearch = search.trim().toLowerCase()
                   {/* Preview */}
                   {pizzaSizes.some((s) => s.name.trim()) ? (
                     <div>
-                      <p className="text-sm font-semibold text-ink-900">O que o cliente verá</p>
+                      <p className="text-sm font-semibold text-ink-900">O que o cliente ver�</p>
                       <div className="mt-3 flex flex-wrap gap-3">
                         {pizzaSizes.filter((s) => s.name.trim()).map((size) => (
                           <div key={size.id} className="flex h-28 w-28 flex-col items-center justify-center rounded-2xl border-2 border-ink-200 bg-white p-3 text-center">
                             <p className="text-sm font-bold text-ink-900">{size.name}</p>
-                            <p className="mt-1 text-xs text-ink-500">Cortada em {size.slices} pedaços</p>
+                            <p className="mt-1 text-xs text-ink-500">Cortada em {size.slices} peda�os</p>
                             <p className="text-xs text-ink-500">Aceita {size.maxFlavors} sabor{size.maxFlavors > 1 ? 'es' : ''}</p>
                           </div>
                         ))}
@@ -2210,7 +2212,7 @@ const normalizedSearch = search.trim().toLowerCase()
                 </div>
               ) : null}
 
-              {/* ── MASSAS ── */}
+              {/* -- MASSAS -- */}
               {pizzaTab === 'massas' ? (
                 <div className="space-y-4">
                   <div>
@@ -2248,7 +2250,7 @@ const normalizedSearch = search.trim().toLowerCase()
                 </div>
               ) : null}
 
-              {/* ── BORDAS ── */}
+              {/* -- BORDAS -- */}
               {pizzaTab === 'bordas' ? (
                 <div className="space-y-4">
                   <div>
@@ -2320,7 +2322,7 @@ const normalizedSearch = search.trim().toLowerCase()
         onClose={() => setPizzaCategoryImagePickerOpen(false)}
       />
 
-      {/* ── Modal de sabor ── */}
+      {/* -- Modal de sabor -- */}
       <AnimatedModal
         open={flavorModalOpen}
         onClose={() => { if (!flavorImagePickerOpen) setFlavorModalOpen(false) }}
@@ -2351,7 +2353,7 @@ const normalizedSearch = search.trim().toLowerCase()
                   className={cn('inline-flex shrink-0 items-center rounded-2xl border px-4 py-3 text-sm font-semibold transition',
                     flavorTab === tab ? 'border-coral-200 bg-coral-50 text-coral-700'
                       : 'border-transparent text-ink-500 hover:border-ink-100 hover:bg-ink-50 hover:text-ink-900')}>
-                  {tab === 'detalhes' ? 'Detalhes' : 'Preço'}
+                  {tab === 'detalhes' ? 'Detalhes' : 'Pre�o'}
                 </button>
               ))}
             </div>
@@ -2359,10 +2361,10 @@ const normalizedSearch = search.trim().toLowerCase()
 
           <div className="mt-5 min-h-0 flex-1 overflow-y-auto pr-1">
 
-            {/* ── DETALHES ── */}
+            {/* -- DETALHES -- */}
             {flavorTab === 'detalhes' ? (
               <div className="space-y-4">
-                {/* Botão escolher da biblioteca */}
+                {/* Bot�o escolher da biblioteca */}
                 {(flavorsByCategory[flavorModalCategoryId ?? ''] ?? []).length > 0 ? (
                   <div>
                     {flavorPickerOpen ? (
@@ -2426,7 +2428,7 @@ const normalizedSearch = search.trim().toLowerCase()
                   )}
                 </div>
 
-                {/* Nome e descrição */}
+                {/* Nome e descri��o */}
                 <div className="flex flex-col gap-4">
                   <label className="block">
                     <span className="mb-2 block text-sm font-semibold text-ink-900">Sabor <span className="text-coral-500">*</span></span>
@@ -2436,7 +2438,7 @@ const normalizedSearch = search.trim().toLowerCase()
                     <p className="mt-1 text-right text-xs text-ink-400">{flavorName.length}/80</p>
                   </label>
                   <label className="block flex-1">
-                    <span className="mb-2 block text-sm font-semibold text-ink-900">Descrição</span>
+                    <span className="mb-2 block text-sm font-semibold text-ink-900">Descri��o</span>
                     <textarea value={flavorDescription} onChange={(e) => setFlavorDescription(e.target.value.slice(0, 100))}
                       rows={4} placeholder="Pizza artesanal, base com molho de tomate..."
                       className="w-full rounded-2xl border border-ink-100 bg-white px-4 py-3 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400 resize-none" />
@@ -2447,7 +2449,7 @@ const normalizedSearch = search.trim().toLowerCase()
               </div>
             ) : null}
 
-            {/* ── PREÇO ── */}
+            {/* -- PRE�O -- */}
             {flavorTab === 'preco' ? (
               <div className="space-y-4">
                 {flavorSizes.length === 0 ? (
@@ -2459,7 +2461,7 @@ const normalizedSearch = search.trim().toLowerCase()
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {flavorSizes.map((size) => (
                       <div key={size.id} className="rounded-2xl border border-ink-100 bg-white p-4">
-                        <p className="text-xs font-semibold text-ink-500">Preço para o tamanho</p>
+                        <p className="text-xs font-semibold text-ink-500">Pre�o para o tamanho</p>
                         <p className="mt-0.5 text-sm font-bold text-ink-900">{size.name}</p>
                         <div className="relative mt-3">
                           <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-ink-400">R$</span>
@@ -2487,7 +2489,7 @@ const normalizedSearch = search.trim().toLowerCase()
               <button type="button" onClick={() => setFlavorTab('preco')} disabled={!flavorName.trim()}
                 className={cn('inline-flex h-11 items-center justify-center rounded-2xl px-5 text-sm font-semibold text-white transition',
                   flavorName.trim() ? 'bg-coral-500 hover:bg-coral-600' : 'bg-ink-300 text-white/80')}>
-                Próximo
+                Pr�ximo
               </button>
             ) : (
               <button type="button" onClick={() => void handleSaveFlavor()} disabled={savingFlavor}
@@ -2500,7 +2502,7 @@ const normalizedSearch = search.trim().toLowerCase()
         </>
       </AnimatedModal>
 
-      {/* ── Modal biblioteca de sabores ── */}
+      {/* -- Modal biblioteca de sabores -- */}
       <AnimatedModal
         open={flavorLibModalOpen}
         onClose={() => setFlavorLibModalOpen(false)}
@@ -3229,7 +3231,7 @@ const normalizedSearch = search.trim().toLowerCase()
 
                   {standardItemStepTab === 'detalhes' ? (
                     <div className="grid gap-5 md:grid-cols-[200px_minmax(0,1fr)]">
-                      {/* Coluna esquerda — imagem */}
+                      {/* Coluna esquerda � imagem */}
                       <div className="flex flex-col gap-2">
                         <span className="block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Imagem do produto</span>
                         {prepImage ? (
@@ -3249,7 +3251,7 @@ const normalizedSearch = search.trim().toLowerCase()
                         )}
                       </div>
 
-                      {/* Coluna direita — nome e descrição */}
+                      {/* Coluna direita � nome e descri��o */}
                       <div className="flex flex-col gap-4">
                         <label className="block">
                           <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Nome do produto <span className="text-coral-500">*</span></span>
@@ -3328,12 +3330,12 @@ const normalizedSearch = search.trim().toLowerCase()
                                 className="h-9 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
                               <div className="grid grid-cols-2 gap-2">
                                 <label className="block">
-                                  <span className="mb-1 block text-xs font-semibold text-ink-500">Mínimo</span>
+                                  <span className="mb-1 block text-xs font-semibold text-ink-500">M�nimo</span>
                                   <input type="number" min={0} value={editingGroupMin} onChange={(e) => setEditingGroupMin(e.target.value)}
                                     className="h-9 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
                                 </label>
                                 <label className="block">
-                                  <span className="mb-1 block text-xs font-semibold text-ink-500">Máximo</span>
+                                  <span className="mb-1 block text-xs font-semibold text-ink-500">M�ximo</span>
                                   <input type="number" min={1} value={editingGroupMax} onChange={(e) => setEditingGroupMax(e.target.value)}
                                     className="h-9 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
                                 </label>
@@ -3350,8 +3352,8 @@ const normalizedSearch = search.trim().toLowerCase()
                                   : 'bg-ink-100 text-ink-500'
                               )}>
                                 {Number(editingGroupMin) >= 1
-                                  ? '✓ Obrigatorio — o cliente deve escolher ao menos ' + editingGroupMin + ' item(s).'
-                                  : 'Opcional — o cliente pode ignorar este grupo.'}
+                                  ? '? Obrigatorio � o cliente deve escolher ao menos ' + editingGroupMin + ' item(s).'
+                                  : 'Opcional � o cliente pode ignorar este grupo.'}
                               </p>
                               <div className="flex gap-2">
                                 <button type="button" onClick={() => setEditingGroupId(null)}
@@ -3364,7 +3366,7 @@ const normalizedSearch = search.trim().toLowerCase()
                             <div className="flex items-center justify-between gap-3">
                               <div>
                                 <p className="text-sm font-bold text-ink-900">{group.name}</p>
-                                <p className="mt-0.5 text-xs text-ink-500">{group.required ? 'Obrigatorio' : 'Opcional'} · min {group.minQty} / max {group.maxQty}{group.canRepeat ? ' · pode repetir' : ''}</p>
+                                <p className="mt-0.5 text-xs text-ink-500">{group.required ? 'Obrigatorio' : 'Opcional'} � min {group.minQty} / max {group.maxQty}{group.canRepeat ? ' � pode repetir' : ''}</p>
                               </div>
                               <div className="flex items-center gap-1">
                                 <button type="button" onClick={() => {
@@ -3411,7 +3413,7 @@ const normalizedSearch = search.trim().toLowerCase()
                                           <X className="h-3 w-3" />
                                         </button>
                                       </div>
-                                      {/* Max por item — só exibe quando o grupo permite múltiplos */}
+                                      {/* Max por item � s� exibe quando o grupo permite m�ltiplos */}
                                     </div>
                                   ) : (
                                     <div className="flex items-center justify-between gap-3">
@@ -3421,7 +3423,7 @@ const normalizedSearch = search.trim().toLowerCase()
                                           <p className="truncate text-sm font-semibold text-ink-900">{item.name}</p>
                                           <p className="text-xs text-ink-500">
                                             {item.price > 0 ? `+ ${formatCurrency(item.price)}` : 'Gratis'}
-                                            {' · '}{item.source === 'biblioteca' ? 'Biblioteca' : 'Industrializado'}
+                                            {' � '}{item.source === 'biblioteca' ? 'Biblioteca' : 'Industrializado'}
                                           </p>
                                         </div>
                                       </div>
@@ -3520,7 +3522,7 @@ const normalizedSearch = search.trim().toLowerCase()
                                                 )}
                                                 <div className="min-w-0 flex-1">
                                                   <p className="truncate text-sm font-semibold text-ink-900">{libItem.name}</p>
-                                                  <p className="text-xs text-ink-500">{libItem.price > 0 ? formatCurrency(libItem.price) : 'Gratis'}{libItem.description ? ` · ${libItem.description}` : ''}</p>
+                                                  <p className="text-xs text-ink-500">{libItem.price > 0 ? formatCurrency(libItem.price) : 'Gratis'}{libItem.description ? ` � ${libItem.description}` : ''}</p>
                                                 </div>
                                               </button>
                                             ))}
@@ -3610,12 +3612,12 @@ const normalizedSearch = search.trim().toLowerCase()
                             className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
                           <div className="grid grid-cols-2 gap-3">
                             <label className="block">
-                              <span className="mb-1 block text-xs font-semibold text-ink-500">Mínimo</span>
+                              <span className="mb-1 block text-xs font-semibold text-ink-500">M�nimo</span>
                               <input type="number" min={0} value={addingGroupMin} onChange={(e) => setAddingGroupMin(e.target.value)}
                                 className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
                             </label>
                             <label className="block">
-                              <span className="mb-1 block text-xs font-semibold text-ink-500">Máximo</span>
+                              <span className="mb-1 block text-xs font-semibold text-ink-500">M�ximo</span>
                               <input type="number" min={1} value={addingGroupMax} onChange={(e) => setAddingGroupMax(e.target.value)}
                                 className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
                             </label>
@@ -3632,8 +3634,8 @@ const normalizedSearch = search.trim().toLowerCase()
                               : 'bg-ink-100 text-ink-500'
                           )}>
                             {Number(addingGroupMin) >= 1
-                              ? '✓ Obrigatorio — o cliente deve escolher ao menos ' + addingGroupMin + ' item(s).'
-                              : 'Opcional — o cliente pode ignorar este grupo.'}
+                              ? '? Obrigatorio � o cliente deve escolher ao menos ' + addingGroupMin + ' item(s).'
+                              : 'Opcional � o cliente pode ignorar este grupo.'}
                           </p>
                           <div className="flex gap-2">
                             <button type="button" onClick={() => setShowAddGroupForm(false)}
@@ -4038,7 +4040,7 @@ const normalizedSearch = search.trim().toLowerCase()
       </AnimatedModal>
 
 
-      {/* ── Modal renomear categoria ── */}
+      {/* -- Modal renomear categoria -- */}
       <AnimatedModal
         open={renamingCategory !== null}
         onClose={() => { if (!savingRenameCategory) setRenamingCategory(null) }}
