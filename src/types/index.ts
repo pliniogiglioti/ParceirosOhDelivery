@@ -1,4 +1,4 @@
-﻿export type OrderStatus =
+export type OrderStatus =
   | 'aguardando_pagamento'
   | 'aguardando'
   | 'confirmado'

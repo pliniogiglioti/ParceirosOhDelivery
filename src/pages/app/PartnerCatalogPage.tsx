@@ -1,4 +1,4 @@
-﻿import {
+import {
   ChevronDown,
   ChefHat,
   Clock3,
@@ -423,7 +423,7 @@ export function PartnerCatalogPage({
   const [newIndItemPrice, setNewIndItemPrice] = useState('')
   const [selectedIndItem, setSelectedIndItem] = useState<IndustrializedCatalogItem | null>(null)
   const [prepImagePickerOpen, setPrepImagePickerOpen] = useState(false)
-  // Edi��o inline de grupo e item de complemento
+  // Edicco inline de grupo e item de complemento
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null)
   const [editingGroupName, setEditingGroupName] = useState('')
   const [editingGroupRequired, setEditingGroupRequired] = useState(false)
@@ -540,7 +540,7 @@ const [showMaxFeaturedModal, setShowMaxFeaturedModal] = useState(false)
   useEffect(() => {
     setActiveByCategoryId((current) =>
       catalogCategories.reduce<Record<string, boolean>>((accumulator, category) => {
-        // Pizza categories are not controlled by products � preserve current state
+        // Pizza categories are not controlled by products c preserve current state
         if (getCategoryTemplate(category) === 'pizza') {
           accumulator[category.id] = current[category.id] ?? false
           return accumulator
@@ -684,7 +684,7 @@ const [showMaxFeaturedModal, setShowMaxFeaturedModal] = useState(false)
       return
     }
 
-    // Industrializado � fluxo de edi��o simples
+    // Industrializado c fluxo de edicco simples
     setEditStepTab('preco')
     setEditPrice(
       product.price > 0
@@ -1075,7 +1075,7 @@ const normalizedSearch = search.trim().toLowerCase()
     setNewLibItemPrice('')
     setNewLibItemImage('')
     setShowNewLibForm(false)
-    // Salva na biblioteca em background para reutiliza��o futura
+    // Salva na biblioteca em background para reutilizacco futura
     if (data) {
       createComplementLibraryItem(data.store.id, {
         name: item.name,
@@ -1084,7 +1084,7 @@ const normalizedSearch = search.trim().toLowerCase()
         imageUrl: item.imageUrl,
       }).then((saved) => {
         setLibItems((prev) => [saved, ...prev])
-        // Atualiza o sourceId do item rec�m adicionado
+        // Atualiza o sourceId do item reccm adicionado
         setPrepComplementGroups((groups) =>
           groups.map((g) => ({
             ...g,
@@ -1826,8 +1826,8 @@ const normalizedSearch = search.trim().toLowerCase()
 
               {visibleCategories.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-coral-200 bg-white px-5 py-10 text-center">
-                  <p className="text-base font-semibold text-ink-800">Voc� ainda n�o tem nenhuma categoria cadastrada.</p>
-                  <p className="mt-2 text-sm text-ink-500">Comece clicando em "Adicionar categoria" para come�ar.</p>
+                  <p className="text-base font-semibold text-ink-800">Vocc ainda nco tem nenhuma categoria cadastrada.</p>
+                  <p className="mt-2 text-sm text-ink-500">Comece clicando em "Adicionar categoria" para comecar.</p>
                 </div>
               ) : null}
             </div>
@@ -1962,7 +1962,7 @@ const normalizedSearch = search.trim().toLowerCase()
                       )}
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-sm font-bold text-ink-900">{item.name}</p>
-                        <p className="text-xs text-ink-500">{item.price > 0 ? formatCurrency(item.price) : 'Gratis'}{item.description ? ` � ${item.description}` : ''}</p>
+                        <p className="text-xs text-ink-500">{item.price > 0 ? formatCurrency(item.price) : 'Gratis'}{item.description ? ` c ${item.description}` : ''}</p>
                       </div>
                       <button type="button"
                         onClick={() => {
@@ -2343,7 +2343,7 @@ const normalizedSearch = search.trim().toLowerCase()
                   className={cn('inline-flex shrink-0 items-center rounded-2xl border px-4 py-3 text-sm font-semibold transition',
                     flavorTab === tab ? 'border-coral-200 bg-coral-50 text-coral-700'
                       : 'border-transparent text-ink-500 hover:border-ink-100 hover:bg-ink-50 hover:text-ink-900')}>
-                  {tab === 'detalhes' ? 'Detalhes' : 'Pre�o'}
+                  {tab === 'detalhes' ? 'Detalhes' : 'Preco'}
                 </button>
               ))}
             </div>
@@ -2354,7 +2354,7 @@ const normalizedSearch = search.trim().toLowerCase()
             {/* -- DETALHES -- */}
             {flavorTab === 'detalhes' ? (
               <div className="space-y-4">
-                {/* Bot�o escolher da biblioteca */}
+                {/* Botco escolher da biblioteca */}
                 {(flavorsByCategory[flavorModalCategoryId ?? ''] ?? []).length > 0 ? (
                   <div>
                     {flavorPickerOpen ? (
@@ -2418,7 +2418,7 @@ const normalizedSearch = search.trim().toLowerCase()
                   )}
                 </div>
 
-                {/* Nome e descri��o */}
+                {/* Nome e descricco */}
                 <div className="flex flex-col gap-4">
                   <label className="block">
                     <span className="mb-2 block text-sm font-semibold text-ink-900">Sabor <span className="text-coral-500">*</span></span>
@@ -2428,7 +2428,7 @@ const normalizedSearch = search.trim().toLowerCase()
                     <p className="mt-1 text-right text-xs text-ink-400">{flavorName.length}/80</p>
                   </label>
                   <label className="block flex-1">
-                    <span className="mb-2 block text-sm font-semibold text-ink-900">Descri��o</span>
+                    <span className="mb-2 block text-sm font-semibold text-ink-900">Descricco</span>
                     <textarea value={flavorDescription} onChange={(e) => setFlavorDescription(e.target.value.slice(0, 100))}
                       rows={4} placeholder="Pizza artesanal, base com molho de tomate..."
                       className="w-full rounded-2xl border border-ink-100 bg-white px-4 py-3 text-sm text-ink-900 outline-none transition placeholder:text-ink-400 focus:border-coral-400 resize-none" />
@@ -2439,7 +2439,7 @@ const normalizedSearch = search.trim().toLowerCase()
               </div>
             ) : null}
 
-            {/* -- PRE�O -- */}
+            {/* -- PREcO -- */}
             {flavorTab === 'preco' ? (
               <div className="space-y-4">
                 {flavorSizes.length === 0 ? (
@@ -2451,7 +2451,7 @@ const normalizedSearch = search.trim().toLowerCase()
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {flavorSizes.map((size) => (
                       <div key={size.id} className="rounded-2xl border border-ink-100 bg-white p-4">
-                        <p className="text-xs font-semibold text-ink-500">Pre�o para o tamanho</p>
+                        <p className="text-xs font-semibold text-ink-500">Preco para o tamanho</p>
                         <p className="mt-0.5 text-sm font-bold text-ink-900">{size.name}</p>
                         <div className="relative mt-3">
                           <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-ink-400">R$</span>
@@ -2479,7 +2479,7 @@ const normalizedSearch = search.trim().toLowerCase()
               <button type="button" onClick={() => setFlavorTab('preco')} disabled={!flavorName.trim()}
                 className={cn('inline-flex h-11 items-center justify-center rounded-2xl px-5 text-sm font-semibold text-white transition',
                   flavorName.trim() ? 'bg-coral-500 hover:bg-coral-600' : 'bg-ink-300 text-white/80')}>
-                Pr�ximo
+                Prcximo
               </button>
             ) : (
               <button type="button" onClick={() => void handleSaveFlavor()} disabled={savingFlavor}
@@ -3221,7 +3221,7 @@ const normalizedSearch = search.trim().toLowerCase()
 
                   {standardItemStepTab === 'detalhes' ? (
                     <div className="grid gap-5 md:grid-cols-[200px_minmax(0,1fr)]">
-                      {/* Coluna esquerda � imagem */}
+                      {/* Coluna esquerda c imagem */}
                       <div className="flex flex-col gap-2">
                         <span className="block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Imagem do produto</span>
                         {prepImage ? (
@@ -3241,7 +3241,7 @@ const normalizedSearch = search.trim().toLowerCase()
                         )}
                       </div>
 
-                      {/* Coluna direita � nome e descri��o */}
+                      {/* Coluna direita c nome e descricco */}
                       <div className="flex flex-col gap-4">
                         <label className="block">
                           <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Nome do produto <span className="text-coral-500">*</span></span>
@@ -3320,12 +3320,12 @@ const normalizedSearch = search.trim().toLowerCase()
                                 className="h-9 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
                               <div className="grid grid-cols-2 gap-2">
                                 <label className="block">
-                                  <span className="mb-1 block text-xs font-semibold text-ink-500">M�nimo</span>
+                                  <span className="mb-1 block text-xs font-semibold text-ink-500">Mcnimo</span>
                                   <input type="number" min={0} value={editingGroupMin} onChange={(e) => setEditingGroupMin(e.target.value)}
                                     className="h-9 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
                                 </label>
                                 <label className="block">
-                                  <span className="mb-1 block text-xs font-semibold text-ink-500">M�ximo</span>
+                                  <span className="mb-1 block text-xs font-semibold text-ink-500">Mcximo</span>
                                   <input type="number" min={1} value={editingGroupMax} onChange={(e) => setEditingGroupMax(e.target.value)}
                                     className="h-9 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
                                 </label>
@@ -3342,8 +3342,8 @@ const normalizedSearch = search.trim().toLowerCase()
                                   : 'bg-ink-100 text-ink-500'
                               )}>
                                 {Number(editingGroupMin) >= 1
-                                  ? '? Obrigatorio � o cliente deve escolher ao menos ' + editingGroupMin + ' item(s).'
-                                  : 'Opcional � o cliente pode ignorar este grupo.'}
+                                  ? '? Obrigatorio c o cliente deve escolher ao menos ' + editingGroupMin + ' item(s).'
+                                  : 'Opcional c o cliente pode ignorar este grupo.'}
                               </p>
                               <div className="flex gap-2">
                                 <button type="button" onClick={() => setEditingGroupId(null)}
@@ -3356,7 +3356,7 @@ const normalizedSearch = search.trim().toLowerCase()
                             <div className="flex items-center justify-between gap-3">
                               <div>
                                 <p className="text-sm font-bold text-ink-900">{group.name}</p>
-                                <p className="mt-0.5 text-xs text-ink-500">{group.required ? 'Obrigatorio' : 'Opcional'} � min {group.minQty} / max {group.maxQty}{group.canRepeat ? ' � pode repetir' : ''}</p>
+                                <p className="mt-0.5 text-xs text-ink-500">{group.required ? 'Obrigatorio' : 'Opcional'} c min {group.minQty} / max {group.maxQty}{group.canRepeat ? ' c pode repetir' : ''}</p>
                               </div>
                               <div className="flex items-center gap-1">
                                 <button type="button" onClick={() => {
@@ -3403,7 +3403,7 @@ const normalizedSearch = search.trim().toLowerCase()
                                           <X className="h-3 w-3" />
                                         </button>
                                       </div>
-                                      {/* Max por item � s� exibe quando o grupo permite m�ltiplos */}
+                                      {/* Max por item c sc exibe quando o grupo permite mcltiplos */}
                                     </div>
                                   ) : (
                                     <div className="flex items-center justify-between gap-3">
@@ -3413,7 +3413,7 @@ const normalizedSearch = search.trim().toLowerCase()
                                           <p className="truncate text-sm font-semibold text-ink-900">{item.name}</p>
                                           <p className="text-xs text-ink-500">
                                             {item.price > 0 ? `+ ${formatCurrency(item.price)}` : 'Gratis'}
-                                            {' � '}{item.source === 'biblioteca' ? 'Biblioteca' : 'Industrializado'}
+                                            {' c '}{item.source === 'biblioteca' ? 'Biblioteca' : 'Industrializado'}
                                           </p>
                                         </div>
                                       </div>
@@ -3512,7 +3512,7 @@ const normalizedSearch = search.trim().toLowerCase()
                                                 )}
                                                 <div className="min-w-0 flex-1">
                                                   <p className="truncate text-sm font-semibold text-ink-900">{libItem.name}</p>
-                                                  <p className="text-xs text-ink-500">{libItem.price > 0 ? formatCurrency(libItem.price) : 'Gratis'}{libItem.description ? ` � ${libItem.description}` : ''}</p>
+                                                  <p className="text-xs text-ink-500">{libItem.price > 0 ? formatCurrency(libItem.price) : 'Gratis'}{libItem.description ? ` c ${libItem.description}` : ''}</p>
                                                 </div>
                                               </button>
                                             ))}
@@ -3602,12 +3602,12 @@ const normalizedSearch = search.trim().toLowerCase()
                             className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
                           <div className="grid grid-cols-2 gap-3">
                             <label className="block">
-                              <span className="mb-1 block text-xs font-semibold text-ink-500">M�nimo</span>
+                              <span className="mb-1 block text-xs font-semibold text-ink-500">Mcnimo</span>
                               <input type="number" min={0} value={addingGroupMin} onChange={(e) => setAddingGroupMin(e.target.value)}
                                 className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
                             </label>
                             <label className="block">
-                              <span className="mb-1 block text-xs font-semibold text-ink-500">M�ximo</span>
+                              <span className="mb-1 block text-xs font-semibold text-ink-500">Mcximo</span>
                               <input type="number" min={1} value={addingGroupMax} onChange={(e) => setAddingGroupMax(e.target.value)}
                                 className="h-10 w-full rounded-xl border border-ink-100 bg-white px-3 text-sm outline-none focus:border-coral-400" />
                             </label>
@@ -3624,8 +3624,8 @@ const normalizedSearch = search.trim().toLowerCase()
                               : 'bg-ink-100 text-ink-500'
                           )}>
                             {Number(addingGroupMin) >= 1
-                              ? '? Obrigatorio � o cliente deve escolher ao menos ' + addingGroupMin + ' item(s).'
-                              : 'Opcional � o cliente pode ignorar este grupo.'}
+                              ? '? Obrigatorio c o cliente deve escolher ao menos ' + addingGroupMin + ' item(s).'
+                              : 'Opcional c o cliente pode ignorar este grupo.'}
                           </p>
                           <div className="flex gap-2">
                             <button type="button" onClick={() => setShowAddGroupForm(false)}
