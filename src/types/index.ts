@@ -1,4 +1,4 @@
-export type OrderStatus =
+﻿export type OrderStatus =
   | 'aguardando_pagamento'
   | 'aguardando'
   | 'confirmado'
@@ -102,6 +102,7 @@ export interface PartnerCategory {
   name: string
   icon: string
   template?: 'padrao' | 'pizza'
+  imageUrl?: string
   sortOrder: number
   productCount: number
   active: boolean
