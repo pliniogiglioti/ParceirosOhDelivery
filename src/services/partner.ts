@@ -1215,43 +1215,65 @@ export async function savePizzaCategory(
 ): Promise<void> {
   if (!isSupabaseConfigured || !supabase) throw new Error('Supabase nao configurado.')
 
-  await supabase.from('pizza_sizes').delete().eq('category_id', categoryId).eq('store_id', storeId)
+  // Get existing size IDs to know which to delete
+  const { data: existingSizes } = await supabase
+    .from('pizza_sizes')
+    .select('id')
+    .eq('category_id', categoryId)
+    .eq('store_id', storeId)
+
+  const existingIds = new Set((existingSizes ?? []).map((s) => String(s.id)))
+  const incomingIds = new Set(sizes.filter((s) => s.id && !s.id.startsWith('sz-')).map((s) => s.id!))
+
+  // Delete sizes that were removed
+  const toDelete = [...existingIds].filter((id) => !incomingIds.has(id))
+  if (toDelete.length > 0) {
+    await supabase.from('pizza_sizes').delete().in('id', toDelete).eq('store_id', storeId)
+  }
 
   for (let i = 0; i < sizes.length; i++) {
     const size = sizes[i]
-    const { data: sizeRow, error: sizeError } = await supabase
-      .from('pizza_sizes')
-      .insert({
-        category_id: categoryId,
-        store_id: storeId,
-        name: size.name,
-        slices: size.slices,
-        max_flavors: size.maxFlavors,
-        sort_order: i,
-        image_url: size.imageUrl ?? null,
-      })
-      .select('id')
-      .single()
-    if (sizeError) throw sizeError
+    const isExisting = size.id && !size.id.startsWith('sz-') && existingIds.has(size.id)
+    let sizeId: string
 
-    const sizeId = String(sizeRow.id)
+    if (isExisting) {
+      // Update existing
+      await supabase.from('pizza_sizes').update({
+        name: size.name, slices: size.slices, max_flavors: size.maxFlavors,
+        sort_order: i, image_url: size.imageUrl ?? null,
+      }).eq('id', size.id!).eq('store_id', storeId)
+      sizeId = size.id!
+    } else {
+      // Insert new
+      const { data: sizeRow, error: sizeError } = await supabase
+        .from('pizza_sizes')
+        .insert({
+          category_id: categoryId, store_id: storeId,
+          name: size.name, slices: size.slices, max_flavors: size.maxFlavors,
+          sort_order: i, image_url: size.imageUrl ?? null,
+        })
+        .select('id').single()
+      if (sizeError) throw sizeError
+      sizeId = String(sizeRow.id)
+    }
 
+    // Rebuild crusts and edges for this size
+    await supabase.from('pizza_crusts').delete().eq('size_id', sizeId).eq('store_id', storeId)
     for (let j = 0; j < size.crusts.length; j++) {
       const crust = size.crusts[j]
       if (!crust.name.trim()) continue
       const { error } = await supabase.from('pizza_crusts').insert({
-        size_id: sizeId, store_id: storeId,
-        name: crust.name, price: crust.price, sort_order: j,
+        size_id: sizeId, store_id: storeId, name: crust.name, price: crust.price, sort_order: j,
       })
       if (error) throw error
     }
 
+    await supabase.from('pizza_edges').delete().eq('size_id', sizeId).eq('store_id', storeId)
     for (let j = 0; j < size.edges.length; j++) {
       const edge = size.edges[j]
       if (!edge.name.trim()) continue
       const { error } = await supabase.from('pizza_edges').insert({
-        size_id: sizeId, store_id: storeId,
-        name: edge.name, price: edge.price, sort_order: j,
+        size_id: sizeId, store_id: storeId, name: edge.name, price: edge.price, sort_order: j,
       })
       if (error) throw error
     }
