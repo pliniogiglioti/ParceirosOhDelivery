@@ -47,8 +47,9 @@ interface CategoryCardProps {
   products: PartnerProduct[]
   isExpanded: boolean
   isActive: boolean
-  dragOverCategoryId: string | null
-  draggingCategoryId: string | null
+  isDragging?: boolean
+  dragListeners?: Record<string, unknown>
+  dragAttributes?: Record<string, unknown>
   menuOpenCategoryId: string | null
   activeByProductId: Record<string, boolean>
   featuredByProductId: Record<string, boolean>
@@ -58,11 +59,6 @@ interface CategoryCardProps {
   featuredCount: number
   storeId: string
   storeData: { id: string; name: string; logoImageUrl?: string | null; coverImageUrl?: string | null }
-  onDragOver: (e: React.DragEvent<HTMLElement>) => void
-  onDragLeave: (e: React.DragEvent<HTMLElement>) => void
-  onDrop: (e: React.DragEvent<HTMLElement>) => void
-  onDragStart: (e: React.DragEvent<HTMLDivElement>) => void
-  onDragEnd: () => void
   onToggleExpand: () => void
   onToggleCategoryActive: (nextValue: boolean) => void
   onOpenCategoryMenu: (e: React.MouseEvent<HTMLButtonElement>) => void
@@ -85,18 +81,14 @@ export function CategoryCard({
   products,
   isExpanded,
   isActive,
-  dragOverCategoryId,
-  draggingCategoryId,
+  isDragging = false,
+  dragListeners,
+  dragAttributes,
   activeByProductId,
   featuredByProductId,
   flavorsByCategory,
   sizeCountByCategory,
   storeData,
-  onDragOver,
-  onDragLeave,
-  onDrop,
-  onDragStart,
-  onDragEnd,
   onToggleExpand,
   onToggleCategoryActive,
   onOpenCategoryMenu,
@@ -115,16 +107,9 @@ export function CategoryCard({
 
   return (
     <article
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
       className={cn(
         'rounded-xl border bg-white transition-all duration-150',
-        draggingCategoryId === category.id
-          ? 'opacity-40 border-ink-200'
-          : dragOverCategoryId === category.id
-          ? 'border-coral-400 ring-2 ring-coral-200'
-          : 'border-ink-100'
+        isDragging ? 'opacity-40 border-ink-200' : 'border-ink-100'
       )}
     >
       {/* Header row */}
@@ -134,9 +119,8 @@ export function CategoryCard({
       >
         <div className="flex min-w-0 items-center gap-3">
           <div
-            draggable
-            onDragStart={onDragStart}
-            onDragEnd={onDragEnd}
+            {...dragAttributes}
+            {...dragListeners}
             className="cursor-grab active:cursor-grabbing touch-none shrink-0 p-1 text-ink-300 hover:text-ink-500"
           >
             <GripVertical className="h-5 w-5" />

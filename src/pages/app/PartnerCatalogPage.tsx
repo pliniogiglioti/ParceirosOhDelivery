@@ -23,6 +23,23 @@ import { CatalogFilters } from '@/components/partner/catalog/CatalogFilters'
 import { CategoryCard } from '@/components/partner/catalog/CategoryCard'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import {
+  DndContext,
+  DragOverlay,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragStartEvent,
+  type DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import toast from 'react-hot-toast'
 import { usePartnerPageDataSafe } from '@/hooks/usePartnerPageData'
 import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
@@ -259,6 +276,26 @@ function getCategoryTemplate(category: PartnerCategory): CategoryTemplate {
   return category.template === 'pizza' ? 'pizza' : 'padrao'
 }
 
+function SortableCategoryCard({
+  id,
+  ...props
+}: Omit<React.ComponentProps<typeof CategoryCard>, 'isDragging' | 'dragListeners' | 'dragAttributes'> & { id: string }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+  return (
+    <div
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+    >
+      <CategoryCard
+        {...props}
+        isDragging={isDragging}
+        dragListeners={listeners as Record<string, unknown>}
+        dragAttributes={attributes as unknown as Record<string, unknown>}
+      />
+    </div>
+  )
+}
+
 export function PartnerCatalogPage({
   externalData,
   embedded,
@@ -276,10 +313,8 @@ export function PartnerCatalogPage({
   const [selectedCategoryId, setSelectedCategoryId] = useState('all')
   const [search, setSearch] = useState('')
   const [categoryOrderIds, setCategoryOrderIds] = useState<string[]>([])
-  const [draggingCategoryId, setDraggingCategoryId] = useState<string | null>(null)
-  const [dragOverCategoryId, setDragOverCategoryId] = useState<string | null>(null)
-  const dragSourceRef = useRef<string | null>(null)
-  const dragCloneRef = useRef<HTMLElement | null>(null)
+  const [activeDragId, setActiveDragId] = useState<string | null>(null)
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
   const [createCategoryModalOpen, setCreateCategoryModalOpen] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
   const [newCategoryTemplate, setNewCategoryTemplate] = useState<CategoryTemplate>('padrao')
@@ -1664,177 +1699,176 @@ const normalizedSearch = search.trim().toLowerCase()
           <CatalogSkeleton />
         ) : (
           <div className="rounded-xl border border-ink-100 bg-ink-50 p-3 sm:p-4">
-            <div className="space-y-3">
-              {visibleCategories.map((category) => {
-                const products = catalogProducts.filter((product) => product.categoryId === category.id)
-                const isExpanded = expandedByCategoryId[category.id] ?? false
-                const isActive = activeByCategoryId[category.id] ?? true
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={({ active }: DragStartEvent) => setActiveDragId(active.id as string)}
+              onDragEnd={({ active, over }: DragEndEvent) => {
+                setActiveDragId(null)
+                if (!over || active.id === over.id) return
+                const oldIndex = categoryOrderIds.indexOf(active.id as string)
+                const newIndex = categoryOrderIds.indexOf(over.id as string)
+                if (oldIndex === -1 || newIndex === -1) return
+                const nextOrder = arrayMove(categoryOrderIds, oldIndex, newIndex)
+                setCategoryOrderIds(nextOrder)
+                import('@/lib/supabase').then(({ supabase }) => {
+                  if (!supabase) return
+                  Promise.all(
+                    nextOrder.map((catId, idx) =>
+                      supabase.from('product_categories')
+                        .update({ sort_order: idx })
+                        .eq('id', catId)
+                        .eq('store_id', data.store.id)
+                    )
+                  ).catch(() => toast.error('Nao foi possivel salvar a ordem.'))
+                })
+              }}
+            >
+              <SortableContext items={visibleCategories.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-3">
+                  {visibleCategories.map((category) => {
+                    const products = catalogProducts.filter((product) => product.categoryId === category.id)
+                    const isExpanded = expandedByCategoryId[category.id] ?? false
+                    const isActive = activeByCategoryId[category.id] ?? true
 
-                return (
-                  <CategoryCard
-                    key={category.id}
-                    category={category}
-                    products={products}
-                    isExpanded={isExpanded}
-                    isActive={isActive}
-                    dragOverCategoryId={dragOverCategoryId}
-                    draggingCategoryId={draggingCategoryId}
-                    menuOpenCategoryId={menuOpenCategoryId}
-                    activeByProductId={activeByProductId}
-                    featuredByProductId={featuredByProductId}
-                    menuOpenProductId={menuOpenProductId}
-                    flavorsByCategory={flavorsByCategory}
-                    sizeCountByCategory={sizeCountByCategory}
-                    featuredCount={featuredCount}
-                    storeId={data.store.id}
-                    storeData={data.store}
-                    setFlavorsByCategory={setFlavorsByCategory}
-                    onDragOver={(e) => {
-                      e.preventDefault()
-                      if (category.id !== dragSourceRef.current) {
-                        setDragOverCategoryId(category.id)
-                      }
-                    }}
-                    onDragLeave={(e) => {
-                      if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                        setDragOverCategoryId(null)
-                      }
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault()
-                      const from = dragSourceRef.current
-                      if (!from || from === category.id) return
-                      const nextOrder = reorderCategoryIds(categoryOrderIds, from, category.id)
-                      setCategoryOrderIds(nextOrder)
-                      setDraggingCategoryId(null)
-                      setDragOverCategoryId(null)
-                      dragSourceRef.current = null
-                      if (data) {
-                        import('@/lib/supabase').then(({ supabase }) => {
-                          if (!supabase) return
-                          Promise.all(
-                            nextOrder.map((catId, idx) =>
-                              supabase.from('product_categories')
-                                .update({ sort_order: idx })
-                                .eq('id', catId)
-                                .eq('store_id', data.store.id)
-                            )
-                          ).catch(() => toast.error('Nao foi possivel salvar a ordem.'))
-                        })
-                      }
-                    }}
-                    onDragStart={(e) => {
-                      dragSourceRef.current = category.id
-                      e.dataTransfer.effectAllowed = 'move'
-                      const article = e.currentTarget.closest('article') as HTMLElement
-                      if (article) {
-                        const clone = article.cloneNode(true) as HTMLElement
-                        clone.style.cssText = `position:fixed;top:0;left:-9999px;width:${article.offsetWidth}px;margin:0;pointer-events:none;background:white;border-radius:0.75rem;`
-                        document.body.appendChild(clone)
-                        clone.getBoundingClientRect()
-                        e.dataTransfer.setDragImage(clone, article.offsetWidth / 2, 30)
-                        dragCloneRef.current = clone
-                      }
-                      setDraggingCategoryId(category.id)
-                    }}
-                    onDragEnd={() => {
-                      if (dragCloneRef.current) {
-                        document.body.removeChild(dragCloneRef.current)
-                        dragCloneRef.current = null
-                      }
-                      setDraggingCategoryId(null)
-                      setDragOverCategoryId(null)
-                      dragSourceRef.current = null
-                    }}
-                    onToggleExpand={() => {
-                      setExpandedByCategoryId((current) => ({
-                        ...current,
-                        [category.id]: !isExpanded,
-                      }))
-                      if (!isExpanded && category.template === 'pizza') {
-                        loadFlavorsForCategory(category.id)
-                      }
-                    }}
-                    onToggleCategoryActive={(nextValue) => {
-                      setActiveByCategoryId((current) => ({
-                        ...current,
-                        [category.id]: nextValue,
-                      }))
-                      if (data) {
-                        import('@/lib/supabase').then(({ supabase }) => {
-                          supabase?.from('product_categories')
-                            .update({ active: nextValue })
-                            .eq('id', category.id)
-                            .eq('store_id', data.store.id)
-                            .then(({ error }) => {
-                              if (error) {
-                                setActiveByCategoryId((current) => ({ ...current, [category.id]: !nextValue }))
-                                toast.error('Nao foi possivel atualizar a categoria.')
-                              }
-                            })
-                        })
-                      }
-                    }}
-                    onOpenCategoryMenu={(event) => {
-                      if (menuOpenCategoryId === category.id) {
-                        setMenuOpenCategoryId(null)
-                        setCategoryMenuPosition(null)
-                      } else {
-                        const rect = event.currentTarget.getBoundingClientRect()
-                        const menuHeight = 120
-                        const spaceBelow = window.innerHeight - rect.bottom
-                        const top = spaceBelow >= menuHeight
-                          ? rect.bottom + 4
-                          : rect.top - menuHeight - 4
-                        setCategoryMenuPosition({
-                          top,
-                          right: window.innerWidth - rect.right,
-                        })
-                        setMenuOpenCategoryId(category.id)
-                      }
-                    }}
-                    onAddItem={() => openAddItemModal(category)}
-                    onAddFlavor={() => openFlavorModal(category.id)}
-                    onToggleProductActive={(productId, nextValue) =>
-                      setActiveByProductId((current) => ({ ...current, [productId]: nextValue }))
-                    }
-                    onToggleProductFeatured={(productId, nextValue) => {
-                      if (nextValue && featuredCount >= 6) {
-                        setShowMaxFeaturedModal(true)
-                        return
-                      }
-                      setFeaturedByProductId((current) => ({ ...current, [productId]: nextValue }))
-                    }}
-                    onOpenProductMenu={(event, productId) => {
-                      if (menuOpenProductId === productId) {
-                        setMenuOpenProductId(null)
-                        setProductMenuPosition(null)
-                      } else {
-                        const rect = event.currentTarget.getBoundingClientRect()
-                        const menuHeight = 160
-                        const spaceBelow = window.innerHeight - rect.bottom
-                        const top = spaceBelow >= menuHeight
-                          ? rect.bottom + 4
-                          : rect.top - menuHeight - 4
-                        setProductMenuPosition({
-                          top,
-                          right: window.innerWidth - rect.right,
-                        })
-                        setMenuOpenProductId(productId)
-                      }
-                    }}
-                    onEditFlavor={(flavor) => openFlavorModal(category.id, flavor)}
-                  />
-                )
-              })}
+                    return (
+                      <SortableCategoryCard
+                        key={category.id}
+                        id={category.id}
+                        category={category}
+                        products={products}
+                        isExpanded={isExpanded}
+                        isActive={isActive}
+                        menuOpenCategoryId={menuOpenCategoryId}
+                        activeByProductId={activeByProductId}
+                        featuredByProductId={featuredByProductId}
+                        menuOpenProductId={menuOpenProductId}
+                        flavorsByCategory={flavorsByCategory}
+                        sizeCountByCategory={sizeCountByCategory}
+                        featuredCount={featuredCount}
+                        storeId={data.store.id}
+                        storeData={data.store}
+                        setFlavorsByCategory={setFlavorsByCategory}
+                        onToggleExpand={() => {
+                          setExpandedByCategoryId((current) => ({
+                            ...current,
+                            [category.id]: !isExpanded,
+                          }))
+                          if (!isExpanded && category.template === 'pizza') {
+                            loadFlavorsForCategory(category.id)
+                          }
+                        }}
+                        onToggleCategoryActive={(nextValue) => {
+                          setActiveByCategoryId((current) => ({
+                            ...current,
+                            [category.id]: nextValue,
+                          }))
+                          import('@/lib/supabase').then(({ supabase }) => {
+                            supabase?.from('product_categories')
+                              .update({ active: nextValue })
+                              .eq('id', category.id)
+                              .eq('store_id', data.store.id)
+                              .then(({ error }) => {
+                                if (error) {
+                                  setActiveByCategoryId((current) => ({ ...current, [category.id]: !nextValue }))
+                                  toast.error('Nao foi possivel atualizar a categoria.')
+                                }
+                              })
+                          })
+                        }}
+                        onOpenCategoryMenu={(event) => {
+                          if (menuOpenCategoryId === category.id) {
+                            setMenuOpenCategoryId(null)
+                            setCategoryMenuPosition(null)
+                          } else {
+                            const rect = event.currentTarget.getBoundingClientRect()
+                            const menuHeight = 120
+                            const spaceBelow = window.innerHeight - rect.bottom
+                            const top = spaceBelow >= menuHeight
+                              ? rect.bottom + 4
+                              : rect.top - menuHeight - 4
+                            setCategoryMenuPosition({ top, right: window.innerWidth - rect.right })
+                            setMenuOpenCategoryId(category.id)
+                          }
+                        }}
+                        onAddItem={() => openAddItemModal(category)}
+                        onAddFlavor={() => openFlavorModal(category.id)}
+                        onToggleProductActive={(productId, nextValue) =>
+                          setActiveByProductId((current) => ({ ...current, [productId]: nextValue }))
+                        }
+                        onToggleProductFeatured={(productId, nextValue) => {
+                          if (nextValue && featuredCount >= 6) {
+                            setShowMaxFeaturedModal(true)
+                            return
+                          }
+                          setFeaturedByProductId((current) => ({ ...current, [productId]: nextValue }))
+                        }}
+                        onOpenProductMenu={(event, productId) => {
+                          if (menuOpenProductId === productId) {
+                            setMenuOpenProductId(null)
+                            setProductMenuPosition(null)
+                          } else {
+                            const rect = event.currentTarget.getBoundingClientRect()
+                            const menuHeight = 160
+                            const spaceBelow = window.innerHeight - rect.bottom
+                            const top = spaceBelow >= menuHeight
+                              ? rect.bottom + 4
+                              : rect.top - menuHeight - 4
+                            setProductMenuPosition({ top, right: window.innerWidth - rect.right })
+                            setMenuOpenProductId(productId)
+                          }
+                        }}
+                        onEditFlavor={(flavor) => openFlavorModal(category.id, flavor)}
+                      />
+                    )
+                  })}
 
-              {visibleCategories.length === 0 ? (
-                <div className="rounded-xl border border-dashed border-coral-200 bg-white px-5 py-10 text-center">
-                  <p className="text-base font-semibold text-ink-800">Vocc ainda nco tem nenhuma categoria cadastrada.</p>
-                  <p className="mt-2 text-sm text-ink-500">Comece clicando em "Adicionar categoria" para comecar.</p>
+                  {visibleCategories.length === 0 ? (
+                    <div className="rounded-xl border border-dashed border-coral-200 bg-white px-5 py-10 text-center">
+                      <p className="text-base font-semibold text-ink-800">Vocc ainda nco tem nenhuma categoria cadastrada.</p>
+                      <p className="mt-2 text-sm text-ink-500">Comece clicando em "Adicionar categoria" para comecar.</p>
+                    </div>
+                  ) : null}
                 </div>
-              ) : null}
-            </div>
+              </SortableContext>
+
+              <DragOverlay>
+                {activeDragId ? (() => {
+                  const category = visibleCategories.find((c) => c.id === activeDragId)
+                  if (!category) return null
+                  const products = catalogProducts.filter((p) => p.categoryId === activeDragId)
+                  return (
+                    <div className="shadow-2xl rounded-xl">
+                      <CategoryCard
+                        category={category}
+                        products={products}
+                        isExpanded={expandedByCategoryId[activeDragId] ?? false}
+                        isActive={activeByCategoryId[activeDragId] ?? true}
+                        menuOpenCategoryId={null}
+                        menuOpenProductId={null}
+                        activeByProductId={activeByProductId}
+                        featuredByProductId={featuredByProductId}
+                        flavorsByCategory={flavorsByCategory}
+                        sizeCountByCategory={sizeCountByCategory}
+                        featuredCount={featuredCount}
+                        storeId={data.store.id}
+                        storeData={data.store}
+                        setFlavorsByCategory={() => {}}
+                        onToggleExpand={() => {}}
+                        onToggleCategoryActive={() => {}}
+                        onOpenCategoryMenu={() => {}}
+                        onAddItem={() => {}}
+                        onAddFlavor={() => {}}
+                        onToggleProductActive={() => {}}
+                        onToggleProductFeatured={() => {}}
+                        onOpenProductMenu={() => {}}
+                        onEditFlavor={() => {}}
+                      />
+                    </div>
+                  )
+                })() : null}
+              </DragOverlay>
+            </DndContext>
           </div>
         )}
       </div>
