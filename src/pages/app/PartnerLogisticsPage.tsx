@@ -76,47 +76,41 @@ export function PartnerLogisticsPage() {
 
   return (
     <SectionFrame eyebrow="Logistica" title="Tipo de entrega">
-      <div className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-3">
-          <MetricCard label="Preparo medio" value={data.logistics.averagePrepTime} helper="Acompanha a rapidez da cozinha." />
-          <MetricCard label="Pontualidade" value={data.logistics.onTimeRate} helper="Pedidos dentro da janela prometida." />
-          <MetricCard
-            label="Modo de entrega"
-            value={couriers.length > 0 ? 'Entregadores proprios' : data.logistics.courierMode}
-            helper="Estrutura atual de distribuicao."
-          />
-        </div>
-
+      <div className="space-y-6">
         {/* Tabs */}
-        <div className="flex gap-2 border-b border-ink-100">
-          <button
-            type="button"
-            onClick={() => setActiveTab('proprios')}
-            className={[
-              'px-4 py-2.5 text-sm font-semibold transition border-b-2 -mb-px',
-              activeTab === 'proprios'
-                ? 'border-coral-500 text-coral-600'
-                : 'border-transparent text-ink-500 hover:text-ink-800',
-            ].join(' ')}
-          >
-            Proprios
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab('entregoh')}
-            className={[
-              'px-4 py-2.5 text-sm font-semibold transition border-b-2 -mb-px',
-              activeTab === 'entregoh'
-                ? 'border-coral-500 text-coral-600'
-                : 'border-transparent text-ink-500 hover:text-ink-800',
-            ].join(' ')}
-          >
-            EntregoH!
-          </button>
+        <div className="panel-card px-4 py-3 sm:px-5">
+          <div className="hide-scrollbar flex gap-2 overflow-x-auto">
+            {(['proprios', 'entregoh'] as Tab[]).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                onClick={() => setActiveTab(tab)}
+                className={[
+                  'inline-flex shrink-0 items-center rounded-2xl border px-4 py-3 text-sm font-semibold transition',
+                  activeTab === tab
+                    ? 'border-coral-200 bg-coral-50 text-coral-700 shadow-soft'
+                    : 'border-transparent bg-transparent text-ink-500 hover:border-ink-100 hover:bg-ink-50 hover:text-ink-900',
+                ].join(' ')}
+              >
+                {tab === 'proprios' ? 'Proprios' : 'EntregoH!'}
+              </button>
+            ))}
+          </div>
         </div>
 
         {activeTab === 'proprios' && (
-          <div className="grid gap-4 xl:grid-cols-[1fr_280px]">
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-3">
+              <MetricCard label="Preparo medio" value={data.logistics.averagePrepTime} helper="Acompanha a rapidez da cozinha." />
+              <MetricCard label="Pontualidade" value={data.logistics.onTimeRate} helper="Pedidos dentro da janela prometida." />
+              <MetricCard
+                label="Modo de entrega"
+                value={couriers.length > 0 ? 'Entregadores proprios' : data.logistics.courierMode}
+                helper="Estrutura atual de distribuicao."
+              />
+            </div>
+
+            <div className="grid gap-4 xl:grid-cols-[1fr_280px]">
             <div className="panel-card p-5">
               <div className="flex flex-col gap-4">
                 <div>
@@ -217,6 +211,7 @@ export function PartnerLogisticsPage() {
                 </p>
               </div>
             </div>
+          </div>
           </div>
         )}
 
