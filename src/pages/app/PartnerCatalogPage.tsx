@@ -279,6 +279,7 @@ export function PartnerCatalogPage({
   const [draggingCategoryId, setDraggingCategoryId] = useState<string | null>(null)
   const [dragOverCategoryId, setDragOverCategoryId] = useState<string | null>(null)
   const dragSourceRef = useRef<string | null>(null)
+  const dragCloneRef = useRef<HTMLElement | null>(null)
   const [createCategoryModalOpen, setCreateCategoryModalOpen] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
   const [newCategoryTemplate, setNewCategoryTemplate] = useState<CategoryTemplate>('padrao')
@@ -1728,14 +1729,19 @@ const normalizedSearch = search.trim().toLowerCase()
                       const article = e.currentTarget.closest('article') as HTMLElement
                       if (article) {
                         const clone = article.cloneNode(true) as HTMLElement
-                        clone.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${article.offsetWidth}px;margin:0;pointer-events:none;`
+                        clone.style.cssText = `position:absolute;top:0;left:0;width:${article.offsetWidth}px;margin:0;pointer-events:none;z-index:-1;transform:translateX(-9999px);`
                         document.body.appendChild(clone)
+                        clone.getBoundingClientRect()
                         e.dataTransfer.setDragImage(clone, article.offsetWidth / 2, 30)
-                        setTimeout(() => document.body.removeChild(clone), 0)
+                        dragCloneRef.current = clone
                       }
                       setDraggingCategoryId(category.id)
                     }}
                     onDragEnd={() => {
+                      if (dragCloneRef.current) {
+                        document.body.removeChild(dragCloneRef.current)
+                        dragCloneRef.current = null
+                      }
                       setDraggingCategoryId(null)
                       setDragOverCategoryId(null)
                       dragSourceRef.current = null
