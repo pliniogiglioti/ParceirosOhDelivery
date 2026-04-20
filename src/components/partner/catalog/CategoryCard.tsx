@@ -239,6 +239,7 @@ export function CategoryCard({
               <PizzaFlavorsContent
                 category={category}
                 flavorsByCategory={flavorsByCategory}
+                sizeCountByCategory={sizeCountByCategory}
                 storeData={storeData}
                 onEditFlavor={onEditFlavor}
                 setFlavorsByCategory={setFlavorsByCategory}
@@ -266,6 +267,7 @@ export function CategoryCard({
 interface PizzaFlavorsContentProps {
   category: PartnerCategory
   flavorsByCategory: Record<string, PizzaFlavor[]>
+  sizeCountByCategory: Record<string, number>
   storeData: { id: string }
   onEditFlavor: (flavor: PizzaFlavor) => void
   setFlavorsByCategory: React.Dispatch<React.SetStateAction<Record<string, PizzaFlavor[]>>>
@@ -274,6 +276,7 @@ interface PizzaFlavorsContentProps {
 function PizzaFlavorsContent({
   category,
   flavorsByCategory,
+  sizeCountByCategory,
   storeData,
   onEditFlavor,
   setFlavorsByCategory,
