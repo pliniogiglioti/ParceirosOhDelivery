@@ -119,8 +119,10 @@ export function CategoryCard({
       onDragLeave={onDragLeave}
       onDrop={onDrop}
       className={cn(
-        'rounded-xl border bg-white transition-colors duration-150',
-        dragOverCategoryId === category.id && draggingCategoryId !== category.id
+        'rounded-xl border bg-white transition-all duration-150',
+        draggingCategoryId === category.id
+          ? 'opacity-40 border-ink-200'
+          : dragOverCategoryId === category.id
           ? 'border-coral-400 ring-2 ring-coral-200'
           : 'border-ink-100'
       )}

@@ -278,8 +278,6 @@ export function PartnerCatalogPage({
   const [categoryOrderIds, setCategoryOrderIds] = useState<string[]>([])
   const [draggingCategoryId, setDraggingCategoryId] = useState<string | null>(null)
   const [dragOverCategoryId, setDragOverCategoryId] = useState<string | null>(null)
-  const dragCloneRef = useRef<HTMLDivElement | null>(null)
-  const dragWidthRef = useRef(0)
   const dragSourceRef = useRef<string | null>(null)
   const [createCategoryModalOpen, setCreateCategoryModalOpen] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
@@ -1710,10 +1708,6 @@ const normalizedSearch = search.trim().toLowerCase()
                       setDraggingCategoryId(null)
                       setDragOverCategoryId(null)
                       dragSourceRef.current = null
-                      if (dragCloneRef.current) {
-                        document.body.removeChild(dragCloneRef.current)
-                        dragCloneRef.current = null
-                      }
                       if (data) {
                         import('@/lib/supabase').then(({ supabase }) => {
                           if (!supabase) return
