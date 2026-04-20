@@ -1724,12 +1724,16 @@ const normalizedSearch = search.trim().toLowerCase()
                     }}
                     onDragStart={(e) => {
                       dragSourceRef.current = category.id
-                      setDraggingCategoryId(category.id)
                       e.dataTransfer.effectAllowed = 'move'
                       const article = e.currentTarget.closest('article') as HTMLElement
                       if (article) {
-                        e.dataTransfer.setDragImage(article, article.offsetWidth / 2, 30)
+                        const clone = article.cloneNode(true) as HTMLElement
+                        clone.style.cssText = `position:fixed;top:-9999px;left:-9999px;width:${article.offsetWidth}px;margin:0;pointer-events:none;`
+                        document.body.appendChild(clone)
+                        e.dataTransfer.setDragImage(clone, article.offsetWidth / 2, 30)
+                        setTimeout(() => document.body.removeChild(clone), 0)
                       }
+                      setDraggingCategoryId(category.id)
                     }}
                     onDragEnd={() => {
                       setDraggingCategoryId(null)
