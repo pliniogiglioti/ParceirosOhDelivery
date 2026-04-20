@@ -608,7 +608,7 @@ export async function createProductCategory(
       name: input.name,
       template: input.template ?? 'padrao',
       price_policy: (input as { pricePolicy?: string }).pricePolicy ?? 'maior',
-      active: true,
+      active: false,
       sort_order: 0,
     })
     .select('*')
@@ -623,7 +623,7 @@ export async function createProductCategory(
     template: data.template === 'pizza' ? 'pizza' : 'padrao',
     sortOrder: Number(data.sort_order ?? 0),
     productCount: 0,
-    active: Boolean(data.active ?? true),
+    active: Boolean(data.active ?? false),
   }
 }
 
