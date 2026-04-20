@@ -168,8 +168,10 @@ export function PartnerOverviewPage() {
 
       const [ordersRes, funnelRes] = await Promise.all([
         client.from('orders')
-          .select('id, order_code, customer_name, status, total_amount, created_at, payment_method')
+          .select('id, order_code, customer_name, status, total_amount, created_at, payment_method, payment_status, payment_expires_at')
           .eq('store_id', data.store.id)
+          .neq('status', 'aguardando_pagamento')
+          .or('status.neq.cancelado,payment_expires_at.is.null,payment_status.eq.PAID')
           .gte('created_at', fromDate.toISOString())
           .order('created_at', { ascending: false })
           .limit(500),

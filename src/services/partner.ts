@@ -1368,7 +1368,13 @@ export async function loadPartnerDashboard(storeId: string): Promise<{
       .eq('store_id', storeRow.id)
       .order('sort_order', { ascending: true }),
     supabase.from('products').select('*').eq('store_id', storeRow.id).order('sort_order', { ascending: true }),
-    supabase.from('orders').select('*').eq('store_id', storeRow.id).neq('status', 'aguardando_pagamento').order('created_at', { ascending: false }),
+    supabase
+      .from('orders')
+      .select('*')
+      .eq('store_id', storeRow.id)
+      .neq('status', 'aguardando_pagamento')
+      .or('status.neq.cancelado,payment_expires_at.is.null,payment_status.eq.PAID')
+      .order('created_at', { ascending: false }),
     supabase.from('chat_sessions').select('*').eq('store_id', storeRow.id).order('updated_at', { ascending: false }).limit(20),
     supabase.from('delivery_areas').select('*').eq('store_id', storeRow.id).order('sort_order', { ascending: true }),
     supabase.from('order_reviews').select('*, profiles(name)').eq('store_id', storeRow.id).order('created_at', { ascending: false }).limit(50),

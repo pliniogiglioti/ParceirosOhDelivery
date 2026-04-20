@@ -19,6 +19,17 @@ function mapStatus(value: unknown): OrderStatus {
   return 'aguardando'
 }
 
+function isHiddenPaymentOrder(row: Record<string, unknown>, status = mapStatus(row.status)) {
+  return (
+    status === 'aguardando_pagamento' ||
+    (
+      status === 'cancelado' &&
+      Boolean(row.payment_expires_at) &&
+      String(row.payment_status ?? '') !== 'PAID'
+    )
+  )
+}
+
 function rowToOrder(row: Record<string, unknown>, items: PartnerOrderItem[] = []): PartnerOrder {
   return {
     id: String(row.id),
@@ -56,7 +67,7 @@ export function useOrdersRealtime(storeId: string) {
           const row = payload.new as Record<string, unknown>
 
           // Ignora pedidos aguardando pagamento — loja não deve ver
-          if (String(row.status) === 'aguardando_pagamento') return
+          if (isHiddenPaymentOrder(row)) return
 
           const orderId = String(row.id)
 
@@ -93,7 +104,7 @@ export function useOrdersRealtime(storeId: string) {
           // Neste caso adiciona o pedido ao store (a loja vê pela primeira vez)
           if (
             String(oldRow.status) === 'aguardando_pagamento' &&
-            newStatus === 'aguardando'
+            !isHiddenPaymentOrder(row, newStatus)
           ) {
             const orderId = String(row.id)
             const { data: itemRows } = await supabase!
@@ -114,7 +125,7 @@ export function useOrdersRealtime(storeId: string) {
           }
 
           // Ignora updates de pedidos que ainda estão aguardando pagamento
-          if (newStatus === 'aguardando_pagamento') return
+          if (isHiddenPaymentOrder(row, newStatus)) return
 
           updateOrder(storeId, String(row.id), {
             status: newStatus,
