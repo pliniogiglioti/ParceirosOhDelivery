@@ -138,8 +138,8 @@ function nextStatusButtonTone(order: PartnerOrder) {
   if (order.status === 'aguardando') return 'bg-coral-500 hover:bg-coral-600'
   if (order.status === 'preparo') return 'bg-ink-800 hover:bg-ink-900'
   if (order.status === 'confirmado') return order.fulfillmentType === 'pickup' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-sky-500 hover:bg-sky-600'
-  if (order.status === 'aguardando_retirada') return 'bg-mint-600 hover:bg-mint-700'
-  if (order.status === 'a_caminho') return 'bg-mint-600 hover:bg-mint-700'
+  if (order.status === 'aguardando_retirada') return 'bg-mint-500 hover:bg-mint-700'
+  if (order.status === 'a_caminho') return 'bg-mint-500 hover:bg-mint-700'
   return 'bg-coral-500 hover:bg-coral-600'
 }
 
@@ -1108,7 +1108,7 @@ export function PartnerOrdersPage() {
         <AnimatedModal
           open={Boolean(selectedOrder)}
           onClose={closeOrderDetails}
-          panelClassName="panel-card w-full max-w-[520px] p-5 sm:p-6"
+          panelClassName="panel-card w-full max-w-[860px] p-5 sm:p-6"
           ariaLabelledby="order-details-title"
         >
           {orderDetails ? (
@@ -1169,126 +1169,114 @@ export function PartnerOrdersPage() {
                   />
                 </div>
               ) : (
-                <>
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-ink-100 bg-ink-50/70 p-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">Status</p>
-                  <p className="mt-1 text-sm font-semibold text-ink-900">{orderStatusLabel(orderDetails)}</p>
-                </div>
-                <div className="rounded-2xl border border-ink-100 bg-ink-50/70 p-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">Total</p>
-                  <p className="mt-1 text-sm font-semibold text-ink-900">{formatCurrency(orderDetails.total)}</p>
-                </div>
-                <div className="rounded-2xl border border-ink-100 bg-ink-50/70 p-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">Atendimento</p>
-                  <p className="mt-1 text-sm font-semibold text-ink-900">
-                    {fulfillmentLabel(orderDetails.fulfillmentType)}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-ink-100 bg-ink-50/70 p-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">Pagamento</p>
-                  <p className="mt-1 text-sm font-semibold text-ink-900">{orderDetails.paymentMethod}</p>
-                </div>
-                <div className="rounded-2xl border border-ink-100 bg-ink-50/70 p-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">Criado em</p>
-                  <p className="mt-1 text-sm font-semibold text-ink-900">{formatDateTime(orderDetails.createdAt)}</p>
-                </div>
-                <div className="rounded-2xl border border-ink-100 bg-ink-50/70 p-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">Itens</p>
-                  <p className="mt-1 text-sm font-semibold text-ink-900">{orderDetails.itemsCount} itens</p>
-                </div>
-              </div>
-
-              <div className="mt-4 rounded-xl border border-ink-100 bg-white p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">Produtos</p>
-                  <span className="rounded-full bg-ink-50 px-2.5 py-1 text-[11px] font-semibold text-ink-500">
-                    {orderDetails.itemsCount} {orderDetails.itemsCount === 1 ? 'item' : 'itens'}
-                  </span>
-                </div>
-
-                {orderDetails.items?.length ? (
-                  <div className="mt-3 space-y-2">
-                    {orderDetails.items.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-start justify-between gap-3 rounded-2xl bg-ink-50/70 px-3 py-2.5"
-                      >
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-ink-900">{item.quantity}x {item.name}</p>
-                          <p className="mt-0.5 text-xs text-ink-500">{formatCurrency(item.unitPrice)} por unidade</p>
-                        </div>
-                        <p className="shrink-0 text-sm font-bold text-ink-900">{formatCurrency(item.totalPrice)}</p>
+                <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-[1fr_220px]">
+                  {/* Coluna esquerda: info + produtos + tempo */}
+                  <div className="flex flex-col gap-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="rounded-2xl border border-ink-100 bg-ink-50/70 p-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">Status</p>
+                        <p className="mt-1 text-sm font-semibold text-ink-900">{orderStatusLabel(orderDetails)}</p>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-3 text-sm text-ink-500">Produtos nao informados neste pedido.</p>
-                )}
-              </div>
+                      <div className="rounded-2xl border border-ink-100 bg-ink-50/70 p-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">Total</p>
+                        <p className="mt-1 text-sm font-semibold text-ink-900">{formatCurrency(orderDetails.total)}</p>
+                      </div>
+                      <div className="rounded-2xl border border-ink-100 bg-ink-50/70 p-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">Atendimento</p>
+                        <p className="mt-1 text-sm font-semibold text-ink-900">{fulfillmentLabel(orderDetails.fulfillmentType)}</p>
+                      </div>
+                      <div className="rounded-2xl border border-ink-100 bg-ink-50/70 p-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">Pagamento</p>
+                        <p className="mt-1 text-sm font-semibold text-ink-900">{orderDetails.paymentMethod}</p>
+                      </div>
+                      <div className="rounded-2xl border border-ink-100 bg-ink-50/70 p-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">Criado em</p>
+                        <p className="mt-1 text-sm font-semibold text-ink-900">{formatDateTime(orderDetails.createdAt)}</p>
+                      </div>
+                      <div className="rounded-2xl border border-ink-100 bg-ink-50/70 p-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">Itens</p>
+                        <p className="mt-1 text-sm font-semibold text-ink-900">{orderDetails.itemsCount} itens</p>
+                      </div>
+                    </div>
 
-              <div className="mt-4 rounded-xl border border-ink-100 bg-white p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">
-                      Tempo da etapa
-                    </p>
-                    <p className="mt-1 text-base font-bold text-ink-900">
-                      {formatStageCountdown(orderDetails.stageStartedAt, now, getStageLimitMs(orderDetails.status, orderSettings))}
-                    </p>
+                    <div className="rounded-xl border border-ink-100 bg-white p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">Produtos</p>
+                        <span className="rounded-full bg-ink-50 px-2.5 py-1 text-[11px] font-semibold text-ink-500">
+                          {orderDetails.itemsCount} {orderDetails.itemsCount === 1 ? 'item' : 'itens'}
+                        </span>
+                      </div>
+                      {orderDetails.items?.length ? (
+                        <div className="mt-3 space-y-2">
+                          {orderDetails.items.map((item) => (
+                            <div key={item.id} className="flex items-start justify-between gap-3 rounded-2xl bg-ink-50/70 px-3 py-2.5">
+                              <div className="min-w-0">
+                                <p className="text-sm font-semibold text-ink-900">{item.quantity}x {item.name}</p>
+                                <p className="mt-0.5 text-xs text-ink-500">{formatCurrency(item.unitPrice)} por unidade</p>
+                              </div>
+                              <p className="shrink-0 text-sm font-bold text-ink-900">{formatCurrency(item.totalPrice)}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="mt-3 text-sm text-ink-500">Produtos nao informados neste pedido.</p>
+                      )}
+                    </div>
+
+                    <div className="rounded-xl border border-ink-100 bg-white p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">Tempo da etapa</p>
+                          <p className="mt-1 text-base font-bold text-ink-900">
+                            {formatStageCountdown(orderDetails.stageStartedAt, now, getStageLimitMs(orderDetails.status, orderSettings))}
+                          </p>
+                        </div>
+                        {isStageExpired(orderDetails.status, orderDetails.stageStartedAt, now, getStageLimitMs(orderDetails.status, orderSettings)) ? (
+                          <span className="rounded-full bg-coral-50 px-3 py-1 text-xs font-semibold text-coral-700">Atrasado</span>
+                        ) : (
+                          <span className="rounded-full bg-mint-50 px-3 py-1 text-xs font-semibold text-mint-700">No prazo</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  {isStageExpired(orderDetails.status, orderDetails.stageStartedAt, now, getStageLimitMs(orderDetails.status, orderSettings)) ? (
-                    <span className="rounded-full bg-coral-50 px-3 py-1 text-xs font-semibold text-coral-700">
-                      Atrasado
-                    </span>
-                  ) : (
-                    <span className="rounded-full bg-mint-50 px-3 py-1 text-xs font-semibold text-mint-700">
-                      No prazo
-                    </span>
-                  )}
+
+                  {/* Coluna direita: histórico */}
+                  <div className="rounded-xl border border-ink-100 bg-white p-4">
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">Histórico</p>
+                    {statusEventsLoading ? (
+                      <p className="mt-3 text-sm text-ink-400">Carregando...</p>
+                    ) : statusEvents.length === 0 ? (
+                      <p className="mt-3 text-sm text-ink-400">Nenhum evento registrado ainda.</p>
+                    ) : (
+                      <ol className="mt-3 space-y-0">
+                        {statusEvents.map((event, index) => {
+                          const isLast = index === statusEvents.length - 1
+                          return (
+                            <li key={event.id} className="flex gap-3">
+                              <div className="flex flex-col items-center">
+                                <span
+                                  className={cn(
+                                    'mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full border-2',
+                                    isLast ? 'border-coral-500 bg-coral-500' : 'border-ink-300 bg-white'
+                                  )}
+                                />
+                                {!isLast && (
+                                  <span className="mt-0.5 w-px flex-1 bg-ink-100" style={{ minHeight: '1.25rem' }} />
+                                )}
+                              </div>
+                              <div className="pb-3">
+                                <p className={cn('text-sm font-semibold', isLast ? 'text-ink-900' : 'text-ink-600')}>
+                                  {event.label}
+                                </p>
+                                <p className="text-xs text-ink-400">{formatDateTime(event.createdAt)}</p>
+                              </div>
+                            </li>
+                          )
+                        })}
+                      </ol>
+                    )}
+                  </div>
                 </div>
-              </div>
-
-              <div className="mt-4 rounded-xl border border-ink-100 bg-white p-4">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-400">
-                  Histórico do pedido
-                </p>
-                {statusEventsLoading ? (
-                  <p className="mt-3 text-sm text-ink-400">Carregando...</p>
-                ) : statusEvents.length === 0 ? (
-                  <p className="mt-3 text-sm text-ink-400">Nenhum evento registrado ainda.</p>
-                ) : (
-                  <ol className="mt-3 space-y-0">
-                    {statusEvents.map((event, index) => {
-                      const isLast = index === statusEvents.length - 1
-                      return (
-                        <li key={event.id} className="flex gap-3">
-                          <div className="flex flex-col items-center">
-                            <span
-                              className={cn(
-                                'mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full border-2',
-                                isLast
-                                  ? 'border-coral-500 bg-coral-500'
-                                  : 'border-ink-300 bg-white'
-                              )}
-                            />
-                            {!isLast && (
-                              <span className="mt-0.5 w-px flex-1 bg-ink-100" style={{ minHeight: '1.25rem' }} />
-                            )}
-                          </div>
-                          <div className="pb-3">
-                            <p className={cn('text-sm font-semibold', isLast ? 'text-ink-900' : 'text-ink-600')}>
-                              {event.label}
-                            </p>
-                            <p className="text-xs text-ink-400">{formatDateTime(event.createdAt)}</p>
-                          </div>
-                        </li>
-                      )
-                    })}
-                  </ol>
-                )}
-              </div>
-              </>
               )}
             </>
           ) : null}
