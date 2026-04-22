@@ -14,7 +14,7 @@ import { isElectron, printOrder, getSavedPrinter } from '@/hooks/usePrint'
 import { cn, formatCurrency, formatDateTime } from '@/lib/utils'
 import { supabase } from '@/lib/supabase'
 
-type KanbanColumnId = 'aceitar' | 'preparo' | 'pronto' | 'rota' | 'finalizado' | 'cancelado'
+type KanbanColumnId = 'aceitar' | 'preparo' | 'pronto' | 'retirada' | 'rota' | 'finalizado' | 'cancelado'
 const DEFAULT_STAGE_LIMIT_MS = 5 * 60 * 1000
 const DEFAULT_PREPARE_TIME = 5
 const DEFAULT_ACCEPT_TIME = 10
@@ -52,6 +52,11 @@ const kanbanColumns: Array<{
     tone: 'bg-ink-100 text-ink-800',
   },
   {
+    id: 'retirada',
+    label: 'Aguardando Retirada',
+    tone: 'bg-amber-100 text-amber-800',
+  },
+  {
     id: 'rota',
     label: 'Em rota',
     tone: 'bg-sky-100 text-sky-700',
@@ -72,6 +77,7 @@ function mapOrderToColumn(order: PartnerOrder): KanbanColumnId {
   if (order.status === 'aguardando') return 'aceitar'
   if (order.status === 'preparo') return 'preparo'
   if (order.status === 'confirmado') return 'pronto'
+  if (order.status === 'aguardando_retirada') return 'retirada'
   if (order.status === 'a_caminho') return 'rota'
   if (order.status === 'cancelado') return 'cancelado'
   return 'finalizado'
@@ -81,6 +87,7 @@ function columnToStatus(columnId: KanbanColumnId): OrderStatus {
   if (columnId === 'aceitar') return 'aguardando'
   if (columnId === 'preparo') return 'preparo'
   if (columnId === 'pronto') return 'confirmado'
+  if (columnId === 'retirada') return 'aguardando_retirada'
   if (columnId === 'rota') return 'a_caminho'
   return 'entregue'
 }
@@ -95,6 +102,7 @@ function orderStatusPill(order: PartnerOrder) {
   if (order.status === 'cancelado') return 'bg-coral-100 text-coral-700'
   if (order.status === 'entregue') return 'bg-mint-100 text-mint-700'
   if (order.status === 'a_caminho') return 'bg-sky-100 text-sky-700'
+  if (order.status === 'aguardando_retirada') return 'bg-amber-100 text-amber-800'
   if (order.status === 'preparo') return 'bg-coral-100 text-coral-700'
   if (order.status === 'confirmado') return 'bg-ink-100 text-ink-800'
   return 'bg-sand-100 text-sand-800'
@@ -104,30 +112,34 @@ function orderStatusLabel(order: PartnerOrder) {
   if (order.status === 'aguardando') return 'Aguardando'
   if (order.status === 'preparo') return 'Em preparo'
   if (order.status === 'confirmado') return 'Pronto'
+  if (order.status === 'aguardando_retirada') return 'Ag. Retirada'
   if (order.status === 'a_caminho') return 'Em rota'
   if (order.status === 'cancelado') return 'Cancelado'
   return 'Finalizado'
 }
 
-function nextStatus(status: OrderStatus): OrderStatus | null {
-  if (status === 'aguardando') return 'preparo'
-  if (status === 'preparo') return 'confirmado'
-  if (status === 'confirmado') return 'a_caminho'
+function nextStatusForOrder(order: PartnerOrder): OrderStatus | null {
+  if (order.status === 'aguardando') return 'preparo'
+  if (order.status === 'preparo') return 'confirmado'
+  if (order.status === 'confirmado') return order.fulfillmentType === 'pickup' ? 'aguardando_retirada' : 'a_caminho'
+  if (order.status === 'aguardando_retirada') return 'entregue'
   return null
 }
 
-function nextStatusTimerLabel(status: OrderStatus, countdown: string) {
-  if (status === 'aguardando') return `Aceite em ${countdown}`
-  if (status === 'preparo') return `Prepare em ${countdown}`
-  if (status === 'confirmado') return `Envie em ${countdown}`
+function nextStatusTimerLabel(order: PartnerOrder, countdown: string) {
+  if (order.status === 'aguardando') return `Aceite em ${countdown}`
+  if (order.status === 'preparo') return `Prepare em ${countdown}`
+  if (order.status === 'confirmado') return order.fulfillmentType === 'pickup' ? 'Pronto para retirada' : `Envie em ${countdown}`
+  if (order.status === 'aguardando_retirada') return 'Confirmar retirada'
   return null
 }
 
-function nextStatusButtonTone(status: OrderStatus) {
-  if (status === 'aguardando') return 'bg-coral-500 hover:bg-coral-600'
-  if (status === 'preparo') return 'bg-ink-800 hover:bg-ink-900'
-  if (status === 'confirmado') return 'bg-sky-500 hover:bg-sky-600'
-  if (status === 'a_caminho') return 'bg-mint-600 hover:bg-mint-700'
+function nextStatusButtonTone(order: PartnerOrder) {
+  if (order.status === 'aguardando') return 'bg-coral-500 hover:bg-coral-600'
+  if (order.status === 'preparo') return 'bg-ink-800 hover:bg-ink-900'
+  if (order.status === 'confirmado') return order.fulfillmentType === 'pickup' ? 'bg-amber-500 hover:bg-amber-600' : 'bg-sky-500 hover:bg-sky-600'
+  if (order.status === 'aguardando_retirada') return 'bg-mint-600 hover:bg-mint-700'
+  if (order.status === 'a_caminho') return 'bg-mint-600 hover:bg-mint-700'
   return 'bg-coral-500 hover:bg-coral-600'
 }
 
@@ -153,8 +165,10 @@ function formatStageCountdown(stageStartedAt?: string, now = Date.now(), limitMs
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
 
+const STAGES_WITH_TIMER: OrderStatus[] = ['aguardando', 'preparo', 'confirmado', 'aguardando_retirada']
+
 function isStageExpired(status: OrderStatus, stageStartedAt?: string, now = Date.now(), limitMs = DEFAULT_STAGE_LIMIT_MS) {
-  if (!nextStatus(status) || !stageStartedAt) return false
+  if (!STAGES_WITH_TIMER.includes(status) || !stageStartedAt) return false
 
   return new Date(stageStartedAt).getTime() + limitMs <= now
 }
@@ -512,7 +526,7 @@ export function PartnerOrdersPage() {
   }
 
   function handleAdvanceOrder(order: PartnerOrder) {
-    const next = nextStatus(order.status)
+    const next = nextStatusForOrder(order)
     if (!next) return
 
     updateOrder(data.store.id, order.id, {
@@ -524,12 +538,12 @@ export function PartnerOrdersPage() {
   }
 
   function handleSendOrder(order: PartnerOrder) {
-    if (order.status !== 'confirmado' || order.fulfillmentType !== 'delivery') {
-      handleAdvanceOrder(order)
+    if (order.status === 'confirmado' && order.fulfillmentType === 'delivery') {
+      setDeliveryChoiceOrder(order)
       return
     }
 
-    setDeliveryChoiceOrder(order)
+    handleAdvanceOrder(order)
   }
 
   function handleOwnDelivery(order: PartnerOrder) {
@@ -856,7 +870,7 @@ export function PartnerOrdersPage() {
                       columnOrders.map((order) => {
                         const stageLimitMs = getStageLimitMs(order.status, orderSettings)
                         const countdown = formatStageCountdown(order.stageStartedAt, now, stageLimitMs)
-                        const nextActionLabel = nextStatusTimerLabel(order.status, countdown)
+                        const nextActionLabel = nextStatusTimerLabel(order, countdown)
                         const expired = isStageExpired(order.status, order.stageStartedAt, now, stageLimitMs)
                         const expanded = expandedOrderId === order.id
                         const dispatching = dispatchingOrderId === order.id
@@ -1022,7 +1036,7 @@ export function PartnerOrdersPage() {
                                 }}
                                 className={cn(
                                   'mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-2xl px-3 text-[13px] font-semibold text-white transition',
-                                  nextStatusButtonTone(order.status),
+                                  nextStatusButtonTone(order),
                                   dispatchingOrderId && 'cursor-not-allowed opacity-70'
                                 )}
                               >

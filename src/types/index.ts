@@ -3,6 +3,7 @@ export type OrderStatus =
   | 'aguardando'
   | 'confirmado'
   | 'preparo'
+  | 'aguardando_retirada'
   | 'a_caminho'
   | 'entregue'
   | 'cancelado'

@@ -779,6 +779,7 @@ function statusEventLabel(status: OrderStatus): string {
   if (status === 'aguardando') return 'Pedido recebido'
   if (status === 'preparo') return 'Em preparo'
   if (status === 'confirmado') return 'Pronto'
+  if (status === 'aguardando_retirada') return 'Pronto para retirada'
   if (status === 'a_caminho') return 'Saiu para entrega'
   if (status === 'entregue') return 'Entregue'
   if (status === 'cancelado') return 'Cancelado'
