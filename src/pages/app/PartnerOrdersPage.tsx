@@ -1,6 +1,6 @@
 import type { DragEvent, MouseEvent as ReactMouseEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
-import { ArrowRight, ChevronDown, FlaskConical, GripVertical, Info, Maximize2, MessageCircle, Minimize2, Printer, Search, Settings, X } from 'lucide-react'
+import { ArrowRight, Bike, ChevronDown, FlaskConical, GripVertical, Info, Maximize2, MessageCircle, Minimize2, Printer, Search, Settings, X, Zap } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import type { OrderStatus, OrderStatusEvent, PartnerOrder, PartnerOrderSettings } from '@/types'
@@ -202,6 +202,7 @@ export function PartnerOrdersPage() {
   const [simPaymentMethod, setSimPaymentMethod] = useState<'Pix' | 'Cartão' | 'Dinheiro'>('Pix')
   const [simFulfillment, setSimFulfillment] = useState<'delivery' | 'pickup'>('delivery')
   const [dispatchingOrderId, setDispatchingOrderId] = useState<string | null>(null)
+  const [deliveryChoiceOrder, setDeliveryChoiceOrder] = useState<PartnerOrder | null>(null)
   const orderSettings = {
     ...defaultOrderSettings,
     ...(orderSettingsByStoreId[data.store.id] ?? {}),
@@ -522,12 +523,21 @@ export function PartnerOrdersPage() {
     void updateOrderStatus(order.id, next).catch(() => undefined)
   }
 
-  async function handleSendOrder(order: PartnerOrder) {
+  function handleSendOrder(order: PartnerOrder) {
     if (order.status !== 'confirmado' || order.fulfillmentType !== 'delivery') {
       handleAdvanceOrder(order)
       return
     }
 
+    setDeliveryChoiceOrder(order)
+  }
+
+  function handleOwnDelivery(order: PartnerOrder) {
+    setDeliveryChoiceOrder(null)
+    handleAdvanceOrder(order)
+  }
+
+  async function handleDispatchEntregoh(order: PartnerOrder) {
     if (dispatchingOrderId) return
 
     setDispatchingOrderId(order.id)
@@ -547,6 +557,7 @@ export function PartnerOrdersPage() {
           ? 'Este pedido ja esta aguardando aceite no EntregoH.'
           : `EntregoH notificado: ${result.courierName ?? 'entregador'}${distance}.`
       )
+      setDeliveryChoiceOrder(null)
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Nao foi possivel chamar o EntregoH.')
     } finally {
@@ -852,7 +863,7 @@ export function PartnerOrdersPage() {
                         const actionLabel = dispatching
                           ? 'Chamando EntregoH...'
                           : order.status === 'confirmado' && order.fulfillmentType === 'delivery'
-                            ? 'Chamar EntregoH'
+                            ? 'Entregar'
                             : nextActionLabel
 
                         return (
@@ -1007,7 +1018,7 @@ export function PartnerOrdersPage() {
                                 disabled={Boolean(dispatchingOrderId)}
                                 onClick={(event) => {
                                   event.stopPropagation()
-                                  void handleSendOrder(order)
+                                  handleSendOrder(order)
                                 }}
                                 className={cn(
                                   'mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-2xl px-3 text-[13px] font-semibold text-white transition',
@@ -1257,6 +1268,83 @@ export function PartnerOrdersPage() {
               )}
             </>
           ) : null}
+        </AnimatedModal>
+
+        <AnimatedModal
+          open={Boolean(deliveryChoiceOrder)}
+          onClose={() => {
+            if (!dispatchingOrderId) setDeliveryChoiceOrder(null)
+          }}
+          panelClassName="panel-card w-full max-w-md p-5 sm:p-6"
+          ariaLabelledby="delivery-choice-title"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">Forma de entrega</p>
+              <h4 id="delivery-choice-title" className="mt-2 text-xl font-bold text-ink-900">
+                Como deseja enviar este pedido?
+              </h4>
+              <p className="mt-1 text-sm text-ink-500">
+                {deliveryChoiceOrder ? `${deliveryChoiceOrder.code} - ${deliveryChoiceOrder.customerName}` : 'Pedido pronto para envio'}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (!dispatchingOrderId) setDeliveryChoiceOrder(null)
+              }}
+              disabled={Boolean(dispatchingOrderId)}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-ink-100 bg-ink-50 text-ink-700 transition hover:border-coral-200 hover:text-coral-600 disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label="Fechar escolha de entrega"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="mt-5 grid gap-3">
+            <button
+              type="button"
+              disabled={!deliveryChoiceOrder || Boolean(dispatchingOrderId)}
+              onClick={() => {
+                if (deliveryChoiceOrder) handleOwnDelivery(deliveryChoiceOrder)
+              }}
+              className="flex w-full items-center gap-3 rounded-2xl border border-ink-100 bg-white p-4 text-left transition hover:border-coral-200 hover:bg-coral-50/50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-ink-50 text-ink-700">
+                <Bike className="h-5 w-5" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-bold text-ink-900">Entrega própria</span>
+                <span className="mt-0.5 block text-xs leading-5 text-ink-500">Usar entregador/rota da própria loja.</span>
+              </span>
+              <ArrowRight className="h-4 w-4 text-ink-300" />
+            </button>
+
+            <button
+              type="button"
+              disabled={!deliveryChoiceOrder || Boolean(dispatchingOrderId)}
+              onClick={() => {
+                if (deliveryChoiceOrder) void handleDispatchEntregoh(deliveryChoiceOrder)
+              }}
+              className="flex w-full items-center gap-3 rounded-2xl border border-coral-100 bg-coral-50 p-4 text-left transition hover:border-coral-300 hover:bg-coral-100/70 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-coral-500 text-white">
+                {dispatchingOrderId ? (
+                  <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                ) : (
+                  <Zap className="h-5 w-5" />
+                )}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-bold text-ink-900">EntregoH</span>
+                <span className="mt-0.5 block text-xs leading-5 text-ink-500">
+                  {dispatchingOrderId ? 'Localizando parceiro mais próximo...' : 'Localizar automaticamente o parceiro mais próximo na cidade.'}
+                </span>
+              </span>
+              <ArrowRight className="h-4 w-4 text-coral-400" />
+            </button>
+          </div>
         </AnimatedModal>
 
         <AnimatedModal

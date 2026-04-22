@@ -30,16 +30,15 @@ interface EntregoHCourier {
 }
 
 function EntregoHTab({ storeCity, storeState }: { storeCity: string; storeState: string }) {
-  const [enabled, setEnabled] = useState(false)
   const [cities, setCities] = useState<Array<{ city: string; state: string; count: number }>>([])
   const [selectedCity, setSelectedCity] = useState('')
   const [couriers, setCouriers] = useState<EntregoHCourier[]>([])
   const [loadingCities, setLoadingCities] = useState(false)
   const [loadingCouriers, setLoadingCouriers] = useState(false)
 
-  // Carrega cidades disponíveis quando ativa
+  // Carrega cidades disponíveis para EntregoH, sempre ativo no painel.
   useEffect(() => {
-    if (!enabled || !isSupabaseConfigured || !supabase) return
+    if (!isSupabaseConfigured || !supabase) return
     setLoadingCities(true)
 
     void (async () => {
@@ -79,7 +78,7 @@ function EntregoHTab({ storeCity, storeState }: { storeCity: string; storeState:
         setLoadingCities(false)
       }
     })()
-  }, [enabled, storeCity])
+  }, [storeCity])
 
   // Carrega entregadores da cidade selecionada
   useEffect(() => {
@@ -150,7 +149,7 @@ function EntregoHTab({ storeCity, storeState }: { storeCity: string; storeState:
 
   return (
     <div className="space-y-4">
-      {/* Switch de ativar EntregoH */}
+      {/* EntregoH sempre ativo */}
       <div className="panel-card p-5">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -158,41 +157,22 @@ function EntregoHTab({ storeCity, storeState }: { storeCity: string; storeState:
               <Zap className="h-5 w-5 text-coral-500" />
             </span>
             <div>
-              <p className="text-sm font-semibold text-ink-900">Ativar EntregoH!</p>
+              <p className="text-sm font-semibold text-ink-900">EntregoH! ativo</p>
               <p className="mt-0.5 text-xs text-ink-500">
                 Contrate entregadores sob demanda da rede EntregoH diretamente pela plataforma
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={enabled}
-            onClick={() => {
-              setEnabled((v) => !v)
-              toast.success(!enabled ? 'EntregoH ativado.' : 'EntregoH desativado.')
-            }}
-            className={cn('inline-flex h-6 w-11 items-center rounded-full px-0.5 transition', enabled ? 'bg-coral-500' : 'bg-ink-200')}
-          >
-            <span className={cn('h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200', enabled ? 'translate-x-5' : 'translate-x-0')} />
-          </button>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Ativo
+          </span>
         </div>
       </div>
 
-      {!enabled ? (
-        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-coral-200 bg-white px-6 py-14 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-coral-50 text-coral-500">
-            <Zap className="h-7 w-7" />
-          </div>
-          <p className="mt-4 text-base font-bold text-ink-900">EntregoH! desativado</p>
-          <p className="mt-2 max-w-sm text-sm text-ink-500">
-            Ative o switch acima para ver os entregadores disponíveis na sua cidade e contratar sob demanda.
-          </p>
-        </div>
-      ) : (
-        <>
-          {/* Seleção de cidade */}
-          <div className="panel-card p-5">
+      <>
+        {/* Seleção de cidade */}
+        <div className="panel-card p-5">
             <div className="flex items-center gap-2 mb-3">
               <MapPin className="h-4 w-4 text-coral-500" />
               <p className="text-sm font-semibold text-ink-900">Selecione a cidade</p>
@@ -229,11 +209,11 @@ function EntregoHTab({ storeCity, storeState }: { storeCity: string; storeState:
                 ))}
               </div>
             )}
-          </div>
+        </div>
 
-          {/* Lista de entregadores */}
-          {selectedCity && (
-            <div className="panel-card overflow-hidden">
+        {/* Lista de entregadores */}
+        {selectedCity && (
+          <div className="panel-card overflow-hidden">
               <div className="flex items-center justify-between border-b border-ink-100 px-5 py-4">
                 <div>
                   <p className="text-sm font-semibold text-ink-900">Entregadores disponíveis</p>
@@ -288,10 +268,9 @@ function EntregoHTab({ storeCity, storeState }: { storeCity: string; storeState:
                   ))}
                 </ul>
               )}
-            </div>
-          )}
-        </>
-      )}
+          </div>
+        )}
+      </>
     </div>
   )
 }
