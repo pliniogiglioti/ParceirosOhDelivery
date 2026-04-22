@@ -497,6 +497,11 @@ export function PartnerOrdersPage() {
       return
     }
 
+    if (targetColumn === 'rota' && order.fulfillmentType === 'pickup') {
+      toast.error('Pedidos de retirada não vão para rota. Use a coluna Aguardando Retirada.')
+      return
+    }
+
     if (targetIndex < currentIndex) {
       toast.error('Não é permitido mover um pedido para uma etapa anterior.')
       return
