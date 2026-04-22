@@ -13,7 +13,6 @@ as $$
 declare
   trigger_type text;
   project_url text := 'https://emjnqqbsmigqswbfhpzi.supabase.co';
-  service_key text := current_setting('app.service_role_key', true);
 begin
   -- Mapeia status do pedido para trigger_type do template
   trigger_type := case new.status
@@ -35,12 +34,9 @@ begin
   end if;
 
   -- Chama a Edge Function de forma assíncrona via pg_net
-  perform extensions.http_post(
+  perform net.http_post(
     url := project_url || '/functions/v1/send-push-batch',
-    headers := jsonb_build_object(
-      'Content-Type', 'application/json',
-      'Authorization', 'Bearer ' || coalesce(service_key, '')
-    ),
+    headers := jsonb_build_object('Content-Type', 'application/json'),
     body := jsonb_build_object(
       'trigger_type', trigger_type,
       'target_type', 'user',
@@ -48,7 +44,7 @@ begin
       'order_code', new.order_code,
       'store_name', new.store_name,
       'customer_name', new.customer_name
-    )::text
+    )
   );
 
   return new;
