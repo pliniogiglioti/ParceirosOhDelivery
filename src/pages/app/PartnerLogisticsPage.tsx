@@ -1,10 +1,12 @@
-import { Bike, Clock, Loader2, Mail, Plus, Trash2 } from 'lucide-react'
+import { Bike, CheckCircle2, Clock, Loader2, Mail, MapPin, Plus, Star, Trash2, Zap } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
 import { MetricCard, SectionFrame } from '@/components/partner/PartnerUi'
 import { usePartnerDraftStore } from '@/hooks/usePartnerDraftStore'
 import { usePartnerPageData } from '@/hooks/usePartnerPageData'
 import { deleteStoreCourier, saveStoreCourier } from '@/services/partner'
+import { isSupabaseConfigured, supabase } from '@/lib/supabase'
+import { cn } from '@/lib/utils'
 import type { StoreCourier } from '@/types'
 
 function isValidEmail(value: string) {
@@ -12,6 +14,287 @@ function isValidEmail(value: string) {
 }
 
 type Tab = 'proprios' | 'entregoh'
+
+interface EntregoHCourier {
+  profileId: string
+  name: string
+  city: string
+  state: string
+  serviceType: string
+  equipmentType: string
+  rating: number
+  completedDeliveries: number
+  available: boolean
+  lat?: number
+  lng?: number
+}
+
+function EntregoHTab({ storeCity, storeState }: { storeCity: string; storeState: string }) {
+  const [enabled, setEnabled] = useState(false)
+  const [cities, setCities] = useState<Array<{ city: string; state: string; count: number }>>([])
+  const [selectedCity, setSelectedCity] = useState('')
+  const [couriers, setCouriers] = useState<EntregoHCourier[]>([])
+  const [loadingCities, setLoadingCities] = useState(false)
+  const [loadingCouriers, setLoadingCouriers] = useState(false)
+
+  // Carrega cidades disponíveis quando ativa
+  useEffect(() => {
+    if (!enabled || !isSupabaseConfigured || !supabase) return
+    setLoadingCities(true)
+
+    void (async () => {
+      try {
+        // Busca cidades com entregadores aprovados ou pendentes disponíveis
+        const { data } = await supabase!
+          .from('courier_profiles')
+          .select('address_city, address_state')
+          .eq('available', true)
+          .not('address_city', 'is', null)
+
+        if (!data) return
+
+        // Agrupa por cidade
+        const cityMap = new Map<string, { city: string; state: string; count: number }>()
+        data.forEach((row) => {
+          const key = `${row.address_city}-${row.address_state}`
+          const existing = cityMap.get(key)
+          if (existing) existing.count++
+          else cityMap.set(key, { city: row.address_city, state: row.address_state, count: 1 })
+        })
+
+        const sorted = [...cityMap.values()].sort((a, b) => {
+          // Coloca a cidade da loja primeiro
+          if (a.city === storeCity) return -1
+          if (b.city === storeCity) return 1
+          return b.count - a.count
+        })
+
+        setCities(sorted)
+
+        // Auto-seleciona a cidade da loja se disponível
+        const storeMatch = sorted.find((c) => c.city === storeCity)
+        if (storeMatch) setSelectedCity(storeMatch.city)
+        else if (sorted.length > 0) setSelectedCity(sorted[0].city)
+      } finally {
+        setLoadingCities(false)
+      }
+    })()
+  }, [enabled, storeCity])
+
+  // Carrega entregadores da cidade selecionada
+  useEffect(() => {
+    if (!selectedCity || !isSupabaseConfigured || !supabase) return
+    setLoadingCouriers(true)
+    setCouriers([])
+
+    void (async () => {
+      try {
+        const { data: profiles } = await supabase!
+          .from('courier_profiles')
+          .select('profile_id, address_city, address_state, service_type, equipment_type, rating, completed_deliveries, available')
+          .eq('address_city', selectedCity)
+          .eq('available', true)
+          .order('rating', { ascending: false })
+
+        if (!profiles?.length) { setLoadingCouriers(false); return }
+
+        // Busca localizações recentes
+        const profileIds = profiles.map((p) => p.profile_id)
+        const { data: locations } = await supabase!
+          .from('courier_locations')
+          .select('courier_id, latitude, longitude, updated_at')
+          .in('courier_id', profileIds)
+
+        // Busca nomes dos perfis
+        const { data: profileData } = await supabase!
+          .from('profiles')
+          .select('id, name')
+          .in('id', profileIds)
+
+        const nameById = new Map((profileData ?? []).map((p) => [p.id, p.name]))
+        const locById = new Map((locations ?? []).map((l) => [l.courier_id, l]))
+
+        setCouriers(profiles.map((p) => ({
+          profileId: p.profile_id,
+          name: nameById.get(p.profile_id) ?? 'Entregador',
+          city: p.address_city,
+          state: p.address_state,
+          serviceType: p.service_type ?? 'moto',
+          equipmentType: p.equipment_type ?? 'bag',
+          rating: Number(p.rating ?? 5),
+          completedDeliveries: Number(p.completed_deliveries ?? 0),
+          available: Boolean(p.available),
+          lat: locById.get(p.profile_id)?.latitude,
+          lng: locById.get(p.profile_id)?.longitude,
+        })))
+      } finally {
+        setLoadingCouriers(false)
+      }
+    })()
+  }, [selectedCity])
+
+  function serviceLabel(type: string) {
+    if (type === 'moto') return 'Moto'
+    if (type === 'bike') return 'Bicicleta'
+    if (type === 'car') return 'Carro'
+    if (type === 'van') return 'Van'
+    return type
+  }
+
+  function serviceIcon(type: string) {
+    if (type === 'moto' || type === 'bike') return '🏍️'
+    if (type === 'car') return '🚗'
+    if (type === 'van') return '🚐'
+    return '🛵'
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Switch de ativar EntregoH */}
+      <div className="panel-card p-5">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-coral-50">
+              <Zap className="h-5 w-5 text-coral-500" />
+            </span>
+            <div>
+              <p className="text-sm font-semibold text-ink-900">Ativar EntregoH!</p>
+              <p className="mt-0.5 text-xs text-ink-500">
+                Contrate entregadores sob demanda da rede EntregoH diretamente pela plataforma
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={enabled}
+            onClick={() => {
+              setEnabled((v) => !v)
+              toast.success(!enabled ? 'EntregoH ativado.' : 'EntregoH desativado.')
+            }}
+            className={cn('inline-flex h-6 w-11 items-center rounded-full px-0.5 transition', enabled ? 'bg-coral-500' : 'bg-ink-200')}
+          >
+            <span className={cn('h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200', enabled ? 'translate-x-5' : 'translate-x-0')} />
+          </button>
+        </div>
+      </div>
+
+      {!enabled ? (
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-coral-200 bg-white px-6 py-14 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-coral-50 text-coral-500">
+            <Zap className="h-7 w-7" />
+          </div>
+          <p className="mt-4 text-base font-bold text-ink-900">EntregoH! desativado</p>
+          <p className="mt-2 max-w-sm text-sm text-ink-500">
+            Ative o switch acima para ver os entregadores disponíveis na sua cidade e contratar sob demanda.
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* Seleção de cidade */}
+          <div className="panel-card p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <MapPin className="h-4 w-4 text-coral-500" />
+              <p className="text-sm font-semibold text-ink-900">Selecione a cidade</p>
+            </div>
+            {loadingCities ? (
+              <div className="h-12 animate-pulse rounded-2xl bg-ink-100" />
+            ) : cities.length === 0 ? (
+              <p className="text-sm text-ink-400">Nenhuma cidade com entregadores disponíveis no momento.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {cities.map((c) => (
+                  <button
+                    key={c.city}
+                    type="button"
+                    onClick={() => setSelectedCity(c.city)}
+                    className={cn(
+                      'inline-flex items-center gap-1.5 rounded-2xl border px-4 py-2 text-sm font-semibold transition',
+                      selectedCity === c.city
+                        ? 'border-coral-300 bg-coral-50 text-coral-700'
+                        : 'border-ink-100 bg-white text-ink-600 hover:bg-ink-50'
+                    )}
+                  >
+                    <MapPin className="h-3.5 w-3.5" />
+                    {c.city} — {c.state}
+                    <span className={cn('rounded-full px-1.5 py-0.5 text-[10px] font-bold',
+                      selectedCity === c.city ? 'bg-coral-200 text-coral-800' : 'bg-ink-100 text-ink-500'
+                    )}>
+                      {c.count}
+                    </span>
+                    {c.city === storeCity && (
+                      <span className="rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-bold text-green-700">sua cidade</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Lista de entregadores */}
+          {selectedCity && (
+            <div className="panel-card overflow-hidden">
+              <div className="flex items-center justify-between border-b border-ink-100 px-5 py-4">
+                <div>
+                  <p className="text-sm font-semibold text-ink-900">Entregadores disponíveis</p>
+                  <p className="mt-0.5 text-xs text-ink-500">{selectedCity} · {couriers.length} ativo{couriers.length !== 1 ? 's' : ''}</p>
+                </div>
+              </div>
+
+              {loadingCouriers ? (
+                <div className="space-y-0 divide-y divide-ink-100">
+                  {[1,2,3].map((i) => (
+                    <div key={i} className="flex items-center gap-4 px-5 py-4">
+                      <div className="h-11 w-11 animate-pulse rounded-2xl bg-ink-100" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-3.5 w-32 animate-pulse rounded-full bg-ink-100" />
+                        <div className="h-3 w-48 animate-pulse rounded-full bg-ink-100" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : couriers.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 py-12 text-center">
+                  <Bike className="h-8 w-8 text-ink-200" />
+                  <p className="text-sm text-ink-400">Nenhum entregador disponível em {selectedCity} agora.</p>
+                </div>
+              ) : (
+                <ul className="divide-y divide-ink-100">
+                  {couriers.map((courier) => (
+                    <li key={courier.profileId} className="flex items-center gap-4 px-5 py-4">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-coral-50 text-2xl">
+                        {serviceIcon(courier.serviceType)}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold text-ink-900">{courier.name}</p>
+                          <span className="flex items-center gap-0.5 rounded-full bg-yellow-50 px-2 py-0.5 text-[11px] font-semibold text-yellow-700">
+                            <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                            {courier.rating.toFixed(1)}
+                          </span>
+                          {courier.available && (
+                            <span className="flex items-center gap-0.5 rounded-full bg-green-50 px-2 py-0.5 text-[11px] font-semibold text-green-700">
+                              <CheckCircle2 className="h-3 w-3" />
+                              Disponível
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-0.5 text-xs text-ink-500">
+                          {serviceLabel(courier.serviceType)} · {courier.completedDeliveries} entregas
+                          {courier.lat && courier.lng ? ' · Localização ativa' : ''}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
 
 export function PartnerLogisticsPage() {
   const { data } = usePartnerPageData()
@@ -216,15 +499,7 @@ export function PartnerLogisticsPage() {
         )}
 
         {activeTab === 'entregoh' && (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-coral-200 bg-white px-6 py-16 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-coral-50 text-coral-500">
-              <Clock className="h-8 w-8" />
-            </div>
-            <p className="mt-4 text-xl font-bold text-ink-900">Em breve — EntregoH!</p>
-            <p className="mt-2 max-w-sm text-sm text-ink-500">
-              A integracao com a EntregoH! esta sendo desenvolvida. Em breve voce podera contratar entregadores sob demanda diretamente pela plataforma.
-            </p>
-          </div>
+          <EntregoHTab storeCity={data.store.addressCity} storeState={data.store.addressState} />
         )}
       </div>
     </SectionFrame>
