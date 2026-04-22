@@ -10,6 +10,7 @@ function mapStatus(value: unknown): OrderStatus {
     status === 'aguardando' ||
     status === 'confirmado' ||
     status === 'preparo' ||
+    status === 'aguardando_retirada' ||
     status === 'a_caminho' ||
     status === 'entregue' ||
     status === 'cancelado'
