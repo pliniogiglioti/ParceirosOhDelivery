@@ -816,6 +816,43 @@ export async function cancelOrder(orderId: string, reason?: string): Promise<voi
     .insert({ order_id: orderId, status: 'cancelado', label: 'Cancelado' })
 }
 
+export type EntregohDispatchResult =
+  | {
+      success: true
+      requestId: string
+      courierId: string
+      courierName?: string
+      distanceKm?: number
+      alreadyPending?: boolean
+      message?: string
+    }
+  | {
+      success: false
+      code?: string
+      message?: string
+    }
+
+export async function dispatchEntregohCourier(orderId: string): Promise<EntregohDispatchResult> {
+  if (!supabase) throw new Error('Supabase nao configurado.')
+
+  const { data, error } = await supabase.rpc('dispatch_entregoh_courier' as never, {
+    p_order_id: orderId,
+  } as never)
+
+  if (error) throw error
+
+  const result = data as EntregohDispatchResult | null
+  if (!result) {
+    return {
+      success: false,
+      code: 'empty_response',
+      message: 'Nao foi possivel chamar o EntregoH.',
+    }
+  }
+
+  return result
+}
+
 export async function fetchOrderStatusEvents(orderId: string): Promise<OrderStatusEvent[]> {
   if (!supabase) return []
   const { data, error } = await supabase

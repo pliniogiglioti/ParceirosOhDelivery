@@ -4,7 +4,7 @@ import { ArrowRight, ChevronDown, FlaskConical, GripVertical, Info, Maximize2, M
 import { useSearchParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import type { OrderStatus, OrderStatusEvent, PartnerOrder, PartnerOrderSettings } from '@/types'
-import { cancelOrder, fetchOrderStatusEvents, updateOrderStatus } from '@/services/partner'
+import { cancelOrder, dispatchEntregohCourier, fetchOrderStatusEvents, updateOrderStatus } from '@/services/partner'
 import { AnimatedModal } from '@/components/partner/AnimatedModal'
 import { OrderChatPanel } from '@/components/partner/OrderChatPanel'
 import { SectionFrame } from '@/components/partner/PartnerUi'
@@ -201,6 +201,7 @@ export function PartnerOrdersPage() {
   const [simulating, setSimulating] = useState(false)
   const [simPaymentMethod, setSimPaymentMethod] = useState<'Pix' | 'Cartão' | 'Dinheiro'>('Pix')
   const [simFulfillment, setSimFulfillment] = useState<'delivery' | 'pickup'>('delivery')
+  const [dispatchingOrderId, setDispatchingOrderId] = useState<string | null>(null)
   const orderSettings = {
     ...defaultOrderSettings,
     ...(orderSettingsByStoreId[data.store.id] ?? {}),
@@ -521,6 +522,38 @@ export function PartnerOrdersPage() {
     void updateOrderStatus(order.id, next).catch(() => undefined)
   }
 
+  async function handleSendOrder(order: PartnerOrder) {
+    if (order.status !== 'confirmado' || order.fulfillmentType !== 'delivery') {
+      handleAdvanceOrder(order)
+      return
+    }
+
+    if (dispatchingOrderId) return
+
+    setDispatchingOrderId(order.id)
+    try {
+      const result = await dispatchEntregohCourier(order.id)
+
+      if (!result.success) {
+        toast.error(result.message ?? 'Nenhum parceiro EntregoH disponivel para este pedido.')
+        return
+      }
+
+      const distance = typeof result.distanceKm === 'number'
+        ? ` (${result.distanceKm.toFixed(1).replace('.', ',')} km)`
+        : ''
+      toast.success(
+        result.alreadyPending
+          ? 'Este pedido ja esta aguardando aceite no EntregoH.'
+          : `EntregoH notificado: ${result.courierName ?? 'entregador'}${distance}.`
+      )
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Nao foi possivel chamar o EntregoH.')
+    } finally {
+      setDispatchingOrderId(null)
+    }
+  }
+
   function handleSavePrepareTime() {
     const prepareTime = Math.max(prepareTimeDraft, 1)
     updateOrderSettings(data.store.id, { prepareTime })
@@ -815,6 +848,12 @@ export function PartnerOrdersPage() {
                         const nextActionLabel = nextStatusTimerLabel(order.status, countdown)
                         const expired = isStageExpired(order.status, order.stageStartedAt, now, stageLimitMs)
                         const expanded = expandedOrderId === order.id
+                        const dispatching = dispatchingOrderId === order.id
+                        const actionLabel = dispatching
+                          ? 'Chamando EntregoH...'
+                          : order.status === 'confirmado' && order.fulfillmentType === 'delivery'
+                            ? 'Chamar EntregoH'
+                            : nextActionLabel
 
                         return (
                           <article
@@ -961,20 +1000,22 @@ export function PartnerOrdersPage() {
                               </div>
                             </div>
 
-                            {nextActionLabel ? (
+                            {actionLabel ? (
                               <button
                                 type="button"
                                 data-prevent-board-pan="true"
+                                disabled={Boolean(dispatchingOrderId)}
                                 onClick={(event) => {
                                   event.stopPropagation()
-                                  handleAdvanceOrder(order)
+                                  void handleSendOrder(order)
                                 }}
                                 className={cn(
                                   'mt-3 inline-flex h-10 w-full items-center justify-center gap-2 rounded-2xl px-3 text-[13px] font-semibold text-white transition',
-                                  nextStatusButtonTone(order.status)
+                                  nextStatusButtonTone(order.status),
+                                  dispatchingOrderId && 'cursor-not-allowed opacity-70'
                                 )}
                               >
-                                {nextActionLabel}
+                                {actionLabel}
                                 <ArrowRight className="h-3.5 w-3.5" />
                               </button>
                             ) : null}
