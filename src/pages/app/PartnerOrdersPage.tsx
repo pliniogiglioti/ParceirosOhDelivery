@@ -489,6 +489,7 @@ export function PartnerOrdersPage() {
     })
     toast.success(`Pedido ${order.code} movido com sucesso.`)
     void updateOrderStatus(order.id, next).catch(() => undefined)
+    void sendOrderPush(order, next)
   }
 
   async function handleConfirmCancel() {
@@ -498,15 +499,52 @@ export function PartnerOrdersPage() {
     try {
       updateOrder(data.store.id, cancelTarget.id, { status: 'cancelado' })
       await cancelOrder(cancelTarget.id, cancelReason.trim())
+      void sendOrderPush(cancelTarget, 'cancelado')
       toast.success(`Pedido ${cancelTarget.code} cancelado.`)
       setCancelTarget(null)
       setCancelReason('')
     } catch {
       toast.error('Nao foi possivel cancelar o pedido.')
-      // Reverte
       updateOrder(data.store.id, cancelTarget.id, { status: cancelTarget.status })
     } finally {
       setCancelling(false)
+    }
+  }
+
+  async function sendOrderPush(order: PartnerOrder, status: OrderStatus) {
+    if (!supabase) return
+    const triggerMap: Partial<Record<OrderStatus, string>> = {
+      preparo: 'order_confirmed',
+      confirmado: 'order_ready',
+      a_caminho: 'order_delivered',
+      cancelado: 'order_cancelled',
+    }
+    const triggerType = triggerMap[status]
+    if (!triggerType || !order.customerProfileId) return
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+      await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-push-batch`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            trigger_type: triggerType,
+            target_type: 'user',
+            target_id: order.customerProfileId,
+            order_code: order.code,
+            store_name: data.store.name,
+            customer_name: order.customerName,
+          }),
+        }
+      )
+    } catch {
+      // Push falhou silenciosamente — não bloqueia o fluxo
     }
   }
 
@@ -520,6 +558,7 @@ export function PartnerOrdersPage() {
     })
     toast.success(`Pedido ${order.code} movido com sucesso.`)
     void updateOrderStatus(order.id, next).catch(() => undefined)
+    void sendOrderPush(order, next)
   }
 
   function handleSavePrepareTime() {
