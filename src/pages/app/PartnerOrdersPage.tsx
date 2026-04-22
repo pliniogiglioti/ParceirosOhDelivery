@@ -1,6 +1,6 @@
 import type { DragEvent, MouseEvent as ReactMouseEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
-import { ArrowRight, ChevronDown, GripVertical, Info, Maximize2, MessageCircle, Minimize2, Printer, Search, Settings, X } from 'lucide-react'
+import { ArrowRight, ChevronDown, FlaskConical, GripVertical, Info, Maximize2, MessageCircle, Minimize2, Printer, Search, Settings, X } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import type { OrderStatus, OrderStatusEvent, PartnerOrder, PartnerOrderSettings } from '@/types'
@@ -197,6 +197,10 @@ export function PartnerOrdersPage() {
   const [cancelTarget, setCancelTarget] = useState<PartnerOrder | null>(null)
   const [cancelReason, setCancelReason] = useState('')
   const [cancelling, setCancelling] = useState(false)
+  const [simulateModalOpen, setSimulateModalOpen] = useState(false)
+  const [simulating, setSimulating] = useState(false)
+  const [simPaymentMethod, setSimPaymentMethod] = useState<'Pix' | 'Cartão' | 'Dinheiro'>('Pix')
+  const [simFulfillment, setSimFulfillment] = useState<'delivery' | 'pickup'>('delivery')
   const orderSettings = {
     ...defaultOrderSettings,
     ...(orderSettingsByStoreId[data.store.id] ?? {}),
@@ -583,6 +587,70 @@ export function PartnerOrdersPage() {
     await panel.requestFullscreen()
   }
 
+  async function handleSimulateOrder() {
+    if (!supabase || simulating) return
+    setSimulating(true)
+    try {
+      // Perfil de teste fixo
+      const TEST_PROFILE_ID = 'a30fc969-3dd2-49fe-a7e3-f583cd2782b6'
+      const TEST_ADDRESS = 'Rua Engenheiro Hans Klotz, 11A - Centro, Osvaldo Cruz/SP'
+
+      // Pega um produto ativo da loja
+      const product = data.products.find((p) => p.active && p.price > 0)
+      if (!product) { toast.error('Nenhum produto ativo encontrado na loja.'); return }
+
+      // Cria o pedido
+      const { data: order, error } = await supabase
+        .from('orders')
+        .insert({
+          store_id: data.store.id,
+          store_name: data.store.name,
+          profile_id: TEST_PROFILE_ID,
+          customer_name: 'Plinio Giglioti (Teste)',
+          customer_email: 'plinio.giglioti@gmail.com',
+          status: 'aguardando',
+          payment_status: 'confirmado',
+          payment_method: simPaymentMethod,
+          fulfillment_type: simFulfillment,
+          address_label: simFulfillment === 'delivery' ? TEST_ADDRESS : null,
+          subtotal_amount: product.price,
+          delivery_fee: simFulfillment === 'delivery' ? data.store.deliveryFee : 0,
+          service_fee: 0,
+          total_amount: product.price + (simFulfillment === 'delivery' ? data.store.deliveryFee : 0),
+          metadata: { simulated: true },
+        })
+        .select('id, order_code')
+        .single()
+
+      if (error) throw error
+
+      // Adiciona o item
+      await supabase.from('order_items').insert({
+        order_id: order.id,
+        product_id: product.id,
+        product_name: product.name,
+        quantity: 1,
+        unit_price: product.price,
+        total_price: product.price,
+      })
+
+      // Evento de status
+      await supabase.from('order_status_events').insert({
+        order_id: order.id,
+        status: 'aguardando',
+        label: 'Pedido recebido',
+      })
+
+      toast.success(`Pedido simulado ${order.order_code} criado!`)
+      setSimulateModalOpen(false)
+    } catch (err) {
+      toast.error('Erro ao simular pedido.')
+      console.error(err)
+    } finally {
+      setSimulating(false)
+    }
+  }
+
   const normalizedSearch = search.trim().toLowerCase()
   const filteredOrders = normalizedSearch
     ? data.orders.filter((order) => {
@@ -636,9 +704,17 @@ export function PartnerOrdersPage() {
 
             <button
               type="button"
-              onClick={() => {
-                void toggleFullscreen()
-              }}
+              onClick={() => setSimulateModalOpen(true)}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-dashed border-ink-300 bg-ink-50/70 px-3 text-sm font-semibold text-ink-600 transition hover:border-coral-300 hover:bg-coral-50 hover:text-coral-600"
+              title="Simular pedido de teste"
+            >
+              <FlaskConical className="h-4 w-4" />
+              <span className="hidden sm:inline">Simular pedido</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => { void toggleFullscreen() }}
               className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-ink-100 bg-ink-50/70 text-ink-700 transition hover:border-coral-200 hover:text-coral-600"
               aria-label={isFullscreen ? 'Sair da tela cheia do kanban' : 'Abrir kanban em tela cheia'}
               title={isFullscreen ? 'Sair da tela cheia' : 'Tela cheia'}
@@ -1331,6 +1407,88 @@ export function PartnerOrdersPage() {
               className="inline-flex h-11 items-center justify-center rounded-2xl bg-coral-500 px-6 text-sm font-semibold text-white transition hover:bg-coral-600 disabled:opacity-40"
             >
               {cancelling ? 'Cancelando...' : 'Confirmar cancelamento'}
+            </button>
+          </div>
+        </AnimatedModal>
+
+        {/* Modal de simulação de pedido */}
+        <AnimatedModal
+          open={simulateModalOpen}
+          onClose={() => { if (!simulating) setSimulateModalOpen(false) }}
+          panelClassName="panel-card w-full max-w-md p-5 sm:p-6"
+          ariaLabelledby="simulate-order-title"
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-coral-500">Ambiente de teste</p>
+              <h4 id="simulate-order-title" className="mt-2 text-xl font-bold text-ink-900">
+                Simular pedido
+              </h4>
+              <p className="mt-1 text-sm text-ink-500">
+                Cria um pedido real usando o perfil de teste <strong>plinio.giglioti@gmail.com</strong> com endereço cadastrado.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSimulateModalOpen(false)}
+              disabled={simulating}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-ink-100 bg-ink-50 text-ink-700 transition hover:border-coral-200 hover:text-coral-600"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-ink-100 bg-ink-50 px-4 py-3 text-xs text-ink-500">
+            <p>📍 <strong>Endereço:</strong> Rua Engenheiro Hans Klotz, 11A — Centro, Osvaldo Cruz/SP</p>
+            <p className="mt-1">🛍️ <strong>Produto:</strong> Primeiro produto ativo da loja</p>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <label className="block">
+              <span className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Pagamento</span>
+              <select
+                value={simPaymentMethod}
+                onChange={(e) => setSimPaymentMethod(e.target.value as 'Pix' | 'Cartão' | 'Dinheiro')}
+                className="h-11 w-full rounded-2xl border border-ink-100 bg-white px-3 text-sm font-medium text-ink-900 outline-none focus:border-coral-400"
+              >
+                <option value="Pix">Pix</option>
+                <option value="Cartão">Cartão</option>
+                <option value="Dinheiro">Dinheiro</option>
+              </select>
+            </label>
+            <label className="block">
+              <span className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-ink-500">Tipo</span>
+              <select
+                value={simFulfillment}
+                onChange={(e) => setSimFulfillment(e.target.value as 'delivery' | 'pickup')}
+                className="h-11 w-full rounded-2xl border border-ink-100 bg-white px-3 text-sm font-medium text-ink-900 outline-none focus:border-coral-400"
+              >
+                <option value="delivery">Entrega</option>
+                <option value="pickup">Retirada</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="mt-5 flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setSimulateModalOpen(false)}
+              disabled={simulating}
+              className="inline-flex h-11 items-center justify-center rounded-2xl border border-ink-100 px-5 text-sm font-semibold text-ink-700 transition hover:bg-ink-50 disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleSimulateOrder()}
+              disabled={simulating}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-coral-500 px-6 text-sm font-semibold text-white transition hover:bg-coral-600 disabled:opacity-50"
+            >
+              {simulating ? (
+                <><span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" /> Criando...</>
+              ) : (
+                <><FlaskConical className="h-4 w-4" /> Criar pedido</>
+              )}
             </button>
           </div>
         </AnimatedModal>
