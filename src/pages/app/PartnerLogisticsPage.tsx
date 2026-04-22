@@ -43,11 +43,14 @@ function EntregoHTab({ storeCity, storeState }: { storeCity: string; storeState:
 
     void (async () => {
       try {
-        // Busca cidades com entregadores aprovados ou pendentes disponíveis
+        // Busca cidades com entregadores realmente aptos para receber chamadas EntregoH.
         const { data } = await supabase!
           .from('courier_profiles')
           .select('address_city, address_state')
+          .eq('status', 'approved')
           .eq('available', true)
+          .eq('registration_completed', true)
+          .eq('active_delivery_mode', 'parceiro-entregoh')
           .not('address_city', 'is', null)
 
         if (!data) return
@@ -92,7 +95,10 @@ function EntregoHTab({ storeCity, storeState }: { storeCity: string; storeState:
           .from('courier_profiles')
           .select('profile_id, address_city, address_state, service_type, equipment_type, rating, completed_deliveries, available')
           .eq('address_city', selectedCity)
+          .eq('status', 'approved')
           .eq('available', true)
+          .eq('registration_completed', true)
+          .eq('active_delivery_mode', 'parceiro-entregoh')
           .order('rating', { ascending: false })
 
         if (!profiles?.length) { setLoadingCouriers(false); return }
@@ -111,9 +117,14 @@ function EntregoHTab({ storeCity, storeState }: { storeCity: string; storeState:
           .in('id', profileIds)
 
         const nameById = new Map((profileData ?? []).map((p) => [p.id, p.name]))
-        const locById = new Map((locations ?? []).map((l) => [l.courier_id, l]))
+        const recentLocationCutoff = Date.now() - 20 * 60 * 1000
+        const locById = new Map(
+          (locations ?? [])
+            .filter((location) => new Date(location.updated_at).getTime() >= recentLocationCutoff)
+            .map((location) => [location.courier_id, location])
+        )
 
-        setCouriers(profiles.map((p) => ({
+        setCouriers(profiles.filter((p) => locById.has(p.profile_id)).map((p) => ({
           profileId: p.profile_id,
           name: nameById.get(p.profile_id) ?? 'Entregador',
           city: p.address_city,
