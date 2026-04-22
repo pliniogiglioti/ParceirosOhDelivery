@@ -19,7 +19,8 @@ begin
   trigger_type := case new.status
     when 'preparo'    then 'order_confirmed'
     when 'confirmado' then 'order_ready'
-    when 'a_caminho'  then 'order_delivered'
+    when 'a_caminho'  then 'order_on_the_way'
+    when 'entregue'   then 'order_delivered'
     when 'cancelado'  then 'order_cancelled'
     else null
   end;

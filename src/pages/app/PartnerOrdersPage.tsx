@@ -514,10 +514,11 @@ export function PartnerOrdersPage() {
   async function sendOrderPush(order: PartnerOrder, status: OrderStatus) {
     if (!supabase) return
     const triggerMap: Partial<Record<OrderStatus, string>> = {
-      preparo: 'order_confirmed',
+      preparo:    'order_confirmed',
       confirmado: 'order_ready',
-      a_caminho: 'order_delivered',
-      cancelado: 'order_cancelled',
+      a_caminho:  'order_on_the_way',
+      entregue:   'order_delivered',
+      cancelado:  'order_cancelled',
     }
     const triggerType = triggerMap[status]
     if (!triggerType || !order.customerProfileId) return
@@ -533,6 +534,7 @@ export function PartnerOrdersPage() {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${session.access_token}`,
           },
+          // Não mandamos title/body — a Edge Function busca o template do banco
           body: JSON.stringify({
             trigger_type: triggerType,
             target_type: 'user',
