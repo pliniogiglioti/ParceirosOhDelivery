@@ -492,6 +492,11 @@ export function PartnerOrdersPage() {
       return
     }
 
+    if (targetColumn === 'retirada' && order.fulfillmentType !== 'pickup') {
+      toast.error('Apenas pedidos de retirada podem ir para esta etapa.')
+      return
+    }
+
     if (targetIndex < currentIndex) {
       toast.error('Não é permitido mover um pedido para uma etapa anterior.')
       return
